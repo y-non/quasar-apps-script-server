@@ -1,23 +1,40 @@
+<script setup>
+import { useMainStore } from "src/stores/main-store";
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
+
+const storeMain = useMainStore();
+const router = useRouter();
+
+onMounted(async () => {
+  storeMain.getInit();
+
+  storeMain.isLogin ? router.push("/data") : [];
+
+  await storeMain.fetchMenuData();
+});
+</script>
+
 <template>
   <q-page class="q-pa-md">
     <div class="login-wrapper">
       <q-form
-        @submit="login"
+        @submit="storeMain.login(storeMain.username, storeMain.password)"
         style="width: 500px"
       >
         <div class="text-h6 q-mb-md">Vui lòng đăng nhập</div>
         <q-input
-          v-model="username"
+          v-model="storeMain.username"
           label="Tên đăng nhập"
-          :rules="[(val) => !!val || 'Field is required']"
+          :rules="[(val) => !!val || 'Không được để rỗng']"
           outlined
-          @input="username = $event.toLowerCase()"
+          @input="storeMain.username = $event.toLowerCase()"
         />
         <q-input
-          v-model="password"
+          v-model="storeMain.password"
           label="Mật khẩu"
           type="password"
-          :rules="[(val) => !!val || 'Field is required']"
+          :rules="[(val) => !!val || 'Không được để rỗng']"
           outlined
         />
         <div class="full-width flex flex-center">
@@ -32,69 +49,6 @@
     </div>
   </q-page>
 </template>
-
-<script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { Loading } from "quasar";
-import { useMainStore } from "src/stores/main-store";
-
-
-const username = ref("");
-const password = ref("");
-const router = useRouter();
-const storeMain = useMainStore();
-
-
-const login = async () => {
-  try {
-    Loading.show({
-      message: "Đang đăng nhập...",
-    });
-
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "text/plain;charset=utf-8")
-
-    const raw = JSON.stringify({
-      action: "login",
-      username: username.value,
-      password: password.value,
-    })
-
-    const requestOptions = {
-      method: 'POST',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow'
-    };
-
-    const response = await fetch(
-      storeMain.urlEndPoint,
-      requestOptions
-    );
-
-    const data = await response.json();
-
-    if (data.success) {
-      localStorage.setItem("username", username.value);
-      localStorage.setItem("password", password.value);
-      localStorage.setItem("isLogin", true)
-      router.push("/data");
-    } else {
-      alert("Login failed");
-    }
-
-    Loading.hide();
-    setTimeout(() => {
-      window.location.reload();
-    }, 200);
-  } catch (error) {
-    console.error("Error logging in:", error);
-    Loading.hide();
-  }
-};
-
-</script>
 
 <style lang="scss" scoped>
 .login-wrapper {

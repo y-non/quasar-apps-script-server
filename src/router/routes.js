@@ -6,8 +6,8 @@ const routes = [
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
-      { path: "", component: LoginPage },
-      { path: "data", component: DataViewPage },
+      { path: "", component: LoginPage, name: "LoginPage" },
+      { path: "data", component: DataViewPage, name: "DataViewPage" },
     ],
   },
 

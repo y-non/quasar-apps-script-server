@@ -1,3 +1,19 @@
+<script setup>
+import { ref, onMounted } from "vue";
+import { useMainStore } from "src/stores/main-store";
+
+const storeMain = useMainStore();
+
+const drawer = ref(false);
+const isShowLogoutButton = ref(false);
+const username = storeMain.getLocalStorageData("username");
+const isLogin = storeMain.getLocalStorageData("isLogin") || false;
+
+onMounted(() => {
+  isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
+});
+</script>
+
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header class="q-py-sm" elevated>
@@ -7,6 +23,7 @@
           style="align-items: center"
         >
           <q-btn
+            v-if="isLogin"
             flat
             dense
             round
@@ -127,33 +144,9 @@
         </div>
       </q-toolbar>
     </q-header>
-    <q-drawer v-model="drawer" :width="200" :breakpoint="500">
+    <q-drawer v-if="isLogin" v-model="drawer" :width="200" :breakpoint="500">
       <q-scroll-area class="fit">
         <q-list padding class="menu-list">
-          <!-- <q-item clickable v-ripple>
-            <q-item-section avatar>
-              <q-icon name="inbox" />
-            </q-item-section>
-
-            <q-item-section> Inbox </q-item-section>
-          </q-item>
-
-          <q-item active clickable v-ripple>
-            <q-item-section avatar>
-              <q-icon name="star" />
-            </q-item-section>
-
-            <q-item-section> Star </q-item-section>
-          </q-item>
-
-          <q-item clickable v-ripple>
-            <q-item-section avatar>
-              <q-icon name="send" />
-            </q-item-section>
-
-            <q-item-section> Send </q-item-section>
-          </q-item> -->
-
           <q-item @click="syncMenu" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-green-8 text-bold text-bold" name="sync" />
@@ -162,7 +155,7 @@
             <q-item-section> Đồng bộ Menu </q-item-section>
           </q-item>
 
-          <q-item @click="logout" clickable v-ripple>
+          <q-item @click="storeMain.logout" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-red-8 text-bold text-bold" name="logout" />
             </q-item-section>
@@ -178,43 +171,3 @@
     </q-page-container>
   </q-layout>
 </template>
-
-<script setup>
-import { Dialog } from "quasar";
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { useMainStore } from "src/stores/main-store";
-
-const username = localStorage.getItem("username");
-
-const storeMain = useMainStore();
-
-const router = useRouter();
-
-const drawer = ref(false);
-const isShowLogoutButton = ref(false);
-
-const logout = () => {
-  Dialog.create({
-    title: "Xác nhận",
-    message: "Bạn có chắc chắn muốn đăng xuẩt ?",
-    ok: true,
-    cancel: true,
-  }).onOk(() => {
-    localStorage.clear();
-    router.push("/");
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  });
-};
-
-const syncMenu = () => {
-  // TODO: vì menu ít thay đổi, nên function này để request menu về, cất vào trong localStorage, khi dùng thì lấy từ localStorage ra cho nhanh đỡ phải query lại
-  console.log("sync menu");
-};
-
-onMounted(() => {
-  isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
-});
-</script>
