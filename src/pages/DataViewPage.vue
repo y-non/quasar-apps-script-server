@@ -14,6 +14,8 @@ import { dateUtil } from "src/utils/dateUtil";
 const storeMain = useMainStore();
 const username = storeMain.getLocalStorageData("username");
 const password = storeMain.getLocalStorageData("password");
+const selectMenuRef = ref(null);
+const selectMenuRefUpdate = ref(null);
 
 const $q = useQuasar();
 
@@ -312,6 +314,7 @@ const getColor = (status) => {
           >
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <q-select
+              ref="selectMenuRef"
               :rules="[(val) => !!val || 'Không được để rỗng']"
               v-model="storeMain.newData.menuSelected"
               :options="optionsMenuData"
@@ -331,6 +334,32 @@ const getColor = (status) => {
               hide-selected
               behavior="menu"
             >
+              <template v-slot:before-options>
+                <div class="flex q-pt-md">
+                  <q-btn
+                    text-color="grey-5"
+                    icon="close"
+                    flat
+                    label="Đóng menu"
+                    class="full-width q-mb-md"
+                    @click="selectMenuRef.hidePopup()"
+                  ></q-btn>
+                </div>
+              </template>
+
+              <template v-slot:after-options>
+                <div class="flex">
+                  <q-btn
+                    text-color="grey-5"
+                    icon="close"
+                    flat
+                    label="Đóng menu"
+                    class="full-width q-my-md"
+                    @click="selectMenuRef.hidePopup()"
+                  ></q-btn>
+                </div>
+              </template>
+
               <template v-slot:option="scope">
                 <q-item
                   v-bind="scope.itemProps"
@@ -484,6 +513,7 @@ const getColor = (status) => {
           >
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <q-select
+              ref="selectMenuRefUpdate"
               :rules="[(val) => !!val || 'Không được để rỗng']"
               v-model="storeMain.updateData.menuSelected"
               :options="optionsMenuData"
@@ -513,6 +543,32 @@ const getColor = (status) => {
                   }}</span>
                   items
                 </div> -->
+              </template>
+
+              <template v-slot:before-options>
+                <div class="flex q-pt-md">
+                  <q-btn
+                    text-color="grey-5"
+                    icon="close"
+                    flat
+                    label="Đóng menu"
+                    class="full-width q-mb-md"
+                    @click="selectMenuRefUpdate.hidePopup()"
+                  ></q-btn>
+                </div>
+              </template>
+
+              <template v-slot:after-options>
+                <div class="flex">
+                  <q-btn
+                    text-color="grey-5"
+                    icon="close"
+                    flat
+                    label="Đóng menu"
+                    class="full-width q-my-md"
+                    @click="selectMenuRefUpdate.hidePopup()"
+                  ></q-btn>
+                </div>
               </template>
 
               <template v-slot:option="scope">
