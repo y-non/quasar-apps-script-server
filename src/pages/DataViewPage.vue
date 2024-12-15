@@ -159,19 +159,18 @@ const postUpdateItem = async (rowId, value) => {
 const removeAddMenuItem = (id) => {
   let total = 0;
 
-  storeMain.newData.menuSelected =
-    storeMain.newData.menuSelected.filter((item) => {
+  storeMain.newData.menuSelected = storeMain.newData.menuSelected.filter(
+    (item) => {
       if (item.id !== id) {
         total += +item.value;
         return item;
       }
-    });
+    }
+  );
 
   storeMain.newData.umsatz = total;
 
-  storeMain.newData.umsatz === 0
-    ? (showAddMenuList.value = false)
-    : [];
+  storeMain.newData.umsatz === 0 ? (showAddMenuList.value = false) : [];
 };
 
 // Access slide items by ref
@@ -217,6 +216,38 @@ const getColor = (status) => {
       return "red-3";
     default:
       return "primary";
+  }
+};
+
+const clickToggleAddMenuItem = (scope) => {
+  {
+    console.log(scope.opt.value);
+    let listIdSelected = storeMain.newData.menuSelected.map((item) => item.id);
+
+    if (listIdSelected.includes(scope.opt.id)) {
+      storeMain.newData.menuSelected = storeMain.newData.menuSelected.filter(
+        (item) => {
+          if (item.id !== scope.opt.id) {
+            return item;
+          }
+        }
+      );
+
+      storeMain.newData.umsatz = +storeMain.newData.umsatz - +scope.opt.value;
+    } else {
+      storeMain.newData.umsatz = +storeMain.newData.umsatz + +scope.opt.value;
+      storeMain.newData.menuSelected.push(scope.opt);
+    }
+
+    // listIdSelected.includes(scope.opt.id)
+    //   ? (storeMain.newData.menuSelected = storeMain.newData.menuSelected.filter(
+    //       (item) => {
+    //         if (item.id !== scope.opt.id) {
+    //           return item;
+    //         }
+    //       }
+    //     ))
+    //   : storeMain.newData.menuSelected.push(scope.opt);
   }
 };
 </script>
@@ -464,25 +495,7 @@ const getColor = (status) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="
-                          () => {
-                            let listIdSelected =
-                              storeMain.newData.menuSelected.map(
-                                (item) => item.id
-                              );
-
-                            listIdSelected.includes(scope.opt.id)
-                              ? (storeMain.newData.menuSelected =
-                                  storeMain.newData.menuSelected.filter(
-                                    (item) => {
-                                      if (item.id !== scope.opt.id) {
-                                        return item;
-                                      }
-                                    }
-                                  ))
-                              : storeMain.newData.menuSelected.push(scope.opt);
-                          }
-                        "
+                        @click="clickToggleAddMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
