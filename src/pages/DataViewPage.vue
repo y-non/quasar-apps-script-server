@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { Dialog, Loading, Notify } from "quasar";
 import { useMainStore } from "src/stores/main-store";
 import { QSpinnerIos } from "quasar";
 import { useQuasar } from "quasar";
@@ -20,11 +19,10 @@ const $q = useQuasar();
 
 const optionsMenuData = ref([]);
 
-// const storeMain.newData = ref({ umsatz: 0, notizen: "", menuSelected: [] });
-const updateData = ref({ umsatz: 0, notizen: "", menuSelected: [] });
-
 /* state for handle reactive in UI */
-const showAddMenuList = ref(false);
+const slideItems = ref(storeMain.slideItems);
+const slideItemsUpdate = ref(storeMain.slideItemsUpdate);
+
 const visibleCount = ref(3);
 const visibleUsers = computed(() =>
   storeMain.listUserData.slice(0, visibleCount.value)
@@ -65,28 +63,30 @@ function showAction(grid) {
     ],
   })
     .onOk((action) => {
-      // console.log('Action chosen:', action.id)
       let listSelectedMenu;
       switch (action.id) {
         case "update":
           storeMain.showUpdateDialog = true;
-          updateData.value = storeMain.userData.value.filter(
+
+          storeMain.updateData = storeMain.userData.filter(
             (item) => item.id === grid
           )[0];
 
           listSelectedMenu =
-            updateData.value.menu.length > 1
-              ? updateData.value.menu.split(";")
-              : updateData.value.menu;
+            storeMain.updateData.menu.length > 1
+              ? storeMain.updateData.menu.split(";")
+              : storeMain.updateData.menu;
 
-          updateData.value.menu.length > 1
-            ? (updateData.value.menuSelected = listSelectedMenu.map((item) => {
-                return storeMain.menuData.filter(
-                  (menuItem) => item == menuItem.id
-                )[0];
-              }))
-            : (updateData.value.menuSelected = storeMain.menuData.filter(
-                (menuItem) => updateData.value.menu == menuItem.id
+          storeMain.updateData.menu.length > 1
+            ? (storeMain.updateData.menuSelected = listSelectedMenu.map(
+                (item) => {
+                  return storeMain.menuData.filter(
+                    (menuItem) => item == menuItem.id
+                  )[0];
+                }
+              ))
+            : (storeMain.updateData.menuSelected = storeMain.menuData.filter(
+                (menuItem) => storeMain.updateData.menu == menuItem.id
               )[0]);
           break;
 
@@ -98,93 +98,8 @@ function showAction(grid) {
           break;
       }
     })
-    .onCancel(() => {
-      // console.log('Dismissed')
-    })
-    .onDismiss(() => {
-      // console.log('I am triggered on both OK and Cancel')
-    });
-}
-
-// eslint-disable-next-line no-unused-vars
-const postUpdateItem = async (rowId, value) => {
-  try {
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "text/plain;charset=utf-8");
-
-    if (updateData.value.menuSelected.length > 1) {
-      updateData.value.listSelectedId = updateData.value.menuSelected.map(
-        (item) => item.id
-      );
-    } else {
-      updateData.value.listSelectedId = updateData.value.menuSelected[0].id;
-    }
-
-    if (updateData.value.listSelectedId.length > 1) {
-      updateData.value.listSelectedId =
-        updateData.value.listSelectedId.join(";");
-    } else {
-      updateData.value.listSelectedId = updateData.value.listSelectedId + "";
-    }
-
-    const raw = JSON.stringify({
-      action: "updateData",
-      username: username,
-      password: password,
-      id: rowId,
-      // valueChange: value,
-    });
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
-
-    const response = await fetch(storeMain.urlEndPoint, requestOptions);
-
-    const result = await response.json();
-
-    if (result.success) {
-      console.log("Data updated successfully");
-    } else {
-      alert("Error when updating data");
-    }
-  } catch (error) {
-    console.error("Error updating data:", error);
-  }
-};
-
-const removeAddMenuItem = (id) => {
-  let total = 0;
-
-  storeMain.newData.menuSelected = storeMain.newData.menuSelected.filter(
-    (item) => {
-      if (item.id !== id) {
-        total += +item.value;
-        return item;
-      }
-    }
-  );
-
-  storeMain.newData.umsatz = total;
-
-  storeMain.newData.umsatz === 0 ? (showAddMenuList.value = false) : [];
-};
-
-// Access slide items by ref
-const slideItems = ref([]);
-
-function onRightSlide(itemId, index) {
-  // Perform the remove action
-  removeAddMenuItem(itemId);
-
-  // Reset the q-slide-item after performing the action
-  const slideItem = slideItems.value[index];
-  if (slideItem) {
-    slideItem.reset();
-  }
+    .onCancel(() => {})
+    .onDismiss(() => {});
 }
 
 const filterFn = (val, update) => {
@@ -216,38 +131,6 @@ const getColor = (status) => {
       return "red-3";
     default:
       return "primary";
-  }
-};
-
-const clickToggleAddMenuItem = (scope) => {
-  {
-    console.log(scope.opt.value);
-    let listIdSelected = storeMain.newData.menuSelected.map((item) => item.id);
-
-    if (listIdSelected.includes(scope.opt.id)) {
-      storeMain.newData.menuSelected = storeMain.newData.menuSelected.filter(
-        (item) => {
-          if (item.id !== scope.opt.id) {
-            return item;
-          }
-        }
-      );
-
-      storeMain.newData.umsatz = +storeMain.newData.umsatz - +scope.opt.value;
-    } else {
-      storeMain.newData.umsatz = +storeMain.newData.umsatz + +scope.opt.value;
-      storeMain.newData.menuSelected.push(scope.opt);
-    }
-
-    // listIdSelected.includes(scope.opt.id)
-    //   ? (storeMain.newData.menuSelected = storeMain.newData.menuSelected.filter(
-    //       (item) => {
-    //         if (item.id !== scope.opt.id) {
-    //           return item;
-    //         }
-    //       }
-    //     ))
-    //   : storeMain.newData.menuSelected.push(scope.opt);
   }
 };
 </script>
@@ -495,7 +378,7 @@ const clickToggleAddMenuItem = (scope) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="clickToggleAddMenuItem(scope)"
+                        @click="storeMain.clickToggleAddMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
@@ -516,7 +399,7 @@ const clickToggleAddMenuItem = (scope) => {
                 v-for="(item, index) in storeMain.newData.menuSelected"
                 :key="index"
                 ref="slideItems"
-                @right="onRightSlide(item.id, index)"
+                @right="storeMain.onRightSlide(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -592,25 +475,25 @@ const clickToggleAddMenuItem = (scope) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeMain.showUpdateDialog = false"
+            @click="storeMain.handleClickBackButtonShowAlert"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
 
           <div class="float-bottom text-h6" style="right: 5%">
             <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(updateData.umsatz) }}
+            {{ dateUtil.formatter.format(storeMain.updateData.umsatz) }}
           </div>
         </div>
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="postUpdateItem"
+            @submit="storeMain.postUpdateItem(storeMain.updateData)"
           >
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <q-select
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="updateData.menuSelected"
+              v-model="storeMain.updateData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -620,9 +503,11 @@ const clickToggleAddMenuItem = (scope) => {
               @filter="filterFn"
               input-debounce="300"
               @update:model-value="
-                updateData.umsatz = updateData.menuSelected
+                storeMain.updateData.umsatz = storeMain.updateData.menuSelected
                   .map((item) => item.value)
-                  .reduce((acc, current) => acc + current, 0)
+                  .reduce((acc, current) => acc + current, 0);
+
+                storeMain.isHaveNotSaveDataYet = true;
               "
               :disable="storeMain.loadingSelect"
               hide-selected
@@ -631,7 +516,7 @@ const clickToggleAddMenuItem = (scope) => {
                 <!-- <div>
                   Already checked
                   <span class="text-bold">{{
-                    updateData.menuSelected?.length
+                    storeMain.updateData.menuSelected?.length
                   }}</span>
                   items
                 </div> -->
@@ -675,39 +560,28 @@ const clickToggleAddMenuItem = (scope) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="
-                          () => {
-                            let listIdSelected = updateData.menuSelected.map(
-                              (item) => item.id
-                            );
-
-                            listIdSelected.includes(scope.index)
-                              ? (updateData.menuSelected =
-                                  updateData.menuSelected.filter((item) => {
-                                    console.log(item);
-                                    console.log(scope);
-                                    if (item.index !== scope.index) {
-                                      console.log(item);
-                                    }
-                                  }))
-                              : '';
-                          }
-                        "
+                        @click="storeMain.clickToggleUpdateMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
                 </q-item>
               </template>
             </q-select>
-            <span v-if="updateData.menuSelected?.length" class="text-subtitle1"
+            <span
+              v-if="storeMain.updateData.menuSelected?.length"
+              class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
-            <q-list v-if="updateData.menuSelected?.length" bordered separator>
+            <q-list
+              v-if="storeMain.updateData.menuSelected?.length"
+              bordered
+              separator
+            >
               <q-slide-item
-                v-for="(item, index) in updateData.menuSelected"
+                v-for="(item, index) in storeMain.updateData.menuSelected"
                 :key="index"
-                ref="slideItems"
-                @right="onRightSlide(item.id, index)"
+                ref="slideItemsUpdate"
+                @right="storeMain.onRightSlideUpdate(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -744,8 +618,9 @@ const clickToggleAddMenuItem = (scope) => {
 
             <q-input
               v-if="storeMain.showNotizen"
-              v-model="updateData.notizen"
+              v-model="storeMain.updateData.notizen"
               label="Thêm ghi chú"
+              @update:model-value="storeMain.isHaveNotSaveDataYet = true"
               outlined
             />
 

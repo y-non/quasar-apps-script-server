@@ -7,21 +7,26 @@ export const useMainStore = defineStore("main", {
     username: "",
     password: "",
     urlEndPoint:
-      "https://script.google.com/macros/s/AKfycbz9HNx_K45v_U4VCLVOUPfPbrndL6dA7e7VBacwSfmO5Ou9XHdXLjh7bgUfh-3K8BM4/exec",
+      // "https://script.google.com/macros/s/AKfycbz9HNx_K45v_U4VCLVOUPfPbrndL6dA7e7VBacwSfmO5Ou9XHdXLjh7bgUfh-3K8BM4/exec",
+      "https://script.google.com/macros/s/AKfycbwLnFuwFg0TwlFxD7z8x6Fx2dYsh-IWoFQeYkzdAwvHhrddhNi5TuEgMRwj1TkAc-Ek/exec",
     userStatus: "",
     statusServing: "serving",
     statusWaiting: "waiting",
     statusOff: "off",
     listUserData: [],
-
     userData: [],
 
+    /* reactive */
     isLogin: false,
     loadingTable: false,
     loadingSelect: false,
+    slideItems: [],
+    slideItemsUpdate: [],
+    isHaveNotSaveDataYet: false,
 
     /* add section */
     newData: { umsatz: 0, notizen: "", menuSelected: [] },
+    updateData: { umsatz: 0, notizen: "", menuSelected: [], menu: [] },
 
     /* function */
     showAddDialog: false,
@@ -230,7 +235,11 @@ export const useMainStore = defineStore("main", {
             action: "addData",
             username: this.username,
             password: this.password,
-            data: this.newData,
+            data: {
+              umsatz: this.newData.umsatz,
+              notizen: this.newData.notizen,
+              listSelectedId: this.newData.listSelectedId,
+            },
           });
 
           const requestOptions = {
@@ -282,8 +291,12 @@ export const useMainStore = defineStore("main", {
           .onOk(async (data) => {
             if (data != "opt1") {
               await funcAddData();
-              this.fetchData();
-              this.updateUserStatus(data);
+              await this.updateUserStatus(data);
+              // this.fetchData();
+
+              setTimeout(() => {
+                window.location.reload();
+              }, 200);
             } else {
               await funcAddData();
               this.fetchData();
@@ -297,6 +310,87 @@ export const useMainStore = defineStore("main", {
       } catch (error) {
         console.error("Error adding data:", error);
         Loading.hide(); // Ensure loading state is reset even in case of error
+      }
+    },
+
+    // eslint-disable-next-line no-unused-vars
+    async postUpdateItem(data) {
+      try {
+        Loading.show({
+          message: "Đang xử lý...",
+        });
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "text/plain;charset=utf-8");
+
+        if (data.menuSelected.length > 1) {
+          data.listSelectedId = data.menuSelected.map((item) => item.id);
+        } else {
+          data.listSelectedId = data.menuSelected[0].id;
+        }
+
+        if (data.listSelectedId.length > 1) {
+          data.listSelectedId = data.listSelectedId.join(";");
+        } else {
+          data.listSelectedId = data.listSelectedId + "";
+        }
+
+        const raw = JSON.stringify({
+          action: "updateData",
+          id: data.id,
+          username: this.username,
+          password: this.password,
+
+          data: {
+            umsatz: data.umsatz,
+            notizen: data.notizen,
+            listSelectedId: data.listSelectedId,
+          },
+        });
+
+        const requestOptions = {
+          method: "POST",
+          headers: myHeaders,
+          body: raw,
+          redirect: "follow",
+        };
+
+        const response = await fetch(this.urlEndPoint, requestOptions);
+
+        const result = await response.json();
+
+        if (result.success) {
+          Notify.create({
+            type: "positive",
+            message: "Cập nhật thành công!",
+            position: "top",
+          });
+          this.showUpdateDialog = false;
+
+          this.userData = this.userData.map((item) => {
+            if (item.id === data.id) {
+              return {
+                ...this.updateData,
+                id: data.id,
+                menu: data.listSelectedId,
+              };
+            }
+            return item;
+          });
+
+          // this.updateData = {
+          //   umsatz: 0,
+          //   notizen: "",
+          //   menuSelected: [],
+          //   menu: [],
+          // };
+          this.isHaveNotSaveDataYet = false;
+        } else {
+          alert("Error when updating data");
+        }
+        Loading.hide();
+      } catch (error) {
+        Loading.hide();
+        console.error("Error updating data:", error);
       }
     },
 
@@ -464,6 +558,131 @@ export const useMainStore = defineStore("main", {
         localStorage.setItem(key, JSON.stringify(value));
       } catch (err) {
         console.error("Failed to set local item:", err);
+      }
+    },
+
+    onRightSlide(itemId, index) {
+      // Perform the remove action
+      this.removeAddMenuItem(itemId);
+
+      // Reset the q-slide-item after performing the action
+      const slideItem = this.slideItems[index];
+      if (slideItem) {
+        slideItem.reset();
+      }
+    },
+
+    removeAddMenuItem(id) {
+      let total = 0;
+
+      this.newData.menuSelected = this.newData.menuSelected.filter((item) => {
+        if (item.id !== id) {
+          total += +item.value;
+          return item;
+        }
+      });
+
+      this.newData.umsatz = total;
+    },
+
+    onRightSlideUpdate(itemId, index) {
+      this.isHaveNotSaveDataYet = true;
+      // Perform the remove action
+      this.removeUpdateMenuItem(itemId);
+
+      // Reset the q-slide-item after performing the action
+      const slideItem = this.slideItemsUpdate[index];
+      if (slideItem) {
+        slideItem.reset();
+      }
+    },
+
+    removeUpdateMenuItem(id) {
+      let total = 0;
+
+      this.updateData.menuSelected = this.updateData.menuSelected.filter(
+        (item) => {
+          if (item.id !== id) {
+            total += +item.value;
+            return item;
+          }
+        }
+      );
+
+      this.updateData.umsatz = total;
+    },
+
+    clickToggleAddMenuItem(scope) {
+      {
+        let listIdSelected = this.newData.menuSelected.map((item) => item.id);
+
+        if (listIdSelected.includes(scope.opt.id)) {
+          this.newData.menuSelected = this.newData.menuSelected.filter(
+            (item) => {
+              if (item.id !== scope.opt.id) {
+                return item;
+              }
+            }
+          );
+
+          this.newData.umsatz = +this.newData.umsatz - +scope.opt.value;
+        } else {
+          this.newData.umsatz = +this.newData.umsatz + +scope.opt.value;
+          this.newData.menuSelected.push(scope.opt);
+        }
+      }
+    },
+
+    clickToggleUpdateMenuItem(scope) {
+      {
+        this.isHaveNotSaveDataYet = true;
+        let listIdSelected = this.updateData.menuSelected.map(
+          (item) => item.id
+        );
+
+        if (listIdSelected.includes(scope.opt.id)) {
+          this.updateData.menuSelected = this.updateData.menuSelected.filter(
+            (item) => {
+              if (item.id !== scope.opt.id) {
+                return item;
+              }
+            }
+          );
+
+          this.updateData.umsatz = +this.updateData.umsatz - +scope.opt.value;
+        } else {
+          this.updateData.umsatz = +this.updateData.umsatz + +scope.opt.value;
+          this.updateData.menuSelected.push(scope.opt);
+        }
+      }
+    },
+
+    handleClickBackButtonShowAlert() {
+      try {
+        if (this.isHaveNotSaveDataYet) {
+          Dialog.create({
+            title: "Cảnh báo",
+            message:
+              "Mọi thay đổi vẫn chưa được lưu, bạn có muốn cập nhật không?",
+            ok: true,
+            cancel: true,
+          })
+            .onOk(() => {
+              //update data here
+              this.postUpdateItem(this.updateData);
+              this.isHaveNotSaveDataYet = false;
+            })
+            .onCancel(() => {
+              this.isHaveNotSaveDataYet = false;
+            });
+        }
+        this.showUpdateDialog = false;
+        this.isHaveNotSaveDataYet = false;
+      } catch (err) {
+        console.error(
+          "Error when handling handleClickBackButtonShowAlert(): ",
+          err
+        );
       }
     },
   },
