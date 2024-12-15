@@ -159,17 +159,17 @@ const postUpdateItem = async (rowId, value) => {
 const removeAddMenuItem = (id) => {
   let total = 0;
 
-  storeMain.storeMain.newData.menuSelected =
-    storeMain.storeMain.newData.menuSelected.filter((item) => {
+  storeMain.newData.menuSelected =
+    storeMain.newData.menuSelected.filter((item) => {
       if (item.id !== id) {
         total += +item.value;
         return item;
       }
     });
 
-  storeMain.storeMain.newData.umsatz = total;
+  storeMain.newData.umsatz = total;
 
-  storeMain.storeMain.newData.umsatz === 0
+  storeMain.newData.umsatz === 0
     ? (showAddMenuList.value = false)
     : [];
 };
