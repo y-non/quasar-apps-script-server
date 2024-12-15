@@ -322,6 +322,7 @@ const getColor = (status) => {
               use-input
               @filter="filterFn"
               input-debounce="300"
+              clearable
               @update:model-value="
                 storeMain.newData.umsatz = storeMain.newData.menuSelected
                   .map((item) => item.value)
@@ -329,17 +330,8 @@ const getColor = (status) => {
               "
               :disable="storeMain.loadingSelect"
               hide-selected
+              behavior="menu"
             >
-              <template v-slot:selected>
-                <!-- <div>
-                  Already checked
-                  <span class="text-bold">{{
-                    storeMain.newData.menuSelected.length
-                  }}</span>
-                  items
-                </div> -->
-              </template>
-
               <template v-slot:option="scope">
                 <q-item
                   v-bind="scope.itemProps"
@@ -385,6 +377,7 @@ const getColor = (status) => {
                 </q-item>
               </template>
             </q-select>
+
             <span
               v-if="storeMain.newData.menuSelected?.length"
               class="text-subtitle1"
@@ -502,6 +495,8 @@ const getColor = (status) => {
               use-input
               @filter="filterFn"
               input-debounce="300"
+              behavior="menu"
+              clearable
               @update:model-value="
                 storeMain.updateData.umsatz = storeMain.updateData.menuSelected
                   .map((item) => item.value)
