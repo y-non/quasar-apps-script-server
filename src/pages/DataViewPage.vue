@@ -322,7 +322,6 @@ const getColor = (status) => {
               use-input
               @filter="filterFn"
               input-debounce="300"
-              clearable
               @update:model-value="
                 storeMain.newData.umsatz = storeMain.newData.menuSelected
                   .map((item) => item.value)
@@ -496,7 +495,6 @@ const getColor = (status) => {
               @filter="filterFn"
               input-debounce="300"
               behavior="menu"
-              clearable
               @update:model-value="
                 storeMain.updateData.umsatz = storeMain.updateData.menuSelected
                   .map((item) => item.value)
