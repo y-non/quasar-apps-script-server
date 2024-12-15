@@ -23,6 +23,7 @@ export const useMainStore = defineStore("main", {
     slideItems: [],
     slideItemsUpdate: [],
     isHaveNotSaveDataYet: false,
+    isLoadingMenuData: false,
 
     /* add section */
     newData: { umsatz: 0, notizen: "", menuSelected: [] },
@@ -540,9 +541,54 @@ export const useMainStore = defineStore("main", {
       }
     },
 
-    /* FUNCTIONAL */
-    syncMenu() {
-      // TODO: vì menu ít thay đổi, nên function này để request menu về, cất vào trong localStorage, khi dùng thì lấy từ localStorage ra cho nhanh đỡ phải query lại
+    async syncMenu() {
+      try {
+        this.isLoadingMenuData = true;
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "text/plain;charset=utf-8");
+
+        const raw = JSON.stringify({
+          action: "fetchMenuData",
+        });
+
+        const requestOptions = {
+          method: "POST",
+          headers: myHeaders,
+          body: raw,
+          redirect: "follow",
+        };
+
+        const response = await fetch(this.urlEndPoint, requestOptions);
+        const result = await response.json();
+        if (result.success) {
+          this.menuData = result.data || [];
+
+          if (this.menuData.length) {
+            this.menuData = this.menuData.map((item) => ({
+              id: item.id,
+              label: item.service,
+              value: parseFloat(item.price),
+            }));
+
+            this.menuData = this.menuData.map((item) => ({
+              ...item,
+              filterSearch: `${item.label}${dateUtil.formatter.format(item)}`,
+            }));
+
+            localStorage.setItem("menuData", JSON.stringify(this.menuData));
+          }
+        }
+        Notify.create({
+          type: "positive",
+          message: "Tải mới thành công!",
+          position: "top",
+        });
+        this.isLoadingMenuData = false;
+      } catch (error) {
+        this.isLoadingMenuData = false;
+        this.loadingSelect = false;
+        console.error("Error fetching data:", error);
+      }
     },
 
     getLocalStorageData(key) {

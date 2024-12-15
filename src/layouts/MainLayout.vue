@@ -147,13 +147,14 @@ onMounted(() => {
     <q-drawer v-if="isLogin" v-model="drawer" :width="200" :breakpoint="500">
       <q-scroll-area class="fit">
         <q-list padding class="menu-list">
-          <q-item @click="syncMenu" clickable v-ripple>
+          <q-item @click="storeMain.syncMenu" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-green-8 text-bold text-bold" name="sync" />
             </q-item-section>
 
             <q-item-section> Đồng bộ Menu </q-item-section>
           </q-item>
+          <q-linear-progress v-if="storeMain.isLoadingMenuData" indeterminate color="secondary" class="q-mt-sm" />
 
           <q-item @click="storeMain.logout" clickable v-ripple>
             <q-item-section avatar>
