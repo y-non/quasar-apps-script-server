@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useMainStore } from "src/stores/main-store";
+import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { QSpinnerIos } from "quasar";
 import { useQuasar } from "quasar";
 
@@ -12,6 +13,7 @@ import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
 
 const storeMain = useMainStore();
+const storeAuthentication = useAuthenticationStore();
 const username = storeMain.getLocalStorageData("username");
 const password = storeMain.getLocalStorageData("password");
 const selectMenuRef = ref(null);
@@ -34,6 +36,7 @@ const hasMoreUsers = computed(
 );
 
 onMounted(async () => {
+  storeAuthentication.getUserList();
   storeMain.getInit();
   await storeMain.fetchData();
 });
