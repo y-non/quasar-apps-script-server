@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { Dialog, Notify } from "quasar";
+import { Dialog, Loading, Notify } from "quasar";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
 
@@ -18,6 +18,10 @@ export const useAuthenticationStore = defineStore("authentication", {
 
     async signIn(email, password) {
       try {
+        Loading.show({
+          message: "Đang đăng nhập...",
+        });
+
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -38,11 +42,15 @@ export const useAuthenticationStore = defineStore("authentication", {
         if (data.session) {
           localStorage.setItem("access_token", data.session.access_token);
           localStorage.setItem("refresh_token", data.session.refresh_token);
+          storageUtil.setLocalStorageData("userData", data.user);
           this.isLogin = true;
           storageUtil.setLocalStorageData("isLogin", this.isLogin);
           this.router.push("/data");
         }
+
+        Loading.hide();
       } catch (err) {
+        Loading.hide();
         console.error("Error when handling signIn(email, password): ", err);
       }
     },

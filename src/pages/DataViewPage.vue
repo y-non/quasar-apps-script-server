@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { QSpinnerIos } from "quasar";
@@ -18,7 +17,6 @@ import { supabase } from "src/utils/superbase";
 const $q = useQuasar();
 const router = useRouter();
 
-const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
 const username = storageUtil.getLocalStorageData("username");
@@ -29,34 +27,33 @@ const selectMenuRefUpdate = ref(null);
 const optionsMenuData = ref([]);
 
 /* state for handle reactive in UI */
-const slideItems = ref(storeMain.slideItems);
-const slideItemsUpdate = ref(storeMain.slideItemsUpdate);
+// const slideItems = ref(storeSupabase.slideItems);
+// const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
 
-const visibleCount = ref(3);
-const visibleUsers = computed(() =>
-  storeMain.listUserData.slice(0, visibleCount.value)
-);
-const hasMoreUsers = computed(
-  () => visibleCount.value < storeMain.listUserData.length
-);
+// const visibleCount = ref(3);
+// const visibleUsers = computed(() =>
+//   storeSupabase.listUserData.slice(0, visibleCount.value)
+// );
+// const hasMoreUsers = computed(
+//   () => visibleCount.value < storeSupabase.listUserData.length
+// );
 
 onMounted(async () => {
   await storeSupabase.fetchData();
 
   supabase.auth.onAuthStateChange(async (_, session) => {
     if (session) {
-      console.log(await supabase.auth.getUser());
     }
   });
 });
 
 // FUNCTIONAL METHOD
-const showMore = () => {
-  visibleCount.value = storeMain.listUserData.length;
-};
-const showLess = () => {
-  visibleCount.value = 3;
-};
+// const showMore = () => {
+//   visibleCount.value = storeSupabase.listUserData.length;
+// };
+// const showLess = () => {
+//   visibleCount.value = 3;
+// };
 
 function showAction(grid) {
   $q.bottomSheet({
@@ -80,32 +77,33 @@ function showAction(grid) {
       let listSelectedMenu;
       switch (action.id) {
         case "update":
-          storeMain.showUpdateDialog = true;
+          storeSupabase.showUpdateDialog = true;
 
-          storeMain.updateData = storeSupabase.userData.filter(
+          storeSupabase.updateData = storeSupabase.dataItem.filter(
             (item) => item.id === grid
           )[0];
 
           listSelectedMenu =
-            storeMain.updateData.menu.length > 1
-              ? storeMain.updateData.menu.split(";")
-              : storeMain.updateData.menu;
+            storeSupabase.updateData.menu.length > 1
+              ? storeSupabase.updateData.menu.split(";")
+              : storeSupabase.updateData.menu;
 
-          storeMain.updateData.menu.length > 1
-            ? (storeMain.updateData.menuSelected = listSelectedMenu.map(
+          storeSupabase.updateData.menu.length > 1
+            ? (storeSupabase.updateData.menuSelected = listSelectedMenu.map(
                 (item) => {
-                  return storeMain.menuData.filter(
+                  return storeSupabase.menuData.filter(
                     (menuItem) => item == menuItem.id
                   )[0];
                 }
               ))
-            : (storeMain.updateData.menuSelected = storeMain.menuData.filter(
-                (menuItem) => storeMain.updateData.menu == menuItem.id
-              )[0]);
+            : (storeSupabase.updateData.menuSelected =
+                storeSupabase.menuData.filter(
+                  (menuItem) => storeSupabase.updateData.menu == menuItem.id
+                )[0]);
           break;
 
         case "delete":
-          storeMain.deleteData(grid);
+          storeSupabase.deleteData(grid);
           break;
 
         default:
@@ -119,7 +117,7 @@ function showAction(grid) {
 const filterFn = (val, update) => {
   if (val === "") {
     update(() => {
-      optionsMenuData.value = storeMain.menuData;
+      optionsMenuData.value = storeSupabase.menuData;
 
       // here you have access to "ref" which
       // is the Vue reference of the QSelect
@@ -129,7 +127,7 @@ const filterFn = (val, update) => {
 
   update(() => {
     const needle = val.toLowerCase();
-    optionsMenuData.value = storeMain.menuData.filter(
+    optionsMenuData.value = storeSupabase.menuData.filter(
       (v) => v.filterSearch.toLowerCase().indexOf(needle) > -1
     );
   });
@@ -152,7 +150,7 @@ const getColor = (status) => {
 <template>
   <q-page class="q-pa-sm">
     <!-- Display User Badges -->
-    <div v-if="!storeSupabase.loadingMainScreen" class="q-my-sm">
+    <!-- <div v-if="!storeSupabase.isLoadingMainScreen" class="q-my-sm">
       <q-btn
         v-for="user in visibleUsers"
         :key="user.benutzername"
@@ -190,10 +188,10 @@ const getColor = (status) => {
         class="q-ml-sm"
         @click="showLess"
       />
-    </div>
+    </div> -->
 
     <div
-      v-if="storeSupabase.loadingMainScreen"
+      v-if="storeSupabase.isLoadingMainScreen"
       style="height: 30vh"
       class="full-width flex column flex-center"
     >
@@ -201,9 +199,9 @@ const getColor = (status) => {
     </div>
 
     <q-list class="q-mt-md" v-else>
-      <div v-if="storeSupabase.userData?.length">
+      <div v-if="storeSupabase.dataItem?.length">
         <q-card
-          v-for="(item, index) in storeSupabase.userData"
+          v-for="(item, index) in storeSupabase.dataItem"
           :key="index"
           flat
           bordered
@@ -231,8 +229,8 @@ const getColor = (status) => {
               <q-icon
                 name="more_vert"
                 size="sm"
-                :color="storeMain.loadingSelect ? 'grey-3' : 'grey-5'"
-                @click="!storeMain.loadingSelect ? showAction(item.id) : []"
+                :color="storeSupabase.loadingSelect ? 'grey-3' : 'grey-5'"
+                @click="!storeSupabase.loadingSelect ? showAction(item.id) : []"
               />
             </div>
           </q-card-section>
@@ -291,14 +289,14 @@ const getColor = (status) => {
         color="green-7"
         class="q-pa-md"
         round
-        @click="storeMain.showAddDialog = true"
+        @click="storeSupabase.showAddDialog = true"
       />
     </q-page-sticky>
 
     <q-dialog
-      :maximized="storeMain.showAddDialog"
+      :maximized="storeSupabase.showAddDialog"
       class="full-width full-height"
-      v-model="storeMain.showAddDialog"
+      v-model="storeSupabase.showAddDialog"
     >
       <q-card class="full-width full-height">
         <div
@@ -309,26 +307,26 @@ const getColor = (status) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeMain.showAddDialog = false"
+            @click="storeSupabase.showAddDialog = false"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
 
           <div class="float-bottom text-h6" style="right: 5%">
             <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(storeMain.newData.umsatz) }}
+            {{ dateUtil.formatter.format(storeSupabase.newData.umsatz) }}
           </div>
         </div>
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeMain.addData"
+            @submit="storeSupabase.addData"
           >
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <q-select
               ref="selectMenuRef"
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeMain.newData.menuSelected"
+              v-model="storeSupabase.newData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -338,11 +336,12 @@ const getColor = (status) => {
               @filter="filterFn"
               input-debounce="300"
               @update:model-value="
-                storeMain.newData.umsatz = storeMain.newData.menuSelected
-                  .map((item) => item.value)
-                  .reduce((acc, current) => acc + current, 0)
+                storeSupabase.newData.umsatz =
+                  storeSupabase.newData.menuSelected
+                    .map((item) => item.value)
+                    .reduce((acc, current) => acc + current, 0)
               "
-              :disable="storeMain.loadingSelect"
+              :disable="storeSupabase.loadingSelect"
               hide-selected
               behavior="menu"
             >
@@ -410,7 +409,7 @@ const getColor = (status) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="storeMain.clickToggleAddMenuItem(scope)"
+                        @click="storeSupabase.clickToggleAddMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
@@ -419,20 +418,20 @@ const getColor = (status) => {
             </q-select>
 
             <span
-              v-if="storeMain.newData.menuSelected?.length"
+              v-if="storeSupabase.newData.menuSelected?.length"
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
             <q-list
-              v-if="storeMain.newData.menuSelected?.length"
+              v-if="storeSupabase.newData.menuSelected?.length"
               bordered
               separator
             >
               <q-slide-item
-                v-for="(item, index) in storeMain.newData.menuSelected"
+                v-for="(item, index) in storeSupabase.newData.menuSelected"
                 :key="index"
                 ref="slideItems"
-                @right="storeMain.onRightSlide(item.id, index)"
+                @right="storeSupabase.onRightSlide(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -460,23 +459,23 @@ const getColor = (status) => {
             </q-list>
             <!-- notizen -->
             <div
-              v-if="!storeMain.showNotizen"
-              @click="storeMain.showNotizen = true"
+              v-if="!storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = true"
               class="flex flex-center text-blue"
             >
               <q-icon name="add" size="sm" rounded />Hiện ghi chú
             </div>
 
             <q-input
-              v-if="storeMain.showNotizen"
-              v-model="storeMain.newData.notizen"
+              v-if="storeSupabase.showNotizen"
+              v-model="storeSupabase.newData.notizen"
               label="Thêm ghi chú"
               outlined
             />
 
             <div
-              v-if="storeMain.showNotizen"
-              @click="storeMain.showNotizen = false"
+              v-if="storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = false"
               class="flex flex-center text-blue"
             >
               <q-icon name="remove" size="sm" rounded />Ẩn ghi chú
@@ -496,8 +495,8 @@ const getColor = (status) => {
     </q-dialog>
 
     <q-dialog
-      :maximized="storeMain.showUpdateDialog"
-      v-model="storeMain.showUpdateDialog"
+      :maximized="storeSupabase.showUpdateDialog"
+      v-model="storeSupabase.showUpdateDialog"
     >
       <q-card class="full-width full-height">
         <div
@@ -508,26 +507,26 @@ const getColor = (status) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeMain.handleClickBackButtonShowAlert"
+            @click="storeSupabase.handleClickBackButtonShowAlert"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
 
           <div class="float-bottom text-h6" style="right: 5%">
             <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(storeMain.updateData.umsatz) }}
+            {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }}
           </div>
         </div>
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeMain.postUpdateItem(storeMain.updateData)"
+            @submit="storeSupabase.postUpdateItem(storeSupabase.updateData)"
           >
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <q-select
               ref="selectMenuRefUpdate"
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeMain.updateData.menuSelected"
+              v-model="storeSupabase.updateData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -538,20 +537,21 @@ const getColor = (status) => {
               input-debounce="300"
               behavior="menu"
               @update:model-value="
-                storeMain.updateData.umsatz = storeMain.updateData.menuSelected
-                  .map((item) => item.value)
-                  .reduce((acc, current) => acc + current, 0);
+                storeSupabase.updateData.umsatz =
+                  storeSupabase.updateData.menuSelected
+                    .map((item) => item.value)
+                    .reduce((acc, current) => acc + current, 0);
 
-                storeMain.isHaveNotSaveDataYet = true;
+                storeSupabase.isHaveNotSaveDataYet = true;
               "
-              :disable="storeMain.loadingSelect"
+              :disable="storeSupabase.loadingSelect"
               hide-selected
             >
               <template v-slot:selected>
                 <!-- <div>
                   Already checked
                   <span class="text-bold">{{
-                    storeMain.updateData.menuSelected?.length
+                    storeSupabase.updateData.menuSelected?.length
                   }}</span>
                   items
                 </div> -->
@@ -621,7 +621,7 @@ const getColor = (status) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="storeMain.clickToggleUpdateMenuItem(scope)"
+                        @click="storeSupabase.clickToggleUpdateMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
@@ -629,20 +629,20 @@ const getColor = (status) => {
               </template>
             </q-select>
             <span
-              v-if="storeMain.updateData.menuSelected?.length"
+              v-if="storeSupabase.updateData.menuSelected?.length"
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
             <q-list
-              v-if="storeMain.updateData.menuSelected?.length"
+              v-if="storeSupabase.updateData.menuSelected?.length"
               bordered
               separator
             >
               <q-slide-item
-                v-for="(item, index) in storeMain.updateData.menuSelected"
+                v-for="(item, index) in storeSupabase.updateData.menuSelected"
                 :key="index"
                 ref="slideItemsUpdate"
-                @right="storeMain.onRightSlideUpdate(item.id, index)"
+                @right="storeSupabase.onRightSlideUpdate(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -670,24 +670,24 @@ const getColor = (status) => {
             </q-list>
             <!-- notizen -->
             <div
-              v-if="!storeMain.showNotizen"
-              @click="storeMain.showNotizen = true"
+              v-if="!storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = true"
               class="flex flex-center text-blue"
             >
               <q-icon name="add" size="sm" rounded />Hiện ghi chú
             </div>
 
             <q-input
-              v-if="storeMain.showNotizen"
-              v-model="storeMain.updateData.notizen"
+              v-if="storeSupabase.showNotizen"
+              v-model="storeSupabase.updateData.notizen"
               label="Thêm ghi chú"
-              @update:model-value="storeMain.isHaveNotSaveDataYet = true"
+              @update:model-value="storeSupabase.isHaveNotSaveDataYet = true"
               outlined
             />
 
             <div
-              v-if="storeMain.showNotizen"
-              @click="storeMain.showNotizen = false"
+              v-if="storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = false"
               class="flex flex-center text-blue"
             >
               <q-icon name="remove" size="sm" rounded />Ẩn ghi chú

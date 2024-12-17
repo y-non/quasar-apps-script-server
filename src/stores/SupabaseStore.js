@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { Dialog, Loading, Notify } from "quasar";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
@@ -6,8 +7,25 @@ import { supabase } from "src/utils/superbase";
 export const useSupabaseStore = defineStore("supabase", {
   state: () => ({
     menuData: [],
+    dataItem: [],
 
-    loadingMainScreen: false,
+    /* reactive */
+    isLogin: false,
+    isLoadingMainScreen: false,
+    loadingSelect: false,
+    slideItems: [],
+    slideItemsUpdate: [],
+    isHaveNotSaveDataYet: false,
+    isLoadingMenuData: false,
+
+    /* add section */
+    newData: { umsatz: 0, notizen: "", menuSelected: [] },
+    updateData: { umsatz: 0, notizen: "", menuSelected: [], menu: [] },
+
+    /* function */
+    showAddDialog: false,
+    showUpdateDialog: false,
+    showNotizen: false,
   }),
   actions: {
     /* CRUD DATA */
@@ -15,7 +33,7 @@ export const useSupabaseStore = defineStore("supabase", {
       try {
         //hàm này lên đầu để user không cần phải đợi load user data vẫn có thể thực hiện action khi app vừa render
         await this.fetchMenuData();
-        this.loadingMainScreen = true;
+        this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
         const result = await supabase.from("umsatz").select();
@@ -24,11 +42,11 @@ export const useSupabaseStore = defineStore("supabase", {
           let dataResponse = result.data || [];
 
           //assign and arranged in order from largest to smallest
-          // this.listUserData =
+          // this.listdataItem =
           //   result.otherData.sort((a, b) => b.orderCount - a.orderCount) || [];
           // this.userStatus = result.userStatus;
 
-          this.userData = dataResponse
+          this.dataItem = dataResponse
             .map((item) => {
               const newDate = new Date(item.created_at);
               const hours = String(newDate.getHours()).padStart(2, "0");
@@ -47,36 +65,36 @@ export const useSupabaseStore = defineStore("supabase", {
             .filter((item) => item);
 
           /* handle menu item in main page */
-          this.userData.forEach((_, index) => {
+          this.dataItem.forEach((_, index) => {
             const listSelectedMenu =
-              this.userData[index].menu?.length > 1
-                ? this.userData[index].menu.split(";")
-                : this.userData[index].menu;
+              this.dataItem[index].menu?.length > 1
+                ? this.dataItem[index].menu.split(";")
+                : this.dataItem[index].menu;
 
-            this.userData[index].menu.length > 1
-              ? (this.userData[index].menuSelected = listSelectedMenu.map(
+            this.dataItem[index].menu.length > 1
+              ? (this.dataItem[index].menuSelected = listSelectedMenu.map(
                   (item) => {
                     return this.menuData.filter(
                       (menuItem) => item == menuItem.id
                     )[0];
                   }
                 ))
-              : (this.userData[index].menuSelected = this.menuData.filter(
-                  (menuItem) => this.userData[index].menu == menuItem.id
+              : (this.dataItem[index].menuSelected = this.menuData.filter(
+                  (menuItem) => this.dataItem[index].menu == menuItem.id
                 ));
           });
 
-          if (!this.userData.length) {
-            this.userData = [];
+          if (!this.dataItem.length) {
+            this.dataItem = [];
           }
         } else {
           alert("Failed to fetch data");
         }
 
-        this.loadingMainScreen = false;
+        this.isLoadingMainScreen = false;
       } catch (error) {
         console.error("Error fetching data:", error);
-        this.loadingMainScreen = false; // Ensure loading state is reset even in case of error
+        this.isLoadingMainScreen = false; // Ensure loading state is reset even in case of error
       }
     },
 
@@ -113,6 +131,159 @@ export const useSupabaseStore = defineStore("supabase", {
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async addData() {
+      try {
+        const funcAddData = async () => {
+          Loading.show({
+            message: "Đang thêm mới dữ liệu...",
+          });
+
+          if (this.newData.menuSelected.length > 1) {
+            this.newData.listSelectedId = this.newData.menuSelected.map(
+              (item) => item.id
+            );
+          } else {
+            this.newData.listSelectedId = this.newData.menuSelected[0].id;
+          }
+
+          if (this.newData.listSelectedId.length > 1) {
+            this.newData.listSelectedId = this.newData.listSelectedId.join(";");
+          } else {
+            this.newData.listSelectedId = this.newData.listSelectedId + "";
+          }
+
+          const { id, email } = storageUtil.getLocalStorageData("userData");
+
+          const dataInsert = {
+            benutzername: email,
+            umsatz: this.newData.umsatz,
+            notizen: this.newData.notizen,
+            menu: this.newData.listSelectedId,
+            user_id: id,
+          };
+
+          const result = await supabase.from("umsatz").insert(dataInsert);
+
+          if (result.status === 201) {
+            Notify.create({
+              type: "positive",
+              message: "Thêm mới thành công!",
+              position: "top",
+            });
+            this.newData = { umsatz: 0, notizen: "", menuSelected: [] };
+            this.showAddDialog = false;
+            // this.fetchData();
+          } else {
+            alert("Failed to add data");
+          }
+          Loading.hide();
+        };
+
+        let items = [
+          { label: "Serving", value: "serving", color: "green" },
+          { label: "Waiting", value: "waiting", color: "yellow" },
+          { label: "Off", value: "off", color: "red" },
+        ];
+
+        items = items.filter((item) => item.value !== this.userStatus);
+
+        Dialog.create({
+          title: "Thông báo",
+          message: "Bạn có muốn thay đổi trạng thái sau khi thêm không?",
+          options: {
+            type: "radio",
+            model: "opt1",
+            items,
+          },
+          cancel: true,
+          persistent: true,
+        })
+          .onOk(async (data) => {
+            if (data != "opt1") {
+              await funcAddData();
+              await this.updateUserStatus(data);
+              // this.fetchData();
+
+              setTimeout(() => {
+                window.location.reload();
+              }, 200);
+            } else {
+              await funcAddData();
+              this.fetchData();
+            }
+          })
+
+          .onCancel(() => {})
+          .onDismiss(() => {});
+      } catch (error) {
+        console.error("Error adding data:", error);
+        Loading.hide(); // Ensure loading state is reset even in case of error
+      }
+    },
+
+    async deleteData(rowId) {
+      try {
+        Dialog.create({
+          title: "Xác nhận",
+          message: "Bạn có chắc chắn muốn xóa hàng này không?",
+          ok: true,
+          cancel: true,
+        }).onOk(async () => {
+          Loading.show({
+            message: "Đang xóa dữ liệu...",
+          });
+
+          const result = await supabase.from("umsatz").delete().eq("id", rowId);
+
+          if (result.status === 204) {
+            Notify.create({
+              type: "positive",
+              message: "Xóa thành công!",
+              position: "top",
+            });
+
+            this.dataItem = this.dataItem.filter((item) => item.id !== rowId);
+          } else {
+            alert("Failed to delete data");
+          }
+          Loading.hide();
+        });
+      } catch (error) {
+        console.error("Error deleting data:", error);
+        Loading.hide(); // Ensure loading state is reset even in case of error
+      }
+    },
+
+    /* FUNCTIONAL */
+    handleClickBackButtonShowAlert() {
+      try {
+        if (this.isHaveNotSaveDataYet) {
+          Dialog.create({
+            title: "Cảnh báo",
+            message:
+              "Mọi thay đổi vẫn chưa được lưu, bạn có muốn cập nhật không?",
+            ok: true,
+            cancel: true,
+          })
+            .onOk(() => {
+              //update data here
+              this.postUpdateItem(this.updateData);
+              this.isHaveNotSaveDataYet = false;
+            })
+            .onCancel(() => {
+              this.isHaveNotSaveDataYet = false;
+            });
+        }
+        this.showUpdateDialog = false;
+        this.isHaveNotSaveDataYet = false;
+      } catch (err) {
+        console.error(
+          "Error when handling handleClickBackButtonShowAlert(): ",
+          err
+        );
       }
     },
   },
