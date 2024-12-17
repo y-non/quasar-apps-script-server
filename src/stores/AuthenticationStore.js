@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { Notify } from "quasar";
+import { Dialog, Notify } from "quasar";
 import { supabase } from "src/utils/superbase";
 
 export const useAuthenticationStore = defineStore("authentication", {
@@ -40,28 +40,31 @@ export const useAuthenticationStore = defineStore("authentication", {
     },
 
     async signOut() {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Error signing out:", error.message);
-        return;
-      }
-    },
-
-    async getUserList() {
       try {
-        // let { data: benutzer, error } = supabase.from("benutzer");
-        // const { data } = await supabase.from("benutzer").select();
+        Dialog.create({
+          title: "Xác nhận",
+          message: "Bạn có chắc chắn muốn đăng xuẩt ?",
+          ok: true,
+          cancel: true,
+        }).onOk(async () => {
+          localStorage.clear();
+          this.router.push("/");
 
-        let { data: umsatz, error } = await supabase.from("umsatz").select();
-
-        console.log(umsatz);
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error("Error signing out:", error.message);
+            return;
+          }
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        });
       } catch (err) {
-        console.error("Internal Server Error: ", err);
+        console.error("Internal Server Error signOut(): ", err);
       }
     },
 
     /* FUNCTIONAL */
-
     async handleEmailVerification() {
       const url = new URL(window.location.href);
       const accessToken = url.searchParams.get("access_token");

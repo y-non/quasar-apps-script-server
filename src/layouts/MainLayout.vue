@@ -1,9 +1,12 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useMainStore } from "src/stores/main-store";
+import { useAuthenticationStore } from "src/stores/AuthenticationStore";
+
 import { storageUtil } from "src/utils/storageUtil";
 
 const storeMain = useMainStore();
+const storeAuthentication = useAuthenticationStore();
 
 const drawer = ref(false);
 const isShowLogoutButton = ref(false);
@@ -155,9 +158,14 @@ onMounted(() => {
 
             <q-item-section> Đồng bộ Menu </q-item-section>
           </q-item>
-          <q-linear-progress v-if="storeMain.isLoadingMenuData" indeterminate color="secondary" class="q-mt-sm" />
+          <q-linear-progress
+            v-if="storeMain.isLoadingMenuData"
+            indeterminate
+            color="secondary"
+            class="q-mt-sm"
+          />
 
-          <q-item @click="storeMain.logout" clickable v-ripple>
+          <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-red-8 text-bold text-bold" name="logout" />
             </q-item-section>
