@@ -30,13 +30,13 @@ const optionsMenuData = ref([]);
 const slideItems = ref(storeSupabase.slideItems);
 const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
 
-// const visibleCount = ref(3);
-// const visibleUsers = computed(() =>
-//   storeSupabase.listUserData.slice(0, visibleCount.value)
-// );
-// const hasMoreUsers = computed(
-//   () => visibleCount.value < storeSupabase.listUserData.length
-// );
+const visibleCount = ref(3);
+const visibleUsers = computed(() =>
+  storeSupabase.listUserData.slice(0, visibleCount.value)
+);
+const hasMoreUsers = computed(
+  () => visibleCount.value < storeSupabase.listUserData.length
+);
 
 onMounted(async () => {
   await storeSupabase.fetchData();
@@ -48,12 +48,12 @@ onMounted(async () => {
 });
 
 // FUNCTIONAL METHOD
-// const showMore = () => {
-//   visibleCount.value = storeSupabase.listUserData.length;
-// };
-// const showLess = () => {
-//   visibleCount.value = 3;
-// };
+const showMore = () => {
+  visibleCount.value = storeSupabase.listUserData.length;
+};
+const showLess = () => {
+  visibleCount.value = 3;
+};
 
 function showAction(grid) {
   $q.bottomSheet({
@@ -150,7 +150,7 @@ const getColor = (status) => {
 <template>
   <q-page class="q-pa-sm">
     <!-- Display User Badges -->
-    <!-- <div v-if="!storeSupabase.isLoadingMainScreen" class="q-my-sm">
+    <div v-if="!storeSupabase.isLoadingMainScreen" class="q-my-sm">
       <q-btn
         v-for="user in visibleUsers"
         :key="user.benutzername"
@@ -188,7 +188,7 @@ const getColor = (status) => {
         class="q-ml-sm"
         @click="showLess"
       />
-    </div> -->
+    </div>
 
     <div
       v-if="storeSupabase.isLoadingMainScreen"

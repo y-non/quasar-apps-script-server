@@ -2,12 +2,14 @@
 import { ref, onMounted } from "vue";
 import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
+import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { useRouter } from "vue-router";
 import { storageUtil } from "src/utils/storageUtil";
 
 const router = useRouter();
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
+const storeSupabase = useSupabaseStore();
 
 const drawer = ref(false);
 const isShowLogoutButton = ref(false);
@@ -48,23 +50,27 @@ onMounted(() => {
             <div v-if="isShowLogoutButton">
               <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
-                  storeMain.userStatus
+                  storeSupabase.userStatus
                 }}</span>
 
                 <q-spinner-hearts
-                  v-if="storeMain.userStatus === storeMain.statusServing"
+                  v-if="
+                    storeSupabase.userStatus === storeSupabase.statusServing
+                  "
                   :color="'grey-3'"
                   size="md"
                 />
                 <q-spinner-hourglass
-                  v-if="storeMain.userStatus === storeMain.statusWaiting"
+                  v-if="
+                    storeSupabase.userStatus === storeSupabase.statusWaiting
+                  "
                   :color="'grey-3'"
                   size="xs"
                 />
                 <q-icon
                   v-if="
-                    storeMain.userStatus !== storeMain.statusServing &&
-                    storeMain.userStatus !== storeMain.statusWaiting
+                    storeSupabase.userStatus !== storeSupabase.statusServing &&
+                    storeSupabase.userStatus !== storeSupabase.statusWaiting
                   "
                   :name="'eva-wifi-off-outline'"
                   :color="'red'"
@@ -72,16 +78,16 @@ onMounted(() => {
                 />
 
                 <!-- <q-icon
-                  :name="storeMain.userStatus === storeMain.statusServing
+                  :name="storeSupabase.userStatus === storeSupabase.statusServing
                     ? 'eva-radio-outline'
-                    : storeMain.userStatus === storeMain.statusWaiting
+                    : storeSupabase.userStatus === storeSupabase.statusWaiting
                       ? 'eva-sync-outline'
                       : 'eva-wifi-off-outline'
                     "
                   size="md"
-                  :color="storeMain.userStatus === storeMain.statusServing
+                  :color="storeSupabase.userStatus === storeSupabase.statusServing
                     ? 'green'
-                    : storeMain.userStatus === storeMain.statusWaiting
+                    : storeSupabase.userStatus === storeSupabase.statusWaiting
                       ? 'yellow'
                       : 'red'
                     "
@@ -94,7 +100,9 @@ onMounted(() => {
                       <div
                         class="active"
                         @click="
-                          storeMain.updateUserStatus(storeMain.statusServing)
+                          storeSupabase.updateUserStatus(
+                            storeSupabase.statusServing,
+                          )
                         "
                       >
                         <!-- <q-icon
@@ -104,7 +112,7 @@ onMounted(() => {
                         /> -->
                         <q-spinner-hearts color="green" />
                         <span class="q-ml-sm text-capitalize">{{
-                          storeMain.statusServing
+                          storeSupabase.statusServing
                         }}</span>
                       </div>
                     </q-item-section>
@@ -115,7 +123,9 @@ onMounted(() => {
                       <div
                         class="active"
                         @click="
-                          storeMain.updateUserStatus(storeMain.statusWaiting)
+                          storeSupabase.updateUserStatus(
+                            storeSupabase.statusWaiting
+                          )
                         "
                       >
                         <!-- <q-icon
@@ -125,7 +135,7 @@ onMounted(() => {
                         /> -->
                         <q-spinner-hourglass color="yellow" size="xs" />
                         <span class="q-ml-sm text-capitalize">{{
-                          storeMain.statusWaiting
+                          storeSupabase.statusWaiting
                         }}</span>
                       </div>
                     </q-item-section>
@@ -136,14 +146,20 @@ onMounted(() => {
                     <q-item-section>
                       <div
                         class="active"
-                        @click="storeMain.updateUserStatus(storeMain.statusOff)"
+                        @click="
+                          storeSupabase.updateUserStatus(
+                            storeSupabase.statusOff
+                          )
+                        "
                       >
                         <q-icon
                           name="eva-wifi-off-outline"
                           size="xs"
                           color="red"
                         />
-                        <span class="q-ml-sm">{{ storeMain.statusOff }}</span>
+                        <span class="q-ml-sm">{{
+                          storeSupabase.statusOff
+                        }}</span>
                       </div>
                     </q-item-section>
                   </q-item>
@@ -157,7 +173,7 @@ onMounted(() => {
     <q-drawer v-if="isLogin" v-model="drawer" :width="200" :breakpoint="500">
       <q-scroll-area class="fit">
         <q-list padding class="menu-list">
-          <q-item @click="storeMain.syncMenu" clickable v-ripple>
+          <q-item @click="storeSupabase.syncMenu" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-green-8 text-bold text-bold" name="sync" />
             </q-item-section>
@@ -165,7 +181,7 @@ onMounted(() => {
             <q-item-section> Đồng bộ Menu </q-item-section>
           </q-item>
           <q-linear-progress
-            v-if="storeMain.isLoadingMenuData"
+            v-if="storeSupabase.isLoadingMenuData"
             indeterminate
             color="secondary"
             class="q-mt-sm"

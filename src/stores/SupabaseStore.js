@@ -8,6 +8,8 @@ export const useSupabaseStore = defineStore("supabase", {
   state: () => ({
     menuData: [],
     dataItem: [],
+    listUserData: [],
+    userStatusObject: {},
 
     /* reactive */
     isLogin: false,
@@ -17,6 +19,10 @@ export const useSupabaseStore = defineStore("supabase", {
     slideItemsUpdate: [],
     isHaveNotSaveDataYet: false,
     isLoadingMenuData: false,
+    userStatus: "",
+    statusServing: "serving",
+    statusWaiting: "waiting",
+    statusOff: "off",
 
     /* add section */
     newData: { umsatz: 0, notizen: "", menuSelected: [] },
@@ -33,6 +39,7 @@ export const useSupabaseStore = defineStore("supabase", {
       try {
         //hàm này lên đầu để user không cần phải đợi load user data vẫn có thể thực hiện action khi app vừa render
         await this.fetchMenuData();
+        await this.getUserStatus();
         this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
@@ -152,10 +159,10 @@ export const useSupabaseStore = defineStore("supabase", {
             this.newData.listSelectedId = this.newData.menuSelected[0].id;
           }
 
-          if (this.newData.listSelectedId.length > 1) {
-            this.newData.listSelectedId = this.newData.listSelectedId.join(";");
-          } else {
+          if (typeof this.newData.listSelectedId === "string") {
             this.newData.listSelectedId = this.newData.listSelectedId + "";
+          } else {
+            this.newData.listSelectedId = this.newData.listSelectedId.join(";");
           }
 
           const { id, email } = storageUtil.getLocalStorageData("userData");
@@ -207,7 +214,8 @@ export const useSupabaseStore = defineStore("supabase", {
           .onOk(async (data) => {
             if (data != "opt1") {
               await funcAddData();
-              await this.updateUserStatus(data);
+              await this.updateUserStatus(data, this.dataItem.length + 1);
+              this.getUserStatus();
               // this.fetchData();
 
               setTimeout(() => {
@@ -215,7 +223,9 @@ export const useSupabaseStore = defineStore("supabase", {
               }, 200);
             } else {
               await funcAddData();
-              this.fetchData();
+              await this.fetchData();
+              await this.updateUserStatus("", this.dataItem.length);
+              this.getUserStatus();
             }
           })
 
@@ -313,6 +323,8 @@ export const useSupabaseStore = defineStore("supabase", {
             });
 
             this.dataItem = this.dataItem.filter((item) => item.id !== rowId);
+            await this.updateUserStatus("", this.dataItem.length);
+            this.getUserStatus();
           } else {
             alert("Failed to delete data");
           }
@@ -321,6 +333,46 @@ export const useSupabaseStore = defineStore("supabase", {
       } catch (error) {
         console.error("Error deleting data:", error);
         Loading.hide(); // Ensure loading state is reset even in case of error
+      }
+    },
+
+    async getUserStatus() {
+      try {
+        const { data: result } = await supabase.from("user_status").select();
+
+        console.log(result);
+
+        if (result) {
+          this.listUserData = result;
+          const userData = storageUtil.getLocalStorageData("userData");
+
+          this.userStatusObject = this.listUserData.filter(
+            (item) => item.user_id === userData.id
+          )[0];
+
+          this.userStatus = this.userStatusObject.status;
+        } else {
+          alert("Failed to fetch data user status");
+        }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async updateUserStatus(status, orderCount) {
+      try {
+        const dataUpdate = {
+          ...(status ? { status } : {}),
+          ...(orderCount ? { orderCount } : {}),
+        };
+
+        const { data: result, error } = await supabase
+          .from("user_status")
+          .update(dataUpdate);
+
+        console.log(result);
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
       }
     },
 

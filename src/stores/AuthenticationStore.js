@@ -34,6 +34,7 @@ export const useAuthenticationStore = defineStore("authentication", {
             position: "top",
             timeout: 1000,
           });
+          Loading.hide();
           console.error("Sign-in error:", error.message);
           return;
         }
@@ -46,6 +47,10 @@ export const useAuthenticationStore = defineStore("authentication", {
           this.isLogin = true;
           storageUtil.setLocalStorageData("isLogin", this.isLogin);
           this.router.push("/data");
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
         }
 
         Loading.hide();
