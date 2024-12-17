@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
+import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { QSpinnerIos } from "quasar";
 import { useQuasar } from "quasar";
 
@@ -12,9 +13,11 @@ import updateImg from "../assets/icons/update.png";
 import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
+import { supabase } from "src/utils/superbase";
 
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
+const storeSupabase = useSupabaseStore();
 const username = storageUtil.getLocalStorageData("username");
 const password = storageUtil.getLocalStorageData("password");
 const selectMenuRef = ref(null);
@@ -37,9 +40,14 @@ const hasMoreUsers = computed(
 );
 
 onMounted(async () => {
-  storeAuthentication.getUserList();
   storeMain.getInit();
-  await storeMain.fetchData();
+  await storeSupabase.fetchData();
+
+  supabase.auth.onAuthStateChange(async (_, session) => {
+    if (session) {
+      console.log(await supabase.auth.getUser());
+    }
+  });
 });
 
 // FUNCTIONAL METHOD
@@ -74,7 +82,7 @@ function showAction(grid) {
         case "update":
           storeMain.showUpdateDialog = true;
 
-          storeMain.updateData = storeMain.userData.filter(
+          storeMain.updateData = storeSupabase.userData.filter(
             (item) => item.id === grid
           )[0];
 
@@ -144,7 +152,7 @@ const getColor = (status) => {
 <template>
   <q-page class="q-pa-sm">
     <!-- Display User Badges -->
-    <div v-if="!storeMain.loadingTable" class="q-my-sm">
+    <div v-if="!storeSupabase.loadingMainScreen" class="q-my-sm">
       <q-btn
         v-for="user in visibleUsers"
         :key="user.benutzername"
@@ -185,7 +193,7 @@ const getColor = (status) => {
     </div>
 
     <div
-      v-if="storeMain.loadingTable"
+      v-if="storeSupabase.loadingMainScreen"
       style="height: 30vh"
       class="full-width flex column flex-center"
     >
@@ -193,9 +201,9 @@ const getColor = (status) => {
     </div>
 
     <q-list class="q-mt-md" v-else>
-      <div v-if="storeMain.userData.length">
+      <div v-if="storeSupabase.userData?.length">
         <q-card
-          v-for="(item, index) in storeMain.userData"
+          v-for="(item, index) in storeSupabase.userData"
           :key="index"
           flat
           bordered
