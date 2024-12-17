@@ -1,13 +1,14 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useMainStore } from "src/stores/main-store";
+import { storageUtil } from "src/utils/storageUtil";
 
 const storeMain = useMainStore();
 
 const drawer = ref(false);
 const isShowLogoutButton = ref(false);
-const username = storeMain.getLocalStorageData("username");
-const isLogin = storeMain.getLocalStorageData("isLogin") || false;
+const username = storageUtil.getLocalStorageData("username");
+const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 
 onMounted(() => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;

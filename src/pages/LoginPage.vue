@@ -1,16 +1,20 @@
 <script setup>
 import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
+import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "src/utils/superbase";
 
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
+const storeSupabase = useSupabaseStore();
 const router = useRouter();
 const isShowLogin = ref(true);
 
 onMounted(async () => {
+  await storeSupabase.fetchMenuData();
+
   supabase.auth.onAuthStateChange((_, session) => {
     if (session) {
       // storeAuthentication.getUserList();

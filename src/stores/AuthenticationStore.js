@@ -28,8 +28,6 @@ export const useAuthenticationStore = defineStore("authentication", {
           return;
         }
 
-        console.log("Sign-in successful:", data);
-
         // Handle post-login actions, such as redirecting the user
         if (data.session) {
           localStorage.setItem("access_token", data.session.access_token);
@@ -41,28 +39,28 @@ export const useAuthenticationStore = defineStore("authentication", {
       }
     },
 
-    async signUp(email, password) {
-      try {
-        const { data, err } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        console.log(data);
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
-      }
-    },
-
     async signOut() {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error.message);
         return;
       }
-
-      console.log("User signed out");
     },
+
+    async getUserList() {
+      try {
+        // let { data: benutzer, error } = supabase.from("benutzer");
+        // const { data } = await supabase.from("benutzer").select();
+
+        let { data: umsatz, error } = await supabase.from("umsatz").select();
+
+        console.log(umsatz);
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* FUNCTIONAL */
 
     async handleEmailVerification() {
       const url = new URL(window.location.href);
@@ -80,19 +78,6 @@ export const useAuthenticationStore = defineStore("authentication", {
         // Redirect or update your app state after successful login
       } else {
         console.error("No tokens found in URL");
-      }
-    },
-
-    async getUserList() {
-      try {
-        // let { data: benutzer, error } = supabase.from("benutzer");
-        // const { data } = await supabase.from("benutzer").select();
-
-        let { data: umsatz, error } = await supabase.from("umsatz").select();
-
-        console.log(umsatz);
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
       }
     },
   },

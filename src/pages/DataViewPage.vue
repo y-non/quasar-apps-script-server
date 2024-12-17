@@ -11,11 +11,12 @@ import noData from "../assets/images/nodata.jpg";
 import updateImg from "../assets/icons/update.png";
 import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
+import { storageUtil } from "src/utils/storageUtil";
 
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
-const username = storeMain.getLocalStorageData("username");
-const password = storeMain.getLocalStorageData("password");
+const username = storageUtil.getLocalStorageData("username");
+const password = storageUtil.getLocalStorageData("password");
 const selectMenuRef = ref(null);
 const selectMenuRefUpdate = ref(null);
 
