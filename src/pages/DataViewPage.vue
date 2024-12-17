@@ -15,6 +15,9 @@ import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
 
+const $q = useQuasar();
+const router = useRouter();
+
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
@@ -22,8 +25,6 @@ const username = storageUtil.getLocalStorageData("username");
 const password = storageUtil.getLocalStorageData("password");
 const selectMenuRef = ref(null);
 const selectMenuRefUpdate = ref(null);
-
-const $q = useQuasar();
 
 const optionsMenuData = ref([]);
 
@@ -40,7 +41,6 @@ const hasMoreUsers = computed(
 );
 
 onMounted(async () => {
-  storeMain.getInit();
   await storeSupabase.fetchData();
 
   supabase.auth.onAuthStateChange(async (_, session) => {

@@ -2,9 +2,10 @@
 import { ref, onMounted } from "vue";
 import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
-
+import { useRouter } from "vue-router";
 import { storageUtil } from "src/utils/storageUtil";
 
+const router = useRouter();
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
 
@@ -15,6 +16,11 @@ const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 
 onMounted(() => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
+  if (isLogin) {
+    router.push("/data");
+  } else {
+    router.push("/");
+  }
 });
 </script>
 
