@@ -27,8 +27,8 @@ const selectMenuRefUpdate = ref(null);
 const optionsMenuData = ref([]);
 
 /* state for handle reactive in UI */
-// const slideItems = ref(storeSupabase.slideItems);
-// const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
+const slideItems = ref(storeSupabase.slideItems);
+const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
 
 // const visibleCount = ref(3);
 // const visibleUsers = computed(() =>

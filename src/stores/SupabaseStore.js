@@ -36,7 +36,10 @@ export const useSupabaseStore = defineStore("supabase", {
         this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
-        const result = await supabase.from("umsatz").select();
+        const result = await supabase
+          .from("umsatz")
+          .select()
+          .order("created_at", { ascending: true });
 
         if (result.status === 200) {
           let dataResponse = result.data || [];
@@ -224,6 +227,70 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
+    // eslint-disable-next-line no-unused-vars
+    async postUpdateItem(data) {
+      try {
+        Loading.show({
+          message: "Đang xử lý...",
+        });
+
+        if (data.menuSelected.length > 1) {
+          data.listSelectedId = data.menuSelected.map((item) => item.id);
+        } else {
+          data.listSelectedId = data.menuSelected[0].id;
+        }
+
+        if (typeof data.listSelectedId === "string") {
+          data.listSelectedId = data.listSelectedId + "";
+        } else {
+          data.listSelectedId = data.listSelectedId.join(";");
+        }
+        const { id, email } = storageUtil.getLocalStorageData("userData");
+        const dataUpdate = {
+          benutzername: email,
+          umsatz: data.umsatz,
+          notizen: data.notizen,
+          menu: data.listSelectedId,
+          user_id: id,
+        };
+
+        const result = await supabase
+          .from("umsatz")
+          .update(dataUpdate)
+          .eq("id", data.id);
+
+        if (result.status === 204) {
+          Notify.create({
+            type: "positive",
+            message: "Cập nhật thành công!",
+            position: "top",
+          });
+          this.showUpdateDialog = false;
+
+          // this.userData = this.userData.map((item) => {
+          //   if (item.id === data.id) {
+          //     return {
+          //       ...this.updateData,
+          //       id: data.id,
+          //       menu: data.listSelectedId,
+          //     };
+          //   }
+          //   return item;
+          // });
+
+          this.fetchData();
+
+          this.isHaveNotSaveDataYet = false;
+        } else {
+          alert("Error when updating data");
+        }
+        Loading.hide();
+      } catch (error) {
+        Loading.hide();
+        console.error("Error updating data:", error);
+      }
+    },
+
     async deleteData(rowId) {
       try {
         Dialog.create({
@@ -258,6 +325,51 @@ export const useSupabaseStore = defineStore("supabase", {
     },
 
     /* FUNCTIONAL */
+    clickToggleAddMenuItem(scope) {
+      {
+        let listIdSelected = this.newData.menuSelected.map((item) => item.id);
+
+        if (listIdSelected.includes(scope.opt.id)) {
+          this.newData.menuSelected = this.newData.menuSelected.filter(
+            (item) => {
+              if (item.id !== scope.opt.id) {
+                return item;
+              }
+            }
+          );
+
+          this.newData.umsatz = +this.newData.umsatz - +scope.opt.value;
+        } else {
+          this.newData.umsatz = +this.newData.umsatz + +scope.opt.value;
+          this.newData.menuSelected.push(scope.opt);
+        }
+      }
+    },
+
+    clickToggleUpdateMenuItem(scope) {
+      {
+        this.isHaveNotSaveDataYet = true;
+        let listIdSelected = this.updateData.menuSelected.map(
+          (item) => item.id
+        );
+
+        if (listIdSelected.includes(scope.opt.id)) {
+          this.updateData.menuSelected = this.updateData.menuSelected.filter(
+            (item) => {
+              if (item.id !== scope.opt.id) {
+                return item;
+              }
+            }
+          );
+
+          this.updateData.umsatz = +this.updateData.umsatz - +scope.opt.value;
+        } else {
+          this.updateData.umsatz = +this.updateData.umsatz + +scope.opt.value;
+          this.updateData.menuSelected.push(scope.opt);
+        }
+      }
+    },
+
     handleClickBackButtonShowAlert() {
       try {
         if (this.isHaveNotSaveDataYet) {
@@ -285,6 +397,57 @@ export const useSupabaseStore = defineStore("supabase", {
           err
         );
       }
+    },
+
+    onRightSlide(itemId, index) {
+      // Perform the remove action
+      this.removeAddMenuItem(itemId);
+
+      // Reset the q-slide-item after performing the action
+      const slideItem = this.slideItems[index];
+      if (slideItem) {
+        slideItem.reset();
+      }
+    },
+
+    removeAddMenuItem(id) {
+      let total = 0;
+
+      this.newData.menuSelected = this.newData.menuSelected.filter((item) => {
+        if (item.id !== id) {
+          total += +item.value;
+          return item;
+        }
+      });
+
+      this.newData.umsatz = total;
+    },
+
+    onRightSlideUpdate(itemId, index) {
+      this.isHaveNotSaveDataYet = true;
+      // Perform the remove action
+      this.removeUpdateMenuItem(itemId);
+
+      // Reset the q-slide-item after performing the action
+      const slideItem = this.slideItemsUpdate[index];
+      if (slideItem) {
+        slideItem.reset();
+      }
+    },
+
+    removeUpdateMenuItem(id) {
+      let total = 0;
+
+      this.updateData.menuSelected = this.updateData.menuSelected.filter(
+        (item) => {
+          if (item.id !== id) {
+            total += +item.value;
+            return item;
+          }
+        }
+      );
+
+      this.updateData.umsatz = total;
     },
   },
 });
