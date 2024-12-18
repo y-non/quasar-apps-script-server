@@ -34,6 +34,11 @@ export const useSupabaseStore = defineStore("supabase", {
     showNotizen: false,
   }),
   actions: {
+    async getInit() {
+      await this.fetchData();
+      this.subscribleToTable();
+    },
+
     /* CRUD DATA */
     async fetchData() {
       try {
@@ -179,7 +184,6 @@ export const useSupabaseStore = defineStore("supabase", {
             });
             this.newData = { umsatz: 0, notizen: "", menuSelected: [] };
             this.showAddDialog = false;
-            // this.fetchData();
           } else {
             alert("Failed to add data");
           }
@@ -206,21 +210,28 @@ export const useSupabaseStore = defineStore("supabase", {
           persistent: true,
         })
           .onOk(async (data) => {
+            let finalCount = 0;
             if (data != "opt1") {
+              finalCount = this.dataItem.length + 1;
               await funcAddData();
-              await this.updateUserStatus(data, this.dataItem.length + 1);
-              await this.getUserStatus();
-              // this.fetchData();
-
-              // setTimeout(() => {
-              //   window.location.reload();
-              // }, 200);
+              await this.updateUserStatus(data, finalCount);
+              this.userStatus = data;
             } else {
+              finalCount = this.dataItem.length;
               await funcAddData();
-              await this.updateUserStatus("", this.dataItem.length);
-              await this.getUserStatus();
+              await this.updateUserStatus("", finalCount);
             }
-            await this.fetchData();
+
+            const localUserData = storageUtil.getLocalStorageData("userData");
+            this.listUserData = this.listUserData.map((item) => {
+              if (localUserData.id === item.user_id) {
+                return {
+                  ...item,
+                  orderCount: finalCount,
+                };
+              }
+              return item;
+            });
           })
 
           .onCancel(() => {})
@@ -282,8 +293,6 @@ export const useSupabaseStore = defineStore("supabase", {
           //   return item;
           // });
 
-          this.fetchData();
-
           this.isHaveNotSaveDataYet = false;
         } else {
           alert("Error when updating data");
@@ -318,7 +327,18 @@ export const useSupabaseStore = defineStore("supabase", {
 
             this.dataItem = this.dataItem.filter((item) => item.id !== rowId);
             await this.updateUserStatus("", this.dataItem.length);
-            this.getUserStatus();
+            const localUserData = storageUtil.getLocalStorageData("userData");
+            this.listUserData = this.listUserData.map((item) => {
+              if (localUserData.id === item.user_id) {
+                return {
+                  ...item,
+                  orderCount: this.dataItem.length,
+                };
+              }
+              return item;
+            });
+
+            // this.getUserStatus();
           } else {
             alert("Failed to delete data");
           }
@@ -394,6 +414,52 @@ export const useSupabaseStore = defineStore("supabase", {
         this.isLoadingMenuData = false;
         this.loadingSelect = false;
         console.error("Error fetching data:", error);
+      }
+    },
+
+    subscribleToTable() {
+      try {
+        const subscription = supabase
+          .channel("public:umsatz")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "umsatz",
+            },
+            (payload) => {
+              let indexToUpdate;
+              switch (payload.eventType) {
+                case "INSERT":
+                  // Add the new row to the table
+                  this.dataItem.push(payload.new);
+                  break;
+
+                case "UPDATE":
+                  // Find and update the specific row
+                  indexToUpdate = this.dataItem.findIndex(
+                    (row) => row.id === payload.new.id
+                  );
+                  if (indexToUpdate !== -1) {
+                    this.dataItem[indexToUpdate] = payload.new;
+                  }
+                  break;
+
+                case "DELETE":
+                  // Remove the deleted row from the table
+                  this.dataItem = this.dataItem.filter(
+                    (row) => row.id !== payload.old.id
+                  );
+                  break;
+              }
+            }
+          )
+          .subscribe();
+
+        return subscription;
+      } catch (err) {
+        console.error("Error subscribing to changes: ", err);
       }
     },
 

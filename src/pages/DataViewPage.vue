@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
@@ -39,12 +39,16 @@ const hasMoreUsers = computed(
 );
 
 onMounted(async () => {
-  await storeSupabase.fetchData();
+  await storeSupabase.getInit();
 
   supabase.auth.onAuthStateChange(async (_, session) => {
     if (session) {
     }
   });
+});
+
+onUnmounted(() => {
+  supabase.removeAllChannels();
 });
 
 // FUNCTIONAL METHOD
