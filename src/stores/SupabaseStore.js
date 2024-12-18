@@ -196,6 +196,7 @@ export const useSupabaseStore = defineStore("supabase", {
           { label: "Off", value: "off", color: "red" },
         ];
 
+        let currentStatus = this.userStatus;
         items = items.filter((item) => item.value !== this.userStatus);
 
         Dialog.create({
@@ -220,6 +221,7 @@ export const useSupabaseStore = defineStore("supabase", {
               finalCount = this.dataItem.length;
               await funcAddData();
               await this.updateUserStatus("", finalCount);
+              this.userStatus = currentStatus;
             }
 
             const localUserData = storageUtil.getLocalStorageData("userData");
@@ -318,12 +320,14 @@ export const useSupabaseStore = defineStore("supabase", {
 
           const result = await supabase.from("umsatz").delete().eq("id", rowId);
 
+          let currentStatus = this.userStatus;
           if (result.status === 204) {
             Notify.create({
               type: "positive",
               message: "Xóa thành công!",
               position: "top",
             });
+            Loading.hide();
 
             this.dataItem = this.dataItem.filter((item) => item.id !== rowId);
             await this.updateUserStatus("", this.dataItem.length);
@@ -338,11 +342,12 @@ export const useSupabaseStore = defineStore("supabase", {
               return item;
             });
 
+            this.userStatus = currentStatus;
+
             // this.getUserStatus();
           } else {
             alert("Failed to delete data");
           }
-          Loading.hide();
         });
       } catch (error) {
         console.error("Error deleting data:", error);
@@ -374,7 +379,7 @@ export const useSupabaseStore = defineStore("supabase", {
     async updateUserStatus(status, orderCount) {
       try {
         const dataUpdate = {
-          ...(status ? { status } : {}),
+          ...(status.length ? { status } : {}),
           ...(orderCount ? { orderCount } : {}),
         };
 
