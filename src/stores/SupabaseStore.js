@@ -55,47 +55,8 @@ export const useSupabaseStore = defineStore("supabase", {
 
         if (result.status === 200) {
           let dataResponse = result.data || [];
-          this.dataItem = dataResponse
-            .map((item) => {
-              const newDate = new Date(item.created_at);
-              const hours = String(newDate.getHours()).padStart(2, "0");
-              const minutes = String(newDate.getMinutes()).padStart(2, "0");
-              const formattedTime = `${hours}:${minutes}`;
 
-              return {
-                id: item.id,
-                benutzername: item.benutzername,
-                umsatz: item.umsatz,
-                notizen: item.notizen,
-                menu: item.menu,
-                datum: formattedTime,
-              };
-            })
-            .filter((item) => item);
-
-          /* handle menu item in main page */
-          this.dataItem.forEach((_, index) => {
-            const listSelectedMenu =
-              this.dataItem[index].menu?.length > 1
-                ? this.dataItem[index].menu.split(";")
-                : this.dataItem[index].menu;
-
-            this.dataItem[index].menu.length > 1
-              ? (this.dataItem[index].menuSelected = listSelectedMenu.map(
-                  (item) => {
-                    return this.menuData.filter(
-                      (menuItem) => item == menuItem.id
-                    )[0];
-                  }
-                ))
-              : (this.dataItem[index].menuSelected = this.menuData.filter(
-                  (menuItem) => this.dataItem[index].menu == menuItem.id
-                ));
-          });
-
-          if (!this.dataItem.length) {
-            this.dataItem = [];
-          }
+          this.dataItem = await this.handleDataToDisplay(dataResponse);
         } else {
           alert("Failed to fetch data");
         }
@@ -104,6 +65,56 @@ export const useSupabaseStore = defineStore("supabase", {
       } catch (error) {
         console.error("Error fetching data:", error);
         this.isLoadingMainScreen = false; // Ensure loading state is reset even in case of error
+      }
+    },
+
+    async handleDataToDisplay(inputData) {
+      try {
+        let data = [];
+        data = inputData
+          .map((item) => {
+            const newDate = new Date(item.created_at);
+            const hours = String(newDate.getHours()).padStart(2, "0");
+            const minutes = String(newDate.getMinutes()).padStart(2, "0");
+            const formattedTime = `${hours}:${minutes}`;
+
+            return {
+              id: item.id,
+              benutzername: item.benutzername,
+              umsatz: item.umsatz,
+              notizen: item.notizen,
+              menu: item.menu,
+              datum: formattedTime,
+              isHandled: true,
+            };
+          })
+          .filter((item) => item);
+
+        /* handle menu item in main page */
+        data.forEach((_, index) => {
+          const listSelectedMenu =
+            data[index].menu?.length > 1
+              ? data[index].menu.split(";")
+              : data[index].menu;
+
+          data[index].menu.length > 1
+            ? (data[index].menuSelected = listSelectedMenu.map((item) => {
+                return this.menuData.filter(
+                  (menuItem) => item == menuItem.id
+                )[0];
+              }))
+            : (data[index].menuSelected = this.menuData.filter(
+                (menuItem) => data[index].menu == menuItem.id
+              ));
+        });
+
+        if (!data.length) {
+          data = [];
+        }
+
+        return data;
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
       }
     },
 
@@ -422,7 +433,7 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
-    subscribleToTable() {
+    async subscribleToTable() {
       try {
         const subscription = supabase
           .channel("public:umsatz")
@@ -433,12 +444,37 @@ export const useSupabaseStore = defineStore("supabase", {
               schema: "public",
               table: "umsatz",
             },
-            (payload) => {
+            async (payload) => {
               let indexToUpdate;
+              let dataAdd = {};
+              let newDate, hours, minutes, formattedTime, listSelectedMenu;
               switch (payload.eventType) {
                 case "INSERT":
                   // Add the new row to the table
-                  this.dataItem.push(payload.new);
+                  dataAdd = payload.new;
+
+                  newDate = new Date(dataAdd.created_at);
+                  hours = String(newDate.getHours()).padStart(2, "0");
+                  minutes = String(newDate.getMinutes()).padStart(2, "0");
+                  formattedTime = `${hours}:${minutes}`;
+
+                  dataAdd.datum = formattedTime;
+
+                  listSelectedMenu =
+                    dataAdd.menu?.length > 1
+                      ? dataAdd.menu.split(";")
+                      : dataAdd.menu;
+
+                  dataAdd.menu.length > 1
+                    ? (dataAdd.menuSelected = listSelectedMenu.map((item) => {
+                        return this.menuData.filter(
+                          (menuItem) => item == menuItem.id
+                        )[0];
+                      }))
+                    : (dataAdd.menuSelected = this.menuData.filter(
+                        (menuItem) => dataAdd.menu == menuItem.id
+                      ));
+                  this.dataItem.push(dataAdd);
                   break;
 
                 case "UPDATE":
@@ -447,8 +483,13 @@ export const useSupabaseStore = defineStore("supabase", {
                     (row) => row.id === payload.new.id
                   );
                   if (indexToUpdate !== -1) {
-                    this.dataItem[indexToUpdate] = payload.new;
+                    const datumSave = this.dataItem[indexToUpdate].datum;
+                    this.dataItem[indexToUpdate] = {
+                      ...payload.new,
+                      datum: datumSave,
+                    };
                   }
+
                   break;
 
                 case "DELETE":
