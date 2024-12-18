@@ -50,12 +50,6 @@ export const useSupabaseStore = defineStore("supabase", {
 
         if (result.status === 200) {
           let dataResponse = result.data || [];
-
-          //assign and arranged in order from largest to smallest
-          // this.listdataItem =
-          //   result.otherData.sort((a, b) => b.orderCount - a.orderCount) || [];
-          // this.userStatus = result.userStatus;
-
           this.dataItem = dataResponse
             .map((item) => {
               const newDate = new Date(item.created_at);
@@ -215,18 +209,18 @@ export const useSupabaseStore = defineStore("supabase", {
             if (data != "opt1") {
               await funcAddData();
               await this.updateUserStatus(data, this.dataItem.length + 1);
-              this.getUserStatus();
+              await this.getUserStatus();
               // this.fetchData();
 
-              setTimeout(() => {
-                window.location.reload();
-              }, 200);
+              // setTimeout(() => {
+              //   window.location.reload();
+              // }, 200);
             } else {
               await funcAddData();
-              await this.fetchData();
               await this.updateUserStatus("", this.dataItem.length);
-              this.getUserStatus();
+              await this.getUserStatus();
             }
+            await this.fetchData();
           })
 
           .onCancel(() => {})
@@ -340,8 +334,6 @@ export const useSupabaseStore = defineStore("supabase", {
       try {
         const { data: result } = await supabase.from("user_status").select();
 
-        console.log(result);
-
         if (result) {
           this.listUserData = result;
           const userData = storageUtil.getLocalStorageData("userData");
@@ -366,13 +358,42 @@ export const useSupabaseStore = defineStore("supabase", {
           ...(orderCount ? { orderCount } : {}),
         };
 
+        if (Object.keys(dataUpdate).length === 0) {
+          throw new Error("No valid fields provided to update.");
+        }
+        const userData = storageUtil.getLocalStorageData("userData");
+
         const { data: result, error } = await supabase
           .from("user_status")
-          .update(dataUpdate);
+          .update(dataUpdate)
+          .eq("user_id", userData.id);
 
-        console.log(result);
+        if (error) {
+          alert("Update user status failed.");
+        } else {
+          this.userStatus = status;
+        }
       } catch (err) {
         console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async syncMenu() {
+      try {
+        this.isLoadingMenuData = true;
+
+        await this.fetchMenuData();
+
+        this.isLoadingMenuData = false;
+        Notify.create({
+          type: "positive",
+          message: "Tải mới thành công!",
+          position: "top",
+        });
+      } catch (error) {
+        this.isLoadingMenuData = false;
+        this.loadingSelect = false;
+        console.error("Error fetching data:", error);
       }
     },
 
