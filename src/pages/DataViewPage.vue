@@ -43,6 +43,7 @@ onMounted(async () => {
 
   supabase.auth.onAuthStateChange(async (_, session) => {
     if (session) {
+      storeAuthentication.validateSession();
     }
   });
 });

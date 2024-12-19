@@ -27,6 +27,22 @@ export const useAuthenticationStore = defineStore("authentication", {
           password,
         });
 
+        const user = data.user;
+        const sessionToken = this.generateSessionToken();
+
+        // Start a transaction to enforce single-device login
+        const { data: sessionData, error: sessionError } = await supabase.rpc(
+          "manage_user_sessions",
+          {
+            user_id: user.id,
+            session_token: sessionToken,
+          }
+        );
+
+        if (sessionError) throw sessionError;
+
+        localStorage.setItem("session_token", sessionToken);
+
         if (error) {
           Notify.create({
             message: "Tài khoản hoặc mật khẩu không đúng",
@@ -85,6 +101,36 @@ export const useAuthenticationStore = defineStore("authentication", {
       }
     },
 
+    async validateSession() {
+      const sessionToken = localStorage.getItem("session_token");
+
+      const { data, error } = await supabase
+        .from("user_sessions")
+        .select("id")
+        .eq("session_token", sessionToken)
+        .single();
+
+      if (error || !data) {
+        setTimeout(async () => {
+          await supabase.auth.signOut();
+          localStorage.clear();
+          Dialog.create({
+            title: "Thông báo",
+            message: "Tài khoản đã được đăng nhập từ một thiết bị khác.",
+            ok: true,
+            cancel: false,
+            persistent: "",
+          }).onOk(() => {
+            setTimeout(() => {
+              this.router.push("/");
+            }, 300);
+          });
+        }, 300);
+
+        console.error("Session validation failed. User logged out.");
+      }
+    },
+
     /* FUNCTIONAL */
     async handleEmailVerification() {
       const url = new URL(window.location.href);
@@ -103,6 +149,10 @@ export const useAuthenticationStore = defineStore("authentication", {
       } else {
         console.error("No tokens found in URL");
       }
+    },
+
+    generateSessionToken() {
+      return crypto.randomUUID();
     },
   },
 });

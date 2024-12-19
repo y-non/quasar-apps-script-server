@@ -3,6 +3,7 @@ import { Dialog, Loading, Notify } from "quasar";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
+import { useAuthenticationStore } from "./AuthenticationStore";
 
 export const useSupabaseStore = defineStore("supabase", {
   state: () => ({
@@ -36,7 +37,8 @@ export const useSupabaseStore = defineStore("supabase", {
   actions: {
     async getInit() {
       await this.fetchData();
-      this.subscribleToTable();
+      await this.subscribeToTable();
+      await this.subscribeToTableUserSessions();
     },
 
     /* CRUD DATA */
@@ -57,9 +59,10 @@ export const useSupabaseStore = defineStore("supabase", {
           let dataResponse = result.data || [];
 
           this.dataItem = await this.handleDataToDisplay(dataResponse);
-        } else {
-          alert("Failed to fetch data");
         }
+        // else {
+        //   alert("Failed to fetch data");
+        // }
 
         this.isLoadingMainScreen = false;
       } catch (error) {
@@ -379,9 +382,10 @@ export const useSupabaseStore = defineStore("supabase", {
           )[0];
 
           this.userStatus = this.userStatusObject.status;
-        } else {
-          alert("Failed to fetch data user status");
         }
+        // else {
+        //   alert("Failed to fetch data user status");
+        // }
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
@@ -433,7 +437,7 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
-    async subscribleToTable() {
+    async subscribeToTable() {
       try {
         const subscription = supabase
           .channel("public:umsatz")
@@ -498,6 +502,32 @@ export const useSupabaseStore = defineStore("supabase", {
                     (row) => row.id !== payload.old.id
                   );
                   break;
+              }
+            }
+          )
+          .subscribe();
+
+        return subscription;
+      } catch (err) {
+        console.error("Error subscribing to changes: ", err);
+      }
+    },
+
+    async subscribeToTableUserSessions() {
+      try {
+        const storeAuthentication = useAuthenticationStore();
+        const subscription = supabase
+          .channel("public:user_sessions")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "user_sessions",
+            },
+            async (payload) => {
+              if (payload) {
+                await storeAuthentication.validateSession();
               }
             }
           )
