@@ -122,7 +122,9 @@ function showAction(grid) {
 const filterFn = (val, update) => {
   if (val === "") {
     update(() => {
-      optionsMenuData.value = storeSupabase.menuData;
+      optionsMenuData.value = storeSupabase.menuData.filter(
+        (item) => !item.isMultiSelect
+      );
 
       // here you have access to "ref" which
       // is the Vue reference of the QSelect
@@ -133,7 +135,8 @@ const filterFn = (val, update) => {
   update(() => {
     const needle = val.toLowerCase();
     optionsMenuData.value = storeSupabase.menuData.filter(
-      (v) => v.filterSearch.toLowerCase().indexOf(needle) > -1
+      (v) =>
+        v.filterSearch.toLowerCase().indexOf(needle) > -1 && !v.isMultiSelect
     );
   });
 };
@@ -327,7 +330,65 @@ const getColor = (status) => {
             class="q-gutter-md q-py-lg flex column"
             @submit="storeSupabase.addData"
           >
+            <span
+              v-if="storeSupabase.newData.menuSelected?.length"
+              class="text-subtitle1"
+              >Dịch vụ đã chọn</span
+            >
+            <q-list
+              v-if="storeSupabase.newData.menuSelected?.length"
+              bordered
+              separator
+            >
+              <q-slide-item
+                v-for="(item, index) in storeSupabase.newData.menuSelected"
+                :key="index"
+                ref="slideItems"
+                @right="storeSupabase.onRightSlide(item.id, index)"
+                right-color="red-5"
+              >
+                <template v-slot:right>
+                  <q-icon name="delete" /> Xoá...
+                </template>
+
+                <q-item>
+                  <q-item-section>
+                    <div
+                      class="flex justify-between"
+                      style="align-items: center"
+                    >
+                      <div class="flex justify-between full-width">
+                        <div class="text-grey-7">
+                          {{ item.label }}
+                        </div>
+                        <div class="text-blue text-bold">
+                          {{ dateUtil.formatter.format(item.value) }}
+                        </div>
+                      </div>
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-slide-item>
+            </q-list>
+
             <span class="text-subtitle1">Chọn dịch vụ</span>
+            <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
+              <q-btn
+                v-for="(item, index) in storeSupabase.menuData.filter(
+                  (item) => item.isMultiSelect
+                )"
+                :key="index"
+                push
+                color="white"
+                text-color="primary"
+                class="q-mx-sm"
+                :label="item.label"
+              >
+                <q-badge color="orange" floating>{{
+                  item.selectCount
+                }}</q-badge>
+              </q-btn>
+            </div> -->
             <q-select
               ref="selectMenuRef"
               :rules="[(val) => !!val || 'Không được để rỗng']"
@@ -349,17 +410,52 @@ const getColor = (status) => {
               :disable="storeSupabase.loadingSelect"
               hide-selected
               behavior="menu"
+              style="position: relative"
             >
               <template v-slot:before-options>
-                <div class="flex q-pt-md">
-                  <q-btn
-                    text-color="grey-5"
-                    icon="close"
-                    flat
-                    label="Đóng menu"
-                    class="full-width q-mb-md"
-                    @click="selectMenuRef.hidePopup()"
-                  ></q-btn>
+                <div
+                  class="q-pt-md q-px-md bg-white"
+                  style="position: sticky; top: 0; z-index: 10"
+                >
+                  <div class="flex">
+                    <q-btn
+                      text-color="grey-5"
+                      icon="close"
+                      flat
+                      label="Đóng menu"
+                      class="full-width q-mb-md"
+                      @click="selectMenuRef.hidePopup()"
+                    ></q-btn>
+                  </div>
+                  <div
+                    style="display: grid; grid-template-columns: 1fr 1fr 1fr"
+                    class="q-mb-md"
+                  >
+                    <q-btn
+                      v-for="(item, index) in storeSupabase.menuData.filter(
+                        (item) => item.isMultiSelect
+                      )"
+                      :key="index"
+                      class="q-mr-sm"
+                      outline
+                      color="white"
+                      text-color="primary"
+                      :label="item.label"
+                    ></q-btn>
+                    <!-- <q-btn
+                      v-for="(item, index) in storeSupabase.menuData.filter(
+                        (item) => item.isMultiSelect
+                      )"
+                      :key="index"
+                      push
+                      color="white"
+                      text-color="primary"
+                      class="q-mx-sm"
+                      :label="item.label"
+                    >
+
+                    </q-btn> -->
+                  </div>
                 </div>
               </template>
 
@@ -378,6 +474,7 @@ const getColor = (status) => {
 
               <template v-slot:option="scope">
                 <q-item
+                  clickable="false"
                   v-bind="scope.itemProps"
                   :class="[
                     scope.selected
@@ -421,47 +518,6 @@ const getColor = (status) => {
                 </q-item>
               </template>
             </q-select>
-
-            <span
-              v-if="storeSupabase.newData.menuSelected?.length"
-              class="text-subtitle1"
-              >Dịch vụ đã chọn</span
-            >
-            <q-list
-              v-if="storeSupabase.newData.menuSelected?.length"
-              bordered
-              separator
-            >
-              <q-slide-item
-                v-for="(item, index) in storeSupabase.newData.menuSelected"
-                :key="index"
-                ref="slideItems"
-                @right="storeSupabase.onRightSlide(item.id, index)"
-                right-color="red-5"
-              >
-                <template v-slot:right>
-                  <q-icon name="delete" /> Xoá...
-                </template>
-
-                <q-item>
-                  <q-item-section>
-                    <div
-                      class="flex justify-between"
-                      style="align-items: center"
-                    >
-                      <div class="flex justify-between full-width">
-                        <div class="text-grey-7">
-                          {{ item.label }}
-                        </div>
-                        <div class="text-blue text-bold">
-                          {{ dateUtil.formatter.format(item.value) }}
-                        </div>
-                      </div>
-                    </div>
-                  </q-item-section>
-                </q-item>
-              </q-slide-item>
-            </q-list>
             <!-- notizen -->
             <div
               v-if="!storeSupabase.showNotizen"

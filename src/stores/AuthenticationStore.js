@@ -27,6 +27,18 @@ export const useAuthenticationStore = defineStore("authentication", {
           password,
         });
 
+        if (error) {
+          Notify.create({
+            message: "Tài khoản hoặc mật khẩu không đúng",
+            type: "negative",
+            position: "top",
+            timeout: 1000,
+          });
+          Loading.hide();
+          console.error("Sign-in error:", error.message);
+          return;
+        }
+
         const user = data.user;
         const sessionToken = this.generateSessionToken();
 
@@ -42,18 +54,6 @@ export const useAuthenticationStore = defineStore("authentication", {
         if (sessionError) throw sessionError;
 
         localStorage.setItem("session_token", sessionToken);
-
-        if (error) {
-          Notify.create({
-            message: "Tài khoản hoặc mật khẩu không đúng",
-            type: "negative",
-            position: "top",
-            timeout: 1000,
-          });
-          Loading.hide();
-          console.error("Sign-in error:", error.message);
-          return;
-        }
 
         // Handle post-login actions, such as redirecting the user
         if (data.session) {

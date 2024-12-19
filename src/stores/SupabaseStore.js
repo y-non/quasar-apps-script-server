@@ -127,15 +127,38 @@ export const useSupabaseStore = defineStore("supabase", {
 
         if (!menuLocal) {
           const { data: result, error } = await supabase.from("menu").select();
+
           if (result) {
             this.menuData = result || [];
 
             if (this.menuData.length) {
-              this.menuData = this.menuData.map((item) => ({
-                id: item.id,
-                label: item.service,
-                value: parseFloat(item.price),
-              }));
+              this.menuData = this.menuData.map((item) => {
+                if (item.isMultiSelect) {
+                  return {
+                    id: item.id,
+                    label: item.service,
+                    value: parseFloat(item.price),
+                    selectCount: 0,
+                    isMultiSelect: true,
+                  };
+                }
+                return {
+                  id: item.id,
+                  label: item.service,
+                  value: parseFloat(item.price),
+                  isMultiSelect: false,
+                };
+              });
+
+              //arrange data
+              // const menuItemMultiSelect = this.menuData.filter(
+              //   (item) => item.isMultiSelect
+              // );
+              // const menuItem = this.menuData.filter(
+              //   (item) => !item.isMultiSelect
+              // );
+
+              // this.menuData = [...menuItemMultiSelect, ...menuItem];
 
               this.menuData = this.menuData.map((item) => ({
                 ...item,
