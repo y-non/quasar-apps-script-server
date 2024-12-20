@@ -26,7 +26,12 @@ export const useSupabaseStore = defineStore("supabase", {
     statusOff: "off",
 
     /* add section */
-    newData: { umsatz: 0, notizen: "", menuSelected: [] },
+    newData: {
+      umsatz: 0,
+      notizen: "",
+      menuSelected: [],
+      isCustomerOrder: false,
+    },
     updateData: { umsatz: 0, notizen: "", menuSelected: [], menu: [] },
 
     /* function */
@@ -282,6 +287,7 @@ export const useSupabaseStore = defineStore("supabase", {
         const { data, error } = await supabase.rpc("create_order_with_items", {
           user_id: id,
           description: newData.notizen,
+          is_customer_order: newData.isCustomerOrder,
           menu_items: menuItems,
         });
 

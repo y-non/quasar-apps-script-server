@@ -70,12 +70,12 @@ function showAction(grid) {
         img: updateImg,
         id: "update",
       },
-      {},
-      {
-        label: "Xóa",
-        avatar: deleteImg,
-        id: "delete",
-      },
+      // {},
+      // {
+      //   label: "Xóa",
+      //   avatar: deleteImg,
+      //   id: "delete",
+      // },
     ],
   })
     .onOk((action) => {
@@ -550,6 +550,12 @@ const getColor = (status) => {
                 </q-item>
               </template>
             </q-select>
+
+            <!-- checkbox customer order -->
+            <div class="flex justify-end">
+              <q-checkbox left-label v-model="storeSupabase.newData.isCustomerOrder" label="Khách đặt" />
+            </div>
+
             <!-- notizen -->
             <div
               v-if="!storeSupabase.showNotizen"
