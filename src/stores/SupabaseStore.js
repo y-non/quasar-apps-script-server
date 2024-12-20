@@ -105,8 +105,6 @@ export const useSupabaseStore = defineStore("supabase", {
 
               const menuData = await this.fetchOrderItem(item.id);
 
-              console.log(menuData);
-
               let totalPrice = 0;
               menuData.forEach((item) => {
                 totalPrice += item.price;
@@ -473,7 +471,7 @@ export const useSupabaseStore = defineStore("supabase", {
       try {
         Dialog.create({
           title: "Xác nhận",
-          message: "Bạn có chắc chắn muốn xóa hàng này không?",
+          message: "Bạn có chắc chắn muốn xóa đơn hàng này không?",
           ok: true,
           cancel: true,
         }).onOk(async () => {
@@ -481,7 +479,7 @@ export const useSupabaseStore = defineStore("supabase", {
             message: "Đang xóa dữ liệu...",
           });
 
-          const result = await supabase.from("umsatz").delete().eq("id", rowId);
+          const result = await supabase.from("orders").delete().eq("id", rowId);
 
           let currentStatus = this.userStatus;
           if (result.status === 204) {
@@ -493,19 +491,19 @@ export const useSupabaseStore = defineStore("supabase", {
             Loading.hide();
 
             this.dataItem = this.dataItem.filter((item) => item.id !== rowId);
-            await this.updateUserStatus("", this.dataItem.length);
-            const localUserData = storageUtil.getLocalStorageData("userData");
-            this.listUserData = this.listUserData.map((item) => {
-              if (localUserData.id === item.user_id) {
-                return {
-                  ...item,
-                  orderCount: this.dataItem.length,
-                };
-              }
-              return item;
-            });
+            // await this.updateUserStatus("", this.dataItem.length);
+            // const localUserData = storageUtil.getLocalStorageData("userData");
+            // this.listUserData = this.listUserData.map((item) => {
+            //   if (localUserData.id === item.user_id) {
+            //     return {
+            //       ...item,
+            //       orderCount: this.dataItem.length,
+            //     };
+            //   }
+            //   return item;
+            // });
 
-            this.userStatus = currentStatus;
+            // this.userStatus = currentStatus;
 
             // this.getUserStatus();
           } else {
