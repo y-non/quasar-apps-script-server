@@ -401,7 +401,7 @@ export const useSupabaseStore = defineStore("supabase", {
           const userData = storageUtil.getLocalStorageData("userData");
 
           this.userStatusObject = this.listUserData.filter(
-            (item) => item.user_id === userData.id
+            (item) => item?.user_id === userData?.id
           )[0];
 
           this.userStatus = this.userStatusObject.status;
