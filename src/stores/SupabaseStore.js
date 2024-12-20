@@ -50,16 +50,23 @@ export const useSupabaseStore = defineStore("supabase", {
         this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
-        const result = await supabase
-          .from("umsatz")
-          .select()
+        // const result = await supabase
+        //   .from("umsatz")
+        //   .select()
+        //   .order("created_at", { ascending: true });
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
           .order("created_at", { ascending: true });
 
-        if (result.status === 200) {
-          let dataResponse = result.data || [];
+        let dataResponse = data || [];
 
-          this.dataItem = await this.handleDataToDisplay(dataResponse);
-        }
+        this.dataItem = await this.handleDataToDisplay(dataResponse);
+        // if (data?.length) {
+        //   let dataResponse = data || [];
+
+        //   this.dataItem = await this.handleDataToDisplay(dataResponse);
+        // }
         // else {
         //   alert("Failed to fetch data");
         // }
@@ -71,45 +78,110 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
+    async fetchOrderItem(orderId) {
+      try {
+        const { data, error } = await supabase
+          .from("order_menu")
+          .select("*")
+          .eq("order_id", orderId);
+
+        return data;
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    },
+
     async handleDataToDisplay(inputData) {
       try {
         let data = [];
-        data = inputData
-          .map((item) => {
-            const newDate = new Date(item.created_at);
-            const hours = String(newDate.getHours()).padStart(2, "0");
-            const minutes = String(newDate.getMinutes()).padStart(2, "0");
-            const formattedTime = `${hours}:${minutes}`;
+        //phần này để handle data to show lên cho người dùng
+        data = await Promise.all(
+          inputData
+            .map(async (item) => {
+              const newDate = new Date(item.created_at);
+              const hours = String(newDate.getHours()).padStart(2, "0");
+              const minutes = String(newDate.getMinutes()).padStart(2, "0");
+              const formattedTime = `${hours}:${minutes}`;
 
-            return {
-              id: item.id,
-              benutzername: item.benutzername,
-              umsatz: item.umsatz,
-              notizen: item.notizen,
-              menu: item.menu,
-              datum: formattedTime,
-              isHandled: true,
-            };
-          })
-          .filter((item) => item);
+              const menuData = await this.fetchOrderItem(item.id);
+
+              console.log(menuData);
+
+              let totalPrice = 0;
+              menuData.forEach((item) => {
+                totalPrice += item.price;
+              });
+
+              return {
+                id: item.id,
+                notizen: item.description,
+                menu: menuData,
+                datum: formattedTime,
+                isHandled: true,
+                totalPrice: totalPrice,
+              };
+            })
+            .filter((item) => item)
+        );
+
+        await Promise.all(data);
 
         /* handle menu item in main page */
         data.forEach((_, index) => {
-          const listSelectedMenu =
-            data[index].menu?.length > 1
-              ? data[index].menu.split(";")
-              : data[index].menu;
+          // const listSelectedMenu =
+          //   data[index].menu?.length > 1
+          //     ? data[index].menu.split(";")
+          //     : data[index].menu;
+          // data[index].menu.length > 1
+          //   ? (data[index].menuSelected = listSelectedMenu.map((item) => {
+          //       return this.menuData.filter(
+          //         (menuItem) => item == menuItem.id
+          //       )[0];
+          //     }))
+          //   : (data[index].menuSelected = this.menuData.filter(
+          //       (menuItem) => data[index].menu == menuItem.id
+          //     ));
 
-          data[index].menu.length > 1
-            ? (data[index].menuSelected = listSelectedMenu.map((item) => {
-                return this.menuData.filter(
-                  (menuItem) => item == menuItem.id
-                )[0];
-              }))
-            : (data[index].menuSelected = this.menuData.filter(
-                (menuItem) => data[index].menu == menuItem.id
-              ));
+          if (data[index].menu.length > 1) {
+            data[index].menuSelected = data[index].menu.map((item) => {
+              return {
+                ...this.menuData.filter(
+                  (menuItem) => item.menu_id == menuItem.id
+                )[0],
+                quantity: item.quantity,
+              };
+            });
+          }
         });
+
+        //phần này handle add mấy cái multi select cho các biến để tiện xử lý về sau
+        this.newData.menuMultipleSelect = this.menuData
+          .map((item) => {
+            if (item.isMultiSelect) {
+              return {
+                id: item.id,
+                label: item.label,
+                price: parseFloat(item.value),
+                selectCount: 0,
+                isMultiSelect: true,
+              };
+            }
+          })
+          .filter((item) => item);
+
+        this.updateData.menuMultipleSelect = this.menuData
+          .map((item) => {
+            if (item.isMultiSelect) {
+              return {
+                id: item.id,
+                label: item.label,
+                price: parseFloat(item.value),
+                selectCount: 0,
+                isMultiSelect: true,
+              };
+            }
+          })
+          .filter((item) => item);
 
         if (!data.length) {
           data = [];
@@ -180,106 +252,160 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
-    async addData() {
+    async addData(newData) {
       try {
-        const funcAddData = async () => {
-          Loading.show({
-            message: "Đang thêm mới dữ liệu...",
-          });
+        Loading.show({
+          message: "Đang thêm mới dữ liệu...",
+        });
 
-          if (this.newData.menuSelected.length > 1) {
-            this.newData.listSelectedId = this.newData.menuSelected.map(
-              (item) => item.id
-            );
-          } else {
-            this.newData.listSelectedId = this.newData.menuSelected[0].id;
-          }
-
-          if (typeof this.newData.listSelectedId === "string") {
-            this.newData.listSelectedId = this.newData.listSelectedId + "";
-          } else {
-            this.newData.listSelectedId = this.newData.listSelectedId.join(";");
-          }
-
-          const { id, email } = storageUtil.getLocalStorageData("userData");
-
-          const dataInsert = {
-            benutzername: email,
-            umsatz: this.newData.umsatz,
-            notizen: this.newData.notizen,
-            menu: this.newData.listSelectedId,
-            user_id: id,
+        const listMenuSelect = newData.menuSelected.map((item) => {
+          return {
+            menu_id: item.id,
+            quantity: 1,
+            price: item.value,
           };
+        });
 
-          const result = await supabase.from("umsatz").insert(dataInsert);
-
-          if (result.status === 201) {
-            Notify.create({
-              type: "positive",
-              message: "Thêm mới thành công!",
-              position: "top",
-            });
-            this.newData = { umsatz: 0, notizen: "", menuSelected: [] };
-            this.showAddDialog = false;
-          } else {
-            alert("Failed to add data");
-          }
-          Loading.hide();
-        };
-
-        let items = [
-          { label: "Serving", value: "serving", color: "green" },
-          { label: "Waiting", value: "waiting", color: "yellow" },
-          { label: "Off", value: "off", color: "red" },
-        ];
-
-        let currentStatus = this.userStatus;
-        items = items.filter((item) => item.value !== this.userStatus);
-
-        Dialog.create({
-          title: "Thông báo",
-          message: "Bạn có muốn thay đổi trạng thái sau khi thêm không?",
-          options: {
-            type: "radio",
-            model: "opt1",
-            items,
-          },
-          cancel: true,
-          persistent: true,
-        })
-          .onOk(async (data) => {
-            let finalCount = 0;
-            if (data != "opt1") {
-              finalCount = this.dataItem.length + 1;
-              await funcAddData();
-              await this.updateUserStatus(data, finalCount);
-              this.userStatus = data;
-            } else {
-              finalCount = this.dataItem.length;
-              await funcAddData();
-              await this.updateUserStatus("", finalCount);
-              this.userStatus = currentStatus;
+        const listMenuMultipleSelect = newData.menuMultipleSelect
+          .map((item) => {
+            if (item.selectCount > 0) {
+              return {
+                menu_id: item.id,
+                quantity: item.selectCount,
+                price: item.price * item.selectCount,
+              };
             }
-
-            const localUserData = storageUtil.getLocalStorageData("userData");
-            this.listUserData = this.listUserData.map((item) => {
-              if (localUserData.id === item.user_id) {
-                return {
-                  ...item,
-                  orderCount: finalCount,
-                };
-              }
-              return item;
-            });
           })
+          .filter((item) => item);
 
-          .onCancel(() => {})
-          .onDismiss(() => {});
-      } catch (error) {
-        console.error("Error adding data:", error);
-        Loading.hide(); // Ensure loading state is reset even in case of error
+        const menuItems = [...listMenuSelect, ...listMenuMultipleSelect];
+
+        const { id, email } = storageUtil.getLocalStorageData("userData");
+        const { data, error } = await supabase.rpc("create_order_with_items", {
+          user_id: id,
+          description: newData.notizen,
+          menu_items: menuItems,
+        });
+
+        if (error) {
+          console.error("Error creating order with items:", error);
+        } else {
+          this.fetchData();
+          Notify.create({
+            type: "positive",
+            message: "Thêm mới thành công!",
+            position: "top",
+          });
+          this.showAddDialog = false;
+        }
+
+        Loading.hide();
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
       }
     },
+
+    // async addData() {
+    //   try {
+    //     const funcAddData = async () => {
+    //       Loading.show({
+    //         message: "Đang thêm mới dữ liệu...",
+    //       });
+
+    //       if (this.newData.menuSelected.length > 1) {
+    //         this.newData.listSelectedId = this.newData.menuSelected.map(
+    //           (item) => item.id
+    //         );
+    //       } else {
+    //         this.newData.listSelectedId = this.newData.menuSelected[0].id;
+    //       }
+
+    //       if (typeof this.newData.listSelectedId === "string") {
+    //         this.newData.listSelectedId = this.newData.listSelectedId + "";
+    //       } else {
+    //         this.newData.listSelectedId = this.newData.listSelectedId.join(";");
+    //       }
+
+    //       const { id, email } = storageUtil.getLocalStorageData("userData");
+
+    //       const dataInsert = {
+    //         benutzername: email,
+    //         umsatz: this.newData.umsatz,
+    //         notizen: this.newData.notizen,
+    //         menu: this.newData.listSelectedId,
+    //         user_id: id,
+    //       };
+
+    //       const result = await supabase.from("umsatz").insert(dataInsert);
+
+    //       if (result.status === 201) {
+    //         Notify.create({
+    //           type: "positive",
+    //           message: "Thêm mới thành công!",
+    //           position: "top",
+    //         });
+    //         this.newData = { umsatz: 0, notizen: "", menuSelected: [] };
+    //         this.showAddDialog = false;
+    //       } else {
+    //         alert("Failed to add data");
+    //       }
+    //       Loading.hide();
+    //     };
+
+    //     let items = [
+    //       { label: "Serving", value: "serving", color: "green" },
+    //       { label: "Waiting", value: "waiting", color: "yellow" },
+    //       { label: "Off", value: "off", color: "red" },
+    //     ];
+
+    //     let currentStatus = this.userStatus;
+    //     items = items.filter((item) => item.value !== this.userStatus);
+
+    //     Dialog.create({
+    //       title: "Thông báo",
+    //       message: "Bạn có muốn thay đổi trạng thái sau khi thêm không?",
+    //       options: {
+    //         type: "radio",
+    //         model: "opt1",
+    //         items,
+    //       },
+    //       cancel: true,
+    //       persistent: true,
+    //     })
+    //       .onOk(async (data) => {
+    //         let finalCount = 0;
+    //         if (data != "opt1") {
+    //           finalCount = this.dataItem.length + 1;
+    //           await funcAddData();
+    //           await this.updateUserStatus(data, finalCount);
+    //           this.userStatus = data;
+    //         } else {
+    //           finalCount = this.dataItem.length;
+    //           await funcAddData();
+    //           await this.updateUserStatus("", finalCount);
+    //           this.userStatus = currentStatus;
+    //         }
+
+    //         const localUserData = storageUtil.getLocalStorageData("userData");
+    //         this.listUserData = this.listUserData.map((item) => {
+    //           if (localUserData.id === item.user_id) {
+    //             return {
+    //               ...item,
+    //               orderCount: finalCount,
+    //             };
+    //           }
+    //           return item;
+    //         });
+    //       })
+
+    //       .onCancel(() => {})
+    //       .onDismiss(() => {});
+    //   } catch (error) {
+    //     console.error("Error adding data:", error);
+    //     Loading.hide(); // Ensure loading state is reset even in case of error
+    //   }
+    // },
 
     // eslint-disable-next-line no-unused-vars
     async postUpdateItem(data) {
@@ -686,6 +812,22 @@ export const useSupabaseStore = defineStore("supabase", {
       );
 
       this.updateData.umsatz = total;
+    },
+
+    clickMultiSelectInAddData(selectProp) {
+      try {
+        this.newData.menuMultipleSelect.forEach((_, index) => {
+          if (this.newData.menuMultipleSelect[index].id === selectProp.id) {
+            this.newData.umsatz += this.newData.menuMultipleSelect[index].price;
+            this.newData.menuMultipleSelect[index].selectCount++;
+          }
+        });
+      } catch (err) {
+        console.error(
+          "Internal Server Error clickMultiSelect(selectProp): ",
+          err
+        );
+      }
     },
   },
 });

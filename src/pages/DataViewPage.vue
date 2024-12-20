@@ -250,7 +250,7 @@ const getColor = (status) => {
             >
               <span class="text-bold text-grey-7 text-h6">Doanh thu</span>
               <span class="text-blue text-h4">{{
-                dateUtil.formatter.format(item.umsatz)
+                dateUtil.formatter.format(item.totalPrice)
               }}</span>
             </div>
 
@@ -259,10 +259,12 @@ const getColor = (status) => {
                 <q-item-section>
                   <div class="flex justify-between" style="align-items: center">
                     <div class="flex justify-between full-width">
-                      <div class="text-grey-7">
+                      <div style="width: 80%;" class="text-grey-7">
                         {{ menu.label }}
                       </div>
                       <div class="text-grey text-bold">
+                        <span class="text-blue">{{ menu.quantity }} x</span>
+
                         {{ dateUtil.formatter.format(menu.value) }}
                       </div>
                     </div>
@@ -328,13 +330,37 @@ const getColor = (status) => {
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeSupabase.addData"
+            @submit="storeSupabase.addData(storeSupabase.newData)"
           >
             <span
               v-if="storeSupabase.newData.menuSelected?.length"
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr 1fr"
+              class="q-mb-md"
+            >
+              <q-btn
+                v-for="(
+                  item, index
+                ) in storeSupabase.newData.menuMultipleSelect.sort(
+                  (a, b) => a.price - b.price
+                )"
+                :key="index"
+                class="q-mr-sm"
+                outline
+                color="white"
+                text-color="primary"
+                :label="item.label"
+                @click="storeSupabase.clickMultiSelectInAddData(item)"
+              >
+                <q-badge color="orange" floating>
+                  {{ item.selectCount }}
+                </q-badge>
+              </q-btn>
+            </div>
+
             <q-list
               v-if="storeSupabase.newData.menuSelected?.length"
               bordered
@@ -431,9 +457,14 @@ const getColor = (status) => {
                     style="display: grid; grid-template-columns: 1fr 1fr 1fr"
                     class="q-mb-md"
                   >
+                    <!-- v-for="(item, index) in storeSupabase.menuData
+                    .filter((item) => item.isMultiSelect) .sort((a, b) =>
+                    a.value - b.value)" -->
                     <q-btn
-                      v-for="(item, index) in storeSupabase.menuData.filter(
-                        (item) => item.isMultiSelect
+                      v-for="(
+                        item, index
+                      ) in storeSupabase.newData.menuMultipleSelect.sort(
+                        (a, b) => a.price - b.price
                       )"
                       :key="index"
                       class="q-mr-sm"
@@ -441,6 +472,7 @@ const getColor = (status) => {
                       color="white"
                       text-color="primary"
                       :label="item.label"
+                      @click="storeSupabase.clickMultiSelectInAddData(item)"
                     ></q-btn>
                     <!-- <q-btn
                       v-for="(item, index) in storeSupabase.menuData.filter(
@@ -694,6 +726,7 @@ const getColor = (status) => {
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
+
             <q-list
               v-if="storeSupabase.updateData.menuSelected?.length"
               bordered
