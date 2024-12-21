@@ -8,6 +8,7 @@ import { useQuasar } from "quasar";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
 import noData from "../assets/images/nodata.jpg";
+import historyImg from "../assets/icons/history.png";
 import updateImg from "../assets/icons/update.png";
 import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
@@ -70,12 +71,18 @@ function showAction(grid) {
         img: updateImg,
         id: "update",
       },
+
+      {
+        label: "Lịch sử chỉnh sửa",
+        img: historyImg,
+        id: "history",
+      },
       // {},
-      // {
-      //   label: "Xóa",
-      //   avatar: deleteImg,
-      //   id: "delete",
-      // },
+      {
+        label: "Xóa",
+        avatar: deleteImg,
+        id: "delete",
+      },
     ],
   })
     .onOk((action) => {
@@ -109,6 +116,10 @@ function showAction(grid) {
 
         case "delete":
           storeSupabase.deleteData(grid);
+          break;
+
+        case "history":
+          storeSupabase.viewHistory(grid);
           break;
 
         default:
@@ -259,7 +270,7 @@ const getColor = (status) => {
                 <q-item-section>
                   <div class="flex justify-between" style="align-items: center">
                     <div class="flex justify-between full-width">
-                      <div style="width: 80%;" class="text-grey-7">
+                      <div style="width: 80%" class="text-grey-7">
                         {{ menu.label }}
                       </div>
                       <div class="text-grey text-bold">
@@ -299,6 +310,7 @@ const getColor = (status) => {
         color="green-7"
         class="q-pa-md"
         round
+        :disable="storeSupabase.isLoadingMainScreen"
         @click="storeSupabase.showAddDialog = true"
       />
     </q-page-sticky>
@@ -553,7 +565,11 @@ const getColor = (status) => {
 
             <!-- checkbox customer order -->
             <div class="flex justify-end">
-              <q-checkbox left-label v-model="storeSupabase.newData.isCustomerOrder" label="Khách đặt" />
+              <q-checkbox
+                left-label
+                v-model="storeSupabase.newData.isCustomerOrder"
+                label="Khách đặt"
+              />
             </div>
 
             <!-- notizen -->

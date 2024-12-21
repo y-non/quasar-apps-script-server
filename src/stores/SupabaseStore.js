@@ -284,12 +284,21 @@ export const useSupabaseStore = defineStore("supabase", {
         const menuItems = [...listMenuSelect, ...listMenuMultipleSelect];
 
         const { id, email } = storageUtil.getLocalStorageData("userData");
+        console.log({
+          user_id: id,
+          description: newData.notizen,
+          is_customer_order: newData.isCustomerOrder,
+          menu_items: menuItems,
+        });
+
         const { data, error } = await supabase.rpc("create_order_with_items", {
           user_id: id,
           description: newData.notizen,
           is_customer_order: newData.isCustomerOrder,
           menu_items: menuItems,
         });
+
+        console.log(data);
 
         if (error) {
           console.error("Error creating order with items:", error);
@@ -521,6 +530,16 @@ export const useSupabaseStore = defineStore("supabase", {
         Loading.hide(); // Ensure loading state is reset even in case of error
       }
     },
+
+    async viewHistory(inputData) {
+      try {
+        console.log(inputData);
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* ADMIN */
 
     async getUserStatus() {
       try {
