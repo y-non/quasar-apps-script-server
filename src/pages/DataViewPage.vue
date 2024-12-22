@@ -95,23 +95,27 @@ function showAction(grid) {
             (item) => item.id === grid
           )[0];
 
-          listSelectedMenu =
-            storeSupabase.updateData.menu.length > 1
-              ? storeSupabase.updateData.menu.split(";")
-              : storeSupabase.updateData.menu;
+          storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
+          console.log(storeSupabase.updateData);
+          // listSelectedMenu =
+          //   storeSupabase.updateData.menu.length > 1
+          //     ? storeSupabase.updateData.menu.split(";")
+          //     : storeSupabase.updateData.menu;
 
-          storeSupabase.updateData.menu.length > 1
-            ? (storeSupabase.updateData.menuSelected = listSelectedMenu.map(
-                (item) => {
-                  return storeSupabase.menuData.filter(
-                    (menuItem) => item == menuItem.id
-                  )[0];
-                }
-              ))
-            : (storeSupabase.updateData.menuSelected =
-                storeSupabase.menuData.filter(
-                  (menuItem) => storeSupabase.updateData.menu == menuItem.id
-                )[0]);
+          //     console.log(listSelectedMenu);
+
+          // storeSupabase.updateData.menu.length > 1
+          //   ? (storeSupabase.updateData.menuSelected = listSelectedMenu.map(
+          //       (item) => {
+          //         return storeSupabase.menuData.filter(
+          //           (menuItem) => item == menuItem.id
+          //         )[0];
+          //       }
+          //     ))
+          //   : (storeSupabase.updateData.menuSelected =
+          //       storeSupabase.menuData.filter(
+          //         (menuItem) => storeSupabase.updateData.menu == menuItem.id
+          //       )[0]);
           break;
 
         case "delete":
@@ -787,6 +791,7 @@ const getColor = (status) => {
             @submit="storeSupabase.postUpdateItem(storeSupabase.updateData)"
           >
             <span class="text-subtitle1">Chọn dịch vụ</span>
+
             <q-select
               ref="selectMenuRefUpdate"
               :rules="[(val) => !!val || 'Không được để rỗng']"
@@ -830,6 +835,26 @@ const getColor = (status) => {
                     label="Đóng menu"
                     class="full-width q-mb-md"
                     @click="selectMenuRefUpdate.hidePopup()"
+                  ></q-btn>
+                </div>
+
+                <div
+                  style="display: grid; grid-template-columns: 1fr 1fr 1fr"
+                  class="q-mb-md"
+                >
+                  <q-btn
+                    v-for="(
+                      item, index
+                    ) in storeSupabase.updateData.menuMultipleSelect.sort(
+                      (a, b) => a.price - b.price
+                    )"
+                    :key="index"
+                    class="q-mr-sm"
+                    outline
+                    color="white"
+                    text-color="primary"
+                    :label="item.label"
+                    @click="storeSupabase.clickMultiSelectInUpdateData(item)"
                   ></q-btn>
                 </div>
               </template>
@@ -933,6 +958,40 @@ const getColor = (status) => {
                 </q-item>
               </q-slide-item>
             </q-list>
+
+            <!-- <div
+              v-if="storeSupabase.updateData.menuSelected?.length"
+              class="flex column"
+            >
+              <div
+                v-for="(
+                  item, index
+                ) in storeSupabase.updateData.menuMultipleSelect.sort(
+                  (a, b) => a.price - b.price
+                )"
+                :key="index"
+                class="flex justify-between"
+                style="align-items: center"
+              >
+                <span class="text-bold text-subtitle1 text-grey-7">
+                  {{ item.label }}
+                </span>
+
+                <q-input
+                  v-model="item.selectCount"
+                  type="number"
+                  filled
+                  style="width: 20%"
+                  class="flex flex-center"
+                  dense
+                  :rules="[
+                    (val) => (val !== null && val !== '') || '',
+                    (val) => val > -1 || '',
+                  ]"
+                />
+              </div>
+            </div> -->
+
             <!-- notizen -->
             <div
               v-if="!storeSupabase.showNotizen"

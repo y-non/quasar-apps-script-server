@@ -33,7 +33,14 @@ export const useSupabaseStore = defineStore("supabase", {
       menuSelected: [],
       isCustomerOrder: false,
     },
-    updateData: { umsatz: 0, notizen: "", menuSelected: [], menu: [] },
+    updateData: {
+      umsatz: 0,
+      notizen: "",
+      menuSelected: [],
+      menu: [],
+      isCustomerOrder: false,
+      menuMultipleSelect: [],
+    },
 
     listOrderHistories: [],
 
@@ -863,6 +870,23 @@ export const useSupabaseStore = defineStore("supabase", {
           if (this.newData.menuMultipleSelect[index].id === selectProp.id) {
             this.newData.umsatz += this.newData.menuMultipleSelect[index].price;
             this.newData.menuMultipleSelect[index].selectCount++;
+          }
+        });
+      } catch (err) {
+        console.error(
+          "Internal Server Error clickMultiSelect(selectProp): ",
+          err
+        );
+      }
+    },
+
+    clickMultiSelectInUpdateData(selectProp) {
+      try {
+        this.updateData.menuMultipleSelect.forEach((_, index) => {
+          if (this.updateData.menuMultipleSelect[index].id === selectProp.id) {
+            this.updateData.umsatz +=
+              this.updateData.menuMultipleSelect[index].price;
+            this.updateData.menuMultipleSelect[index].selectCount++;
           }
         });
       } catch (err) {
