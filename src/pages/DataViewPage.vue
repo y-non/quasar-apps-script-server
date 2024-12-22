@@ -119,7 +119,8 @@ function showAction(grid) {
           break;
 
         case "history":
-          storeSupabase.viewHistory(grid);
+          storeSupabase.showHistoryDialog = true;
+          storeSupabase.fetchHistoryData(grid);
           break;
 
         default:
@@ -349,7 +350,7 @@ const getColor = (status) => {
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
-            <div
+            <!-- <div
               style="display: grid; grid-template-columns: 1fr 1fr 1fr"
               class="q-mb-md"
             >
@@ -371,7 +372,7 @@ const getColor = (status) => {
                   {{ item.selectCount }}
                 </q-badge>
               </q-btn>
-            </div>
+            </div> -->
 
             <q-list
               v-if="storeSupabase.newData.menuSelected?.length"
@@ -408,6 +409,39 @@ const getColor = (status) => {
                 </q-item>
               </q-slide-item>
             </q-list>
+
+            <div
+              v-if="storeSupabase.newData.menuSelected?.length"
+              class="flex column"
+            >
+              <div
+                v-for="(
+                  item, index
+                ) in storeSupabase.newData.menuMultipleSelect.sort(
+                  (a, b) => a.price - b.price
+                )"
+                :key="index"
+                class="flex justify-between"
+                style="align-items: center"
+              >
+                <span class="text-bold text-subtitle1 text-grey-7">
+                  {{ item.label }}
+                </span>
+
+                <q-input
+                  v-model="item.selectCount"
+                  type="number"
+                  filled
+                  style="width: 20%"
+                  class="flex flex-center"
+                  dense
+                  :rules="[
+                    (val) => (val !== null && val !== '') || '',
+                    (val) => val > -1 || '',
+                  ]"
+                />
+              </div>
+            </div>
 
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
@@ -606,6 +640,28 @@ const getColor = (status) => {
             />
           </q-form>
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog
+      :maximized="storeSupabase.showHistoryDialog"
+      v-model="storeSupabase.showHistoryDialog"
+    >
+      <q-card class="full-width full-height">
+        <div
+          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          style="position: sticky; top: 0"
+        >
+          <q-btn
+            icon="eva-arrow-ios-back-outline"
+            class="text-blue"
+            flat
+            @click="storeSupabase.showHistoryDialog = false"
+          >
+            <span class="text-subtitle1">Quay lại</span>
+          </q-btn>
+        </div>
+        <q-card-section></q-card-section>
       </q-card>
     </q-dialog>
 

@@ -37,6 +37,7 @@ export const useSupabaseStore = defineStore("supabase", {
     /* function */
     showAddDialog: false,
     showUpdateDialog: false,
+    showHistoryDialog: false,
     showNotizen: false,
   }),
   actions: {
@@ -93,6 +94,19 @@ export const useSupabaseStore = defineStore("supabase", {
         return data;
       } catch (err) {
         console.error("Error fetching data:", err);
+      }
+    },
+
+    async fetchHistoryData(rowId) {
+      try {
+        const { data, error } = await supabase
+          .from("order_history")
+          .select("*")
+          .eq("order_id", rowId);
+
+        console.log(data);
+      } catch (err) {
+        console.error("Error fetching data fetchHistoryData(rowId):", err);
       }
     },
 
@@ -284,21 +298,16 @@ export const useSupabaseStore = defineStore("supabase", {
         const menuItems = [...listMenuSelect, ...listMenuMultipleSelect];
 
         const { id, email } = storageUtil.getLocalStorageData("userData");
-        console.log({
-          user_id: id,
-          description: newData.notizen,
-          is_customer_order: newData.isCustomerOrder,
-          menu_items: menuItems,
-        });
 
-        const { data, error } = await supabase.rpc("create_order_with_items", {
-          user_id: id,
-          description: newData.notizen,
-          is_customer_order: newData.isCustomerOrder,
-          menu_items: menuItems,
-        });
-
-        console.log(data);
+        let { data, error } = await supabase.rpc(
+          "create_order_with_items_and_log_history",
+          {
+            user_id: id,
+            description: newData.notizen,
+            is_customer_order: newData.isCustomerOrder,
+            menu_items: menuItems,
+          }
+        );
 
         if (error) {
           console.error("Error creating order with items:", error);
@@ -309,6 +318,12 @@ export const useSupabaseStore = defineStore("supabase", {
             message: "Thêm mới thành công!",
             position: "top",
           });
+          this.newData = {
+            umsatz: 0,
+            notizen: "",
+            menuSelected: [],
+            isCustomerOrder: false,
+          };
           this.showAddDialog = false;
         }
 
@@ -528,14 +543,6 @@ export const useSupabaseStore = defineStore("supabase", {
       } catch (error) {
         console.error("Error deleting data:", error);
         Loading.hide(); // Ensure loading state is reset even in case of error
-      }
-    },
-
-    async viewHistory(inputData) {
-      try {
-        console.log(inputData);
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
       }
     },
 
