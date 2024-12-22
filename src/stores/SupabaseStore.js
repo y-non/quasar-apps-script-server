@@ -16,6 +16,7 @@ export const useSupabaseStore = defineStore("supabase", {
     isLogin: false,
     isLoadingMainScreen: false,
     loadingSelect: false,
+    isLoadingHistory: false,
     slideItems: [],
     slideItemsUpdate: [],
     isHaveNotSaveDataYet: false,
@@ -33,6 +34,8 @@ export const useSupabaseStore = defineStore("supabase", {
       isCustomerOrder: false,
     },
     updateData: { umsatz: 0, notizen: "", menuSelected: [], menu: [] },
+
+    listOrderHistories: [],
 
     /* function */
     showAddDialog: false,
@@ -99,13 +102,23 @@ export const useSupabaseStore = defineStore("supabase", {
 
     async fetchHistoryData(rowId) {
       try {
+        this.isLoadingHistory = true;
         const { data, error } = await supabase
           .from("order_history")
           .select("*")
           .eq("order_id", rowId);
 
-        console.log(data);
+        if (error) {
+          console.error(
+            "Error when fetching data in fetchHistoryData(rowId): ",
+            error
+          );
+        } else {
+          this.listOrderHistories = data;
+        }
+        this.isLoadingHistory = false;
       } catch (err) {
+        this.isLoadingHistory = false;
         console.error("Error fetching data fetchHistoryData(rowId):", err);
       }
     },

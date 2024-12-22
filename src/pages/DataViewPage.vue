@@ -647,7 +647,10 @@ const getColor = (status) => {
       :maximized="storeSupabase.showHistoryDialog"
       v-model="storeSupabase.showHistoryDialog"
     >
-      <q-card class="full-width full-height">
+      <q-card
+        v-if="!storeSupabase.isLoadingHistory"
+        class="full-width full-height"
+      >
         <div
           class="flex justify-between q-py-md q-pr-md bg-white z-max"
           style="position: sticky; top: 0"
@@ -661,7 +664,97 @@ const getColor = (status) => {
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
         </div>
-        <q-card-section></q-card-section>
+        <q-card-section>
+          <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
+          <q-list bordered>
+            <!-- <q-item
+              v-for="(item, index) in storeSupabase.listOrderHistories"
+              :key="index"
+              clickable
+              v-ripple
+              class="column"
+            >
+              <q-item-section avatar>
+                {{ item.operation }}
+              </q-item-section>
+              <q-item-section>{{ item }}</q-item-section>
+            </q-item> -->
+
+            <q-card
+              v-for="(item, index) in storeSupabase.listOrderHistories"
+              :key="index"
+              class="my-card"
+            >
+              <q-card-section>
+                <div class="flex justify-between">
+                  <div>
+                    <div
+                      class="text-h5"
+                      :class="
+                        item.operation.toLowerCase() === 'insert'
+                          ? 'text-green'
+                          : ''
+                      "
+                    >
+                      {{
+                        item.operation.toLowerCase() === "insert"
+                          ? "Tạo mới"
+                          : ""
+                      }}
+                    </div>
+                    <div class="text-subtitle2 text-grey-6 q-ml-xs">
+                      {{
+                        new Date(item.created_at).toLocaleDateString("vi-VN")
+                      }}
+                    </div>
+                  </div>
+                  <div>
+                    <span class="text-blue text-h4 text-right">{{
+                      dateUtil.formatter.format(
+                        item.details.menu_items.reduce(
+                          (total, item) => total + item.price,
+                          0
+                        )
+                      )
+                    }}</span>
+                  </div>
+                </div>
+              </q-card-section>
+              <q-card-section>
+                <!-- {{ item.details }} -->
+                <q-item
+                  v-for="(step, stepIndex) in item.details.menu_items"
+                  :key="stepIndex"
+                  clickable
+                  v-ripple
+                  class="flex justify-between"
+                >
+                  <q-item-section style="width: 70%">
+                    {{
+                      storeSupabase.menuData.filter(
+                        (menuItem) => menuItem.id === step.menu_id
+                      )[0].label
+                    }}
+                  </q-item-section>
+                  <q-item-section class="flex flex-end text-right"
+                    >{{ step.quantity }} x
+                    {{ step.price / step.quantity }}</q-item-section
+                  >
+                </q-item>
+              </q-card-section>
+
+              <q-card-section>
+                Mô tả: {{ item.details.description }}
+              </q-card-section>
+            </q-card>
+          </q-list>
+        </q-card-section>
+      </q-card>
+
+      <q-card v-else class="full-width flex flex-center full-height">
+        <div style="height: 30vh" class="full-width flex column flex-center">
+          Đang tải <q-spinner-ios size="lg" color="blue" />
+        </div>
       </q-card>
     </q-dialog>
 
