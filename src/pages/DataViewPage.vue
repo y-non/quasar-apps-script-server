@@ -95,8 +95,32 @@ function showAction(grid) {
             (item) => item.id === grid
           )[0];
 
+          storeSupabase.updateData.menuSelected =
+            storeSupabase.updateData.menuSelected.filter(
+              (item) => !item.isMultiSelect
+            );
+
+          storeSupabase.updateData.menuMultipleSelect = storeSupabase.menuData
+            .map((item) => {
+              if (item.isMultiSelect) {
+                const quantity = storeSupabase.updateData.menu.filter(
+                  (itemMultiSelect) => itemMultiSelect.menu_id === item.id
+                )[0];
+
+                return {
+                  id: item.id,
+                  label: item.label,
+                  price: parseFloat(item.value),
+                  selectCount: quantity ? quantity.quantity : 0,
+                  isMultiSelect: true,
+                };
+              }
+            })
+            .filter((item) => item);
+
+          // console.log(storeSupabase.updateData);
+
           storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
-          console.log(storeSupabase.updateData);
           // listSelectedMenu =
           //   storeSupabase.updateData.menu.length > 1
           //     ? storeSupabase.updateData.menu.split(";")
@@ -401,10 +425,48 @@ const getColor = (status) => {
                       style="align-items: center"
                     >
                       <div class="flex justify-between full-width">
-                        <div class="text-grey-7">
-                          {{ item.label }}
+                        <div class="flex text-grey-7">
+                          <div class="column">
+                            {{ item.label }}
+                            <span v-if="item.isMultiSelect" class="text-blue"
+                              >x {{ item.selectCount }}</span
+                            >
+                          </div>
+
+                          <div v-if="item.isMultiSelect" class="flex q-ml-md">
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-minus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInAddDataMinus(item)
+                              "
+                              class="q-mx-md"
+                              outline
+
+                            />
+
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-plus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInAddData(item)
+                              "
+                              outline
+                            />
+                          </div>
                         </div>
-                        <div class="text-blue text-bold">
+                        <div
+                          v-if="item.isMultiSelect"
+                          class="text-blue text-bold"
+                        >
+                          {{
+                            dateUtil.formatter.format(
+                              item.value * item.selectCount
+                            )
+                          }}
+                        </div>
+
+                        <div v-else class="text-blue text-bold">
                           {{ dateUtil.formatter.format(item.value) }}
                         </div>
                       </div>
@@ -414,7 +476,7 @@ const getColor = (status) => {
               </q-slide-item>
             </q-list>
 
-            <div
+            <!-- <div
               v-if="storeSupabase.newData.menuSelected?.length"
               class="flex column"
             >
@@ -445,7 +507,7 @@ const getColor = (status) => {
                   ]"
                 />
               </div>
-            </div>
+            </div> -->
 
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
@@ -523,7 +585,9 @@ const getColor = (status) => {
                       text-color="primary"
                       :label="item.label"
                       @click="storeSupabase.clickMultiSelectInAddData(item)"
-                    ></q-btn>
+                    >
+                      <q-badge color="red" :label="item.selectCount" floating />
+                    </q-btn>
                     <!-- <q-btn
                       v-for="(item, index) in storeSupabase.menuData.filter(
                         (item) => item.isMultiSelect
@@ -836,26 +900,26 @@ const getColor = (status) => {
                     class="full-width q-mb-md"
                     @click="selectMenuRefUpdate.hidePopup()"
                   ></q-btn>
-                </div>
 
-                <div
-                  style="display: grid; grid-template-columns: 1fr 1fr 1fr"
-                  class="q-mb-md"
-                >
-                  <q-btn
-                    v-for="(
-                      item, index
-                    ) in storeSupabase.updateData.menuMultipleSelect.sort(
-                      (a, b) => a.price - b.price
-                    )"
-                    :key="index"
-                    class="q-mr-sm"
-                    outline
-                    color="white"
-                    text-color="primary"
-                    :label="item.label"
-                    @click="storeSupabase.clickMultiSelectInUpdateData(item)"
-                  ></q-btn>
+                  <div
+                    style="display: grid; grid-template-columns: 1fr 1fr 1fr"
+                    class="q-mb-md"
+                  >
+                    <q-btn
+                      v-for="(
+                        item, index
+                      ) in storeSupabase.updateData.menuMultipleSelect.sort(
+                        (a, b) => a.price - b.price
+                      )"
+                      :key="index"
+                      class="q-mr-sm"
+                      outline
+                      color="white"
+                      text-color="primary"
+                      :label="item.label"
+                      @click="storeSupabase.clickMultiSelectInAddData(item)"
+                    ></q-btn>
+                  </div>
                 </div>
               </template>
 
@@ -959,7 +1023,7 @@ const getColor = (status) => {
               </q-slide-item>
             </q-list>
 
-            <!-- <div
+            <div
               v-if="storeSupabase.updateData.menuSelected?.length"
               class="flex column"
             >
@@ -984,13 +1048,19 @@ const getColor = (status) => {
                   style="width: 20%"
                   class="flex flex-center"
                   dense
+                  @update:model-value="
+                    storeSupabase.updateData.umsatz +=
+                      storeSupabase.updateData.menuMultipleSelect[index].price;
+                    storeSupabase.updateData.menuMultipleSelect[index]
+                      .selectCount++;
+                  "
                   :rules="[
                     (val) => (val !== null && val !== '') || '',
                     (val) => val > -1 || '',
                   ]"
                 />
               </div>
-            </div> -->
+            </div>
 
             <!-- notizen -->
             <div

@@ -206,20 +206,6 @@ export const useSupabaseStore = defineStore("supabase", {
           })
           .filter((item) => item);
 
-        this.updateData.menuMultipleSelect = this.menuData
-          .map((item) => {
-            if (item.isMultiSelect) {
-              return {
-                id: item.id,
-                label: item.label,
-                price: parseFloat(item.value),
-                selectCount: 0,
-                isMultiSelect: true,
-              };
-            }
-          })
-          .filter((item) => item);
-
         if (!data.length) {
           data = [];
         }
@@ -291,63 +277,72 @@ export const useSupabaseStore = defineStore("supabase", {
 
     async addData(newData) {
       try {
-        Loading.show({
-          message: "Đang thêm mới dữ liệu...",
-        });
-
-        const listMenuSelect = newData.menuSelected.map((item) => {
-          return {
-            menu_id: item.id,
-            quantity: 1,
-            price: item.value,
-          };
-        });
-
-        const listMenuMultipleSelect = newData.menuMultipleSelect
-          .map((item) => {
-            if (item.selectCount > 0) {
-              return {
-                menu_id: item.id,
-                quantity: item.selectCount,
-                price: item.price * item.selectCount,
-              };
-            }
-          })
-          .filter((item) => item);
-
-        const menuItems = [...listMenuSelect, ...listMenuMultipleSelect];
-
-        const { id, email } = storageUtil.getLocalStorageData("userData");
-
-        let { data, error } = await supabase.rpc(
-          "create_order_with_items_and_log_history",
-          {
-            user_id: id,
-            description: newData.notizen,
-            is_customer_order: newData.isCustomerOrder,
-            menu_items: menuItems,
-          }
-        );
-
-        if (error) {
-          console.error("Error creating order with items:", error);
-        } else {
-          this.fetchData();
-          Notify.create({
-            type: "positive",
-            message: "Thêm mới thành công!",
-            position: "top",
+        Dialog.create({
+          title: "Thông báo",
+          message: "Xác nhận thêm mới dữ liệu?",
+          ok: true,
+          cancel: true,
+        }).onOk(async () => {
+          Loading.show({
+            message: "Đang thêm mới dữ liệu...",
           });
-          this.newData = {
-            umsatz: 0,
-            notizen: "",
-            menuSelected: [],
-            isCustomerOrder: false,
-          };
-          this.showAddDialog = false;
-        }
 
-        Loading.hide();
+          const listMenuSelect = newData.menuSelected.map((item) => {
+            return {
+              menu_id: item.id,
+              quantity: 1,
+              price: item.value,
+            };
+          });
+
+          const listMenuMultipleSelect = newData.menuMultipleSelect
+            .map((item) => {
+              if (item.selectCount > 0) {
+                return {
+                  menu_id: item.id,
+                  quantity: item.selectCount,
+                  price: item.price * item.selectCount,
+                };
+              }
+            })
+            .filter((item) => item);
+          console.log(listMenuSelect);
+          console.log(listMenuMultipleSelect);
+
+          const menuItems = [...listMenuSelect, ...listMenuMultipleSelect];
+
+          const { id, email } = storageUtil.getLocalStorageData("userData");
+
+          let { data, error } = await supabase.rpc(
+            "create_order_with_items_and_log_history",
+            {
+              user_id: id,
+              description: newData.notizen,
+              is_customer_order: newData.isCustomerOrder,
+              menu_items: menuItems,
+            }
+          );
+
+          if (error) {
+            console.error("Error creating order with items:", error);
+          } else {
+            this.fetchData();
+            Notify.create({
+              type: "positive",
+              message: "Thêm mới thành công!",
+              position: "top",
+            });
+            this.newData = {
+              umsatz: 0,
+              notizen: "",
+              menuSelected: [],
+              isCustomerOrder: false,
+            };
+            this.showAddDialog = false;
+          }
+
+          Loading.hide();
+        });
       } catch (err) {
         Loading.hide();
         console.error("Internal Server Error: ", err);
@@ -829,8 +824,26 @@ export const useSupabaseStore = defineStore("supabase", {
 
       this.newData.menuSelected = this.newData.menuSelected.filter((item) => {
         if (item.id !== id) {
-          total += +item.value;
-          return item;
+          if (item.isMultiSelect) {
+            total += +item.value * item.selectCount;
+            return item;
+          } else {
+            total += +item.value;
+            return item;
+          }
+        } else {
+          //xử lý logic chỗ multiple select => reset data
+          if (item.isMultiSelect) {
+            this.newData.menuMultipleSelect =
+              this.newData.menuMultipleSelect.map((item) => {
+                if (item.id === id) {
+                  return {
+                    ...item,
+                    selectCount: 0,
+                  };
+                } else return item;
+              });
+          }
         }
       });
 
@@ -866,12 +879,64 @@ export const useSupabaseStore = defineStore("supabase", {
 
     clickMultiSelectInAddData(selectProp) {
       try {
+        //remove multiple select in array if exist
+        this.newData.menuSelected = this.newData.menuSelected.filter(
+          (item) => !item.isMultiSelect
+        );
+
+        // console.log(this.newData.menuSelected);
         this.newData.menuMultipleSelect.forEach((_, index) => {
           if (this.newData.menuMultipleSelect[index].id === selectProp.id) {
             this.newData.umsatz += this.newData.menuMultipleSelect[index].price;
             this.newData.menuMultipleSelect[index].selectCount++;
           }
         });
+
+        const multipleSelectCountData = this.newData.menuMultipleSelect
+          .filter((i) => i.selectCount)
+          .map((item) => ({
+            ...item,
+            value: item.price,
+          }));
+
+        this.newData.menuSelected = [
+          ...this.newData.menuSelected,
+          ...multipleSelectCountData,
+        ];
+      } catch (err) {
+        console.error(
+          "Internal Server Error clickMultiSelect(selectProp): ",
+          err
+        );
+      }
+    },
+
+    clickMultiSelectInAddDataMinus(selectProp) {
+      try {
+        //remove multiple select in array if exist
+        this.newData.menuSelected = this.newData.menuSelected.filter(
+          (item) => !item.isMultiSelect
+        );
+
+        // console.log(this.newData.menuSelected);
+        this.newData.menuMultipleSelect.forEach((_, index) => {
+          if (this.newData.menuMultipleSelect[index].id === selectProp.id) {
+            this.newData.umsatz -= this.newData.menuMultipleSelect[index].price;
+            this.newData.menuMultipleSelect[index].selectCount--;
+          }
+        });
+
+        const multipleSelectCountData = this.newData.menuMultipleSelect
+          .filter((i) => i.selectCount)
+          .map((item) => ({
+            ...item,
+            value: item.price,
+          }));
+
+        this.newData.menuSelected = [
+          ...this.newData.menuSelected,
+          ...multipleSelectCountData,
+        ];
       } catch (err) {
         console.error(
           "Internal Server Error clickMultiSelect(selectProp): ",
