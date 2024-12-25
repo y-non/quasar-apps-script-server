@@ -424,25 +424,31 @@ const getColor = (status) => {
                       class="flex justify-between"
                       style="align-items: center"
                     >
-                      <div class="flex justify-between full-width">
-                        <div class="flex text-grey-7">
-                          <div class="column">
+                      <div
+                        class="flex justify-between full-width"
+                        style="align-items: center"
+                      >
+                        <div class="flex text-grey-7" style="width: 70%">
+                          <div
+                            class="column"
+                            :style="item.isMultiSelect ? 'width: 30%' : []"
+                          >
                             {{ item.label }}
                             <span v-if="item.isMultiSelect" class="text-blue"
                               >x {{ item.selectCount }}</span
                             >
                           </div>
 
-                          <div v-if="item.isMultiSelect" class="flex q-ml-md">
+                          <div v-if="item.isMultiSelect" class="flex">
                             <q-btn
                               color="grey-6"
                               icon="eva-minus-outline"
                               @click="
-                                storeSupabase.clickMultiSelectInAddDataMinus(item)
+                                storeSupabase.clickMultiSelectInAddDataMinus(
+                                  item
+                                )
                               "
-                              class="q-mx-md"
                               outline
-
                             />
 
                             <q-btn
@@ -451,6 +457,7 @@ const getColor = (status) => {
                               @click="
                                 storeSupabase.clickMultiSelectInAddData(item)
                               "
+                              class="q-ml-sm"
                               outline
                             />
                           </div>

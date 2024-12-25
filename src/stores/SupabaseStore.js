@@ -288,6 +288,18 @@ export const useSupabaseStore = defineStore("supabase", {
           });
 
           const listMenuSelect = newData.menuSelected.map((item) => {
+            const filterMultipleSelect = newData.menuMultipleSelect.filter(
+              (itemMulti) => itemMulti.id === item.id
+            )[0];
+
+            if (filterMultipleSelect) {
+              return {
+                menu_id: item.id,
+                quantity: filterMultipleSelect.selectCount,
+                price: item.value * filterMultipleSelect.selectCount,
+              };
+            }
+
             return {
               menu_id: item.id,
               quantity: 1,
@@ -295,21 +307,21 @@ export const useSupabaseStore = defineStore("supabase", {
             };
           });
 
-          const listMenuMultipleSelect = newData.menuMultipleSelect
-            .map((item) => {
-              if (item.selectCount > 0) {
-                return {
-                  menu_id: item.id,
-                  quantity: item.selectCount,
-                  price: item.price * item.selectCount,
-                };
-              }
-            })
-            .filter((item) => item);
-          console.log(listMenuSelect);
-          console.log(listMenuMultipleSelect);
+          // const listMenuMultipleSelect = newData.menuMultipleSelect
+          //   .map((item) => {
+          //     if (item.selectCount > 0) {
+          //       return {
+          //         menu_id: item.id,
+          //         quantity: item.selectCount,
+          //         price: item.price * item.selectCount,
+          //       };
+          //     }
+          //   })
+          //   .filter((item) => item);
+          //test
+          const menuItems = [...listMenuSelect];
 
-          const menuItems = [...listMenuSelect, ...listMenuMultipleSelect];
+          console.log(menuItems);
 
           const { id, email } = storageUtil.getLocalStorageData("userData");
 
@@ -819,6 +831,7 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
+    //test2
     removeAddMenuItem(id) {
       let total = 0;
 
