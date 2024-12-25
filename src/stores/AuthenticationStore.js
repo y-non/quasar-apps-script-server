@@ -40,6 +40,7 @@ export const useAuthenticationStore = defineStore("authentication", {
         }
 
         const user = data.user;
+        await this.getUserAccountData();
         const sessionToken = this.generateSessionToken();
 
         // Start a transaction to enforce single-device login
@@ -98,6 +99,16 @@ export const useAuthenticationStore = defineStore("authentication", {
         });
       } catch (err) {
         console.error("Internal Server Error signOut(): ", err);
+      }
+    },
+
+    async getUserAccountData() {
+      try {
+        let { data: users, error } = await supabase.from("users").select("*");
+
+        storageUtil.setLocalStorageData("userAuthInfo", users);
+      } catch (err) {
+        console.error("Internal Server Error getUserAccountData(): ", err);
       }
     },
 

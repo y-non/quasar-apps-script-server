@@ -479,14 +479,6 @@ export const useSupabaseStore = defineStore("supabase", {
 
         const { id, email } = storageUtil.getLocalStorageData("userData");
 
-        console.log({
-          description: inputData.notizen,
-          is_customer_order: inputData.isCustomerOrder,
-          menu_items: menuDataUpdate,
-          order_id: inputData.id,
-          user_id: id,
-        });
-
         let { data, error } = await supabase.rpc(
           "update_order_with_items_and_log_history",
           {
