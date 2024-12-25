@@ -86,7 +86,6 @@ function showAction(grid) {
     ],
   })
     .onOk((action) => {
-      let listSelectedMenu;
       switch (action.id) {
         case "update":
           storeSupabase.showUpdateDialog = true;
@@ -95,10 +94,21 @@ function showAction(grid) {
             (item) => item.id === grid
           )[0];
 
+          storeSupabase.updateData.isCustomerOrder = false
+
+          /* test */
           storeSupabase.updateData.menuSelected =
-            storeSupabase.updateData.menuSelected.filter(
-              (item) => !item.isMultiSelect
-            );
+            storeSupabase.updateData.menuSelected
+              .map((item) => {
+                if (item.isMultiSelect) {
+                  return {
+                    ...item,
+                    selectCount: item.quantity,
+                  };
+                }
+                return item;
+              })
+              .filter((item) => item);
 
           storeSupabase.updateData.menuMultipleSelect = storeSupabase.menuData
             .map((item) => {
@@ -118,28 +128,7 @@ function showAction(grid) {
             })
             .filter((item) => item);
 
-          // console.log(storeSupabase.updateData);
-
           storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
-          // listSelectedMenu =
-          //   storeSupabase.updateData.menu.length > 1
-          //     ? storeSupabase.updateData.menu.split(";")
-          //     : storeSupabase.updateData.menu;
-
-          //     console.log(listSelectedMenu);
-
-          // storeSupabase.updateData.menu.length > 1
-          //   ? (storeSupabase.updateData.menuSelected = listSelectedMenu.map(
-          //       (item) => {
-          //         return storeSupabase.menuData.filter(
-          //           (menuItem) => item == menuItem.id
-          //         )[0];
-          //       }
-          //     ))
-          //   : (storeSupabase.updateData.menuSelected =
-          //       storeSupabase.menuData.filter(
-          //         (menuItem) => storeSupabase.updateData.menu == menuItem.id
-          //       )[0]);
           break;
 
         case "delete":
@@ -378,30 +367,6 @@ const getColor = (status) => {
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
-            <!-- <div
-              style="display: grid; grid-template-columns: 1fr 1fr 1fr"
-              class="q-mb-md"
-            >
-              <q-btn
-                v-for="(
-                  item, index
-                ) in storeSupabase.newData.menuMultipleSelect.sort(
-                  (a, b) => a.price - b.price
-                )"
-                :key="index"
-                class="q-mr-sm"
-                outline
-                color="white"
-                text-color="primary"
-                :label="item.label"
-                @click="storeSupabase.clickMultiSelectInAddData(item)"
-              >
-                <q-badge color="orange" floating>
-                  {{ item.selectCount }}
-                </q-badge>
-              </q-btn>
-            </div> -->
-
             <q-list
               v-if="storeSupabase.newData.menuSelected?.length"
               bordered
@@ -861,6 +826,94 @@ const getColor = (status) => {
             class="q-gutter-md q-py-lg flex column"
             @submit="storeSupabase.postUpdateItem(storeSupabase.updateData)"
           >
+            <span
+              v-if="storeSupabase.updateData.menuSelected?.length"
+              class="text-subtitle1"
+              >Dịch vụ đã chọn</span
+            >
+
+            <q-list
+              v-if="storeSupabase.updateData.menuSelected?.length"
+              bordered
+              separator
+            >
+              <!-- test -->
+              <q-slide-item
+                v-for="(item, index) in storeSupabase.updateData.menuSelected"
+                :key="index"
+                ref="slideItems"
+                @right="storeSupabase.onRightSlide(item.id, index)"
+                right-color="red-5"
+              >
+                <template v-slot:right>
+                  <q-icon name="delete" /> Xoá...
+                </template>
+
+                <q-item>
+                  <q-item-section>
+                    <div
+                      class="flex justify-between"
+                      style="align-items: center"
+                    >
+                      <div
+                        class="flex justify-between full-width"
+                        style="align-items: center"
+                      >
+                        <div class="flex text-grey-7" style="width: 70%">
+                          <div
+                            class="column"
+                            :style="item.isMultiSelect ? 'width: 30%' : []"
+                          >
+                            {{ item.label }}
+                            <span v-if="item.isMultiSelect" class="text-blue"
+                              >x {{ item.selectCount }}</span
+                            >
+                          </div>
+
+                          <div v-if="item.isMultiSelect" class="flex">
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-minus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInUpdateDataMinus(
+                                  item
+                                )
+                              "
+                              outline
+                            />
+
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-plus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInUpdateData(item)
+                              "
+                              class="q-ml-sm"
+                              outline
+                            />
+                          </div>
+                        </div>
+                        <div
+                          v-if="item.isMultiSelect"
+                          class="text-blue text-bold"
+                        >
+                          {{
+                            dateUtil.formatter.format(
+                              item.value * item.selectCount
+                            )
+                          }}
+                        </div>
+
+                        <div v-else class="text-blue text-bold">
+                          {{ dateUtil.formatter.format(item.value) }}
+                        </div>
+                      </div>
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-slide-item>
+            </q-list>
+
             <span class="text-subtitle1">Chọn dịch vụ</span>
 
             <q-select
@@ -910,7 +963,7 @@ const getColor = (status) => {
 
                   <div
                     style="display: grid; grid-template-columns: 1fr 1fr 1fr"
-                    class="q-mb-md"
+                    class="q-mb-md full-width"
                   >
                     <q-btn
                       v-for="(
@@ -924,8 +977,10 @@ const getColor = (status) => {
                       color="white"
                       text-color="primary"
                       :label="item.label"
-                      @click="storeSupabase.clickMultiSelectInAddData(item)"
-                    ></q-btn>
+                      @click="storeSupabase.clickMultiSelectInUpdateData(item)"
+                    >
+                      <q-badge color="red" :label="item.selectCount" floating />
+                    </q-btn>
                   </div>
                 </div>
               </template>
@@ -988,13 +1043,8 @@ const getColor = (status) => {
                 </q-item>
               </template>
             </q-select>
-            <span
-              v-if="storeSupabase.updateData.menuSelected?.length"
-              class="text-subtitle1"
-              >Dịch vụ đã chọn</span
-            >
 
-            <q-list
+            <!-- <q-list
               v-if="storeSupabase.updateData.menuSelected?.length"
               bordered
               separator
@@ -1028,46 +1078,7 @@ const getColor = (status) => {
                   </q-item-section>
                 </q-item>
               </q-slide-item>
-            </q-list>
-
-            <div
-              v-if="storeSupabase.updateData.menuSelected?.length"
-              class="flex column"
-            >
-              <div
-                v-for="(
-                  item, index
-                ) in storeSupabase.updateData.menuMultipleSelect.sort(
-                  (a, b) => a.price - b.price
-                )"
-                :key="index"
-                class="flex justify-between"
-                style="align-items: center"
-              >
-                <span class="text-bold text-subtitle1 text-grey-7">
-                  {{ item.label }}
-                </span>
-
-                <q-input
-                  v-model="item.selectCount"
-                  type="number"
-                  filled
-                  style="width: 20%"
-                  class="flex flex-center"
-                  dense
-                  @update:model-value="
-                    storeSupabase.updateData.umsatz +=
-                      storeSupabase.updateData.menuMultipleSelect[index].price;
-                    storeSupabase.updateData.menuMultipleSelect[index]
-                      .selectCount++;
-                  "
-                  :rules="[
-                    (val) => (val !== null && val !== '') || '',
-                    (val) => val > -1 || '',
-                  ]"
-                />
-              </div>
-            </div>
+            </q-list> -->
 
             <!-- notizen -->
             <div
