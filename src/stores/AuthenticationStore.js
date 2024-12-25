@@ -58,12 +58,19 @@ export const useAuthenticationStore = defineStore("authentication", {
 
         // Handle post-login actions, such as redirecting the user
         if (data.session) {
+          const role = storageUtil.getLocalStorageData("userAuthInfo").role;
           localStorage.setItem("access_token", data.session.access_token);
           localStorage.setItem("refresh_token", data.session.refresh_token);
           storageUtil.setLocalStorageData("userData", data.user);
           this.isLogin = true;
           storageUtil.setLocalStorageData("isLogin", this.isLogin);
-          this.router.push("/data");
+
+          if (role === "admin") {
+            console.log(role === "admin");
+            this.router.push("/admin");
+          } else {
+            this.router.push("/data");
+          }
 
           setTimeout(() => {
             window.location.reload();
@@ -106,7 +113,7 @@ export const useAuthenticationStore = defineStore("authentication", {
       try {
         let { data: users, error } = await supabase.from("users").select("*");
 
-        storageUtil.setLocalStorageData("userAuthInfo", users);
+        storageUtil.setLocalStorageData("userAuthInfo", users[0]);
       } catch (err) {
         console.error("Internal Server Error getUserAccountData(): ", err);
       }

@@ -1,5 +1,6 @@
 import LoginPage from "pages/LoginPage.vue";
 import DataViewPage from "pages/DataViewPage.vue";
+import AdminPageVue from "src/pages/AdminPage.vue";
 
 const routes = [
   {
@@ -9,6 +10,12 @@ const routes = [
       { path: "", component: LoginPage, name: "LoginPage" },
       { path: "data", component: DataViewPage, name: "DataViewPage" },
     ],
+  },
+
+  {
+    path: "/admin",
+    component: () => import("layouts/MainLayout.vue"),
+    children: [{ path: "", component: AdminPageVue, name: "AdminPage" }],
   },
 
   // Always leave this as last one,

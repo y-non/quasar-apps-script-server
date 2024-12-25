@@ -10,6 +10,7 @@ export const useSupabaseStore = defineStore("supabase", {
     menuData: [],
     dataItem: [],
     listUserData: [],
+    listDiscount: [],
     userStatusObject: {},
 
     /* reactive */
@@ -717,6 +718,17 @@ export const useSupabaseStore = defineStore("supabase", {
         return subscription;
       } catch (err) {
         console.error("Error subscribing to changes: ", err);
+      }
+    },
+
+    async getDiscount() {
+      try {
+        let { data: discounts, error } = await supabase
+          .from("discounts")
+          .select();
+        return discounts;
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
       }
     },
 

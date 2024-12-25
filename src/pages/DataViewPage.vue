@@ -41,6 +41,7 @@ const hasMoreUsers = computed(
 
 onMounted(async () => {
   await storeSupabase.getInit();
+  storeSupabase.listDiscount = await storeSupabase.getDiscount();
 
   supabase.auth.onAuthStateChange(async (_, session) => {
     if (session) {
@@ -94,7 +95,7 @@ function showAction(grid) {
             (item) => item.id === grid
           )[0];
 
-          storeSupabase.updateData.isCustomerOrder = false
+          storeSupabase.updateData.isCustomerOrder = false;
 
           /* test */
           storeSupabase.updateData.menuSelected =
@@ -253,16 +254,6 @@ const getColor = (status) => {
             </div>
 
             <div class="flex flex-center">
-              <!-- <video
-                v-if="loadingSelect"
-                autoplay
-                loop
-                muted
-                width="50"
-                height="50"
-                :src="loadingVideo"
-              ></video> -->
-
               <q-icon
                 name="more_vert"
                 size="sm"
@@ -480,6 +471,19 @@ const getColor = (status) => {
                 />
               </div>
             </div> -->
+
+            <div>
+              <q-badge
+                outline
+                color="primary"
+                v-for="(item, index) in storeSupabase.listDiscount"
+                :key="index"
+                :label="`${item.value}${
+                  item.type === 'none' ? '€' : item.type
+                }`"
+                class="q-pa-sm q-px-lg q-mr-lg"
+              />
+            </div>
 
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">

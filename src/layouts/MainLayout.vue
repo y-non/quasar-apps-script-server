@@ -15,10 +15,14 @@ const drawer = ref(false);
 const isShowLogoutButton = ref(false);
 const username = storageUtil.getLocalStorageData("username");
 const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
+const role = ref("");
 
 onMounted(() => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
-  if (isLogin) {
+  role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
+  if (isLogin && role.value === "admin") {
+    router.push("/admin");
+  } else if (isLogin && role.value !== "admin") {
     router.push("/data");
   } else {
     router.push("/");
@@ -76,22 +80,6 @@ onMounted(() => {
                   :color="'red'"
                   size="xs"
                 />
-
-                <!-- <q-icon
-                  :name="storeSupabase.userStatus === storeSupabase.statusServing
-                    ? 'eva-radio-outline'
-                    : storeSupabase.userStatus === storeSupabase.statusWaiting
-                      ? 'eva-sync-outline'
-                      : 'eva-wifi-off-outline'
-                    "
-                  size="md"
-                  :color="storeSupabase.userStatus === storeSupabase.statusServing
-                    ? 'green'
-                    : storeSupabase.userStatus === storeSupabase.statusWaiting
-                      ? 'yellow'
-                      : 'red'
-                    "
-                /> -->
               </div>
               <q-menu auto-close>
                 <q-list style="min-width: 150px">
@@ -101,15 +89,10 @@ onMounted(() => {
                         class="active"
                         @click="
                           storeSupabase.updateUserStatus(
-                            storeSupabase.statusServing,
+                            storeSupabase.statusServing
                           )
                         "
                       >
-                        <!-- <q-icon
-                          name="eva-radio-outline"
-                          size="xs"
-                          color="green"
-                        /> -->
                         <q-spinner-hearts color="green" />
                         <span class="q-ml-sm text-capitalize">{{
                           storeSupabase.statusServing
@@ -128,11 +111,6 @@ onMounted(() => {
                           )
                         "
                       >
-                        <!-- <q-icon
-                          name="eva-sync-outline"
-                          size="xs"
-                          color="yellow"
-                        /> -->
                         <q-spinner-hourglass color="yellow" size="xs" />
                         <span class="q-ml-sm text-capitalize">{{
                           storeSupabase.statusWaiting
@@ -171,9 +149,45 @@ onMounted(() => {
       </q-toolbar>
     </q-header>
     <q-drawer v-if="isLogin" v-model="drawer" :width="200" :breakpoint="500">
-      <q-scroll-area class="fit">
+      <q-scroll-area v-if="role === 'admin'" class="fit">
         <q-list padding class="menu-list">
-          <q-item @click="storeSupabase.syncMenu" clickable v-ripple>
+          <router-link to="/admin/account">
+            <q-item clickable v-ripple>
+              <q-item-section avatar>
+                <q-icon
+                  class="text-green-8 text-bold"
+                  name="eva-people-outline"
+                />
+              </q-item-section>
+
+              <q-item-section class="text-grey-9"> Danh sách tài khoản </q-item-section>
+            </q-item>
+          </router-link>
+
+          <q-item clickable v-ripple>
+            <q-item-section avatar>
+              <q-icon
+                class="text-primary text-bold"
+                name="eva-file-text-outline"
+              />
+            </q-item-section>
+
+            <q-item-section class="text-grey-9"> Danh sách giảm giá </q-item-section>
+          </q-item>
+
+          <q-item @click="storeAuthentication.signOut" clickable v-ripple>
+            <q-item-section avatar>
+              <q-icon class="text-red-8 text-bold" name="logout" />
+            </q-item-section>
+
+            <q-item-section> Đăng xuất </q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
+
+      <q-scroll-area v-else class="fit">
+        <q-list padding class="menu-list">
+          <q-item clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-green-8 text-bold text-bold" name="sync" />
             </q-item-section>
@@ -203,3 +217,9 @@ onMounted(() => {
     </q-page-container>
   </q-layout>
 </template>
+
+<style lang="scss" scoped>
+* {
+  text-decoration: none;
+}
+</style>
