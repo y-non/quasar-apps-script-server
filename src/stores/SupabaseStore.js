@@ -55,6 +55,7 @@ export const useSupabaseStore = defineStore("supabase", {
   }),
   actions: {
     async getInit() {
+      this.listDiscount = await this.getDiscount();
       await this.fetchData();
       await this.subscribeToTable();
       await this.subscribeToTableUserSessions();
@@ -152,6 +153,18 @@ export const useSupabaseStore = defineStore("supabase", {
                 totalPrice += item.price;
               });
 
+              let discount = this.listDiscount.filter(
+                (discount) => discount.id == item.discount
+              )[0];
+
+              if (discount) {
+                if (discount.type === "none") {
+                  totalPrice -= discount.value;
+                } else {
+                  totalPrice -= (totalPrice / 100) * discount.value;
+                }
+              }
+
               return {
                 id: item.id,
                 notizen: item.description,
@@ -159,6 +172,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 datum: formattedTime,
                 isHandled: true,
                 totalPrice: totalPrice,
+                objectDiscount: discount ? discount : {},
               };
             })
             .filter((item) => item)
@@ -212,6 +226,8 @@ export const useSupabaseStore = defineStore("supabase", {
         if (!data.length) {
           data = [];
         }
+
+        console.log(data);
 
         return data;
       } catch (err) {
@@ -733,6 +749,15 @@ export const useSupabaseStore = defineStore("supabase", {
           .from("discounts")
           .select();
         return discounts;
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async getListAccount() {
+      try {
+        let { data: users, error } = await supabase.from("users").select("*");
+        console.log(users);
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }

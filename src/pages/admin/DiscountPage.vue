@@ -1,16 +1,15 @@
 <script setup>
 import { onMounted } from "vue";
-import { useAdminStore } from "../stores/AdminStore";
+import { useAdminStore } from "../../stores/AdminStore";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
-import noData from "../assets/images/nodata.jpg";
+import noData from "../../assets/images/nodata.jpg";
 import { dateUtil } from "src/utils/dateUtil";
 
 const storeAdmin = useAdminStore();
 
 onMounted(async () => {
   storeAdmin.listDiscount = await storeAdmin.getDiscount();
-  console.log(storeAdmin.listDiscount);
 });
 </script>
 

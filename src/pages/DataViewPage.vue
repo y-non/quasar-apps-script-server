@@ -41,7 +41,6 @@ const hasMoreUsers = computed(
 
 onMounted(async () => {
   await storeSupabase.getInit();
-  storeSupabase.listDiscount = await storeSupabase.getDiscount();
 
   supabase.auth.onAuthStateChange(async (_, session) => {
     if (session) {
@@ -254,6 +253,17 @@ const getColor = (status) => {
             </div>
 
             <div class="flex flex-center">
+              <q-badge
+                v-if="item.objectDiscount.id"
+                color="primary"
+                outline
+                :label="`-${item.objectDiscount.value}${
+                  item.objectDiscount.type === none
+                    ? ''
+                    : item.objectDiscount.type
+                }`"
+              />
+
               <q-icon
                 name="more_vert"
                 size="sm"

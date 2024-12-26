@@ -40,7 +40,7 @@ export const useAuthenticationStore = defineStore("authentication", {
         }
 
         const user = data.user;
-        await this.getUserAccountData();
+        await this.getUserAccountData(user.id);
         const sessionToken = this.generateSessionToken();
 
         // Start a transaction to enforce single-device login
@@ -109,9 +109,13 @@ export const useAuthenticationStore = defineStore("authentication", {
       }
     },
 
-    async getUserAccountData() {
+    async getUserAccountData(id) {
       try {
-        let { data: users, error } = await supabase.from("users").select("*");
+        console.log(id);
+        let { data: users, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("user_id", id);
 
         storageUtil.setLocalStorageData("userAuthInfo", users[0]);
       } catch (err) {
