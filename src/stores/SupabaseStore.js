@@ -33,6 +33,8 @@ export const useSupabaseStore = defineStore("supabase", {
       notizen: "",
       menuSelected: [],
       isCustomerOrder: false,
+      isHaveDiscount: false,
+      objectDiscount: {},
     },
     updateData: {
       umsatz: 0,
@@ -138,7 +140,6 @@ export const useSupabaseStore = defineStore("supabase", {
         data = await Promise.all(
           inputData
             .map(async (item) => {
-              console.log(item);
               const newDate = new Date(item.created_at);
               const hours = String(newDate.getHours()).padStart(2, "0");
               const minutes = String(newDate.getMinutes()).padStart(2, "0");
@@ -324,14 +325,19 @@ export const useSupabaseStore = defineStore("supabase", {
 
           const { id, email } = storageUtil.getLocalStorageData("userData");
 
+          const payload = {
+            user_id: id,
+            description: newData.notizen,
+            is_customer_order: newData.isCustomerOrder,
+            menu_items: menuItems,
+            ...(newData.isHaveDiscount
+              ? { discount: newData.objectDiscount.id }
+              : { discount: "" }),
+          };
+
           let { data, error } = await supabase.rpc(
-            "create_order_with_items_and_log_history",
-            {
-              user_id: id,
-              description: newData.notizen,
-              is_customer_order: newData.isCustomerOrder,
-              menu_items: menuItems,
-            }
+            "create_order_with_items_and_log_historyv2",
+            payload
           );
 
           if (error) {
@@ -733,6 +739,36 @@ export const useSupabaseStore = defineStore("supabase", {
     },
 
     /* FUNCTIONAL */
+    handleClickDiscount(id) {
+      try {
+        this.newData.isHaveDiscount = true;
+        this.listDiscount = this.listDiscount.map((item) => {
+          if (item.id === id) {
+            if (item.isSelected) {
+              this.newData.isHaveDiscount = false;
+              this.newData.objectDiscount = {};
+              return {
+                ...item,
+                isSelected: false,
+              };
+            } else {
+              this.newData.objectDiscount = item;
+              return {
+                ...item,
+                isSelected: true,
+              };
+            }
+          }
+          return {
+            ...item,
+            isSelected: false,
+          };
+        });
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
     clickToggleAddMenuItem(scope) {
       {
         let listIdSelected = this.newData.menuSelected.map((item) => item.id);
@@ -818,7 +854,6 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
-    //test2
     removeAddMenuItem(id) {
       let total = 0;
 
@@ -884,7 +919,6 @@ export const useSupabaseStore = defineStore("supabase", {
           (item) => !item.isMultiSelect
         );
 
-        // console.log(this.newData.menuSelected);
         this.newData.menuMultipleSelect.forEach((_, index) => {
           if (this.newData.menuMultipleSelect[index].id === selectProp.id) {
             this.newData.umsatz += this.newData.menuMultipleSelect[index].price;
@@ -918,7 +952,6 @@ export const useSupabaseStore = defineStore("supabase", {
           (item) => !item.isMultiSelect
         );
 
-        // console.log(this.newData.menuSelected);
         this.newData.menuMultipleSelect.forEach((_, index) => {
           if (this.newData.menuMultipleSelect[index].id === selectProp.id) {
             this.newData.umsatz -= this.newData.menuMultipleSelect[index].price;
@@ -953,7 +986,6 @@ export const useSupabaseStore = defineStore("supabase", {
           (item) => !item.isMultiSelect
         );
 
-        // console.log(this.updateData.menuSelected);
         this.updateData.menuMultipleSelect.forEach((_, index) => {
           if (this.updateData.menuMultipleSelect[index].id === selectProp.id) {
             this.updateData.umsatz +=
@@ -988,7 +1020,6 @@ export const useSupabaseStore = defineStore("supabase", {
           (item) => !item.isMultiSelect
         );
 
-        // console.log(this.updateData.menuSelected);
         this.updateData.menuMultipleSelect.forEach((_, index) => {
           if (this.updateData.menuMultipleSelect[index].id === selectProp.id) {
             this.updateData.umsatz -=

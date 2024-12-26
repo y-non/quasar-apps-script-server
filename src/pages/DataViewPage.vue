@@ -331,7 +331,7 @@ const getColor = (status) => {
     >
       <q-card class="full-width full-height">
         <div
-          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          class="flex justify-between q-py-none q-pr-md bg-white z-max"
           style="position: sticky; top: 0"
         >
           <q-btn
@@ -343,9 +343,55 @@ const getColor = (status) => {
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
 
-          <div class="float-bottom text-h6" style="right: 5%">
-            <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(storeSupabase.newData.umsatz) }}
+          <div class="column flex q-pt-lg" style="align-items: end">
+            <div style="width: 100%" class="flex justify-between">
+              <span class="text-grey-8">Giá gốc: </span>
+
+              <span>
+                {{ dateUtil.formatter.format(storeSupabase.newData.umsatz) }}
+              </span>
+            </div>
+
+            <div
+              v-if="storeSupabase.newData.isHaveDiscount"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span class="text-red-8">Mã giảm giá: </span>
+
+              <span v-if="storeSupabase.newData.objectDiscount.type === 'none'"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.newData.objectDiscount.value
+                  )
+                }}</span
+              >
+
+              <span v-else class="text-red-8"
+                >-{{ storeSupabase.newData.objectDiscount.value }}
+                {{ storeSupabase.newData.objectDiscount.type }}</span
+              >
+            </div>
+            <div
+              class="float-bottom text-subtitle1 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span class="text-bold q-pr-md">Tổng cộng:</span>
+              <span>
+                {{
+                  dateUtil.formatter.format(
+                    storeSupabase.newData.isHaveDiscount
+                      ? storeSupabase.newData.objectDiscount.type === "none"
+                        ? storeSupabase.newData.umsatz -
+                          storeSupabase.newData.objectDiscount.value
+                        : storeSupabase.newData.umsatz -
+                          (storeSupabase.newData.umsatz / 100) *
+                            storeSupabase.newData.objectDiscount.value
+                      : storeSupabase.newData.umsatz
+                  )
+                }}</span
+              >
+            </div>
           </div>
         </div>
         <q-card-section>
@@ -353,6 +399,20 @@ const getColor = (status) => {
             class="q-gutter-md q-py-lg flex column"
             @submit="storeSupabase.addData(storeSupabase.newData)"
           >
+            <div class="full-width justify-between flex q-px-md">
+              <q-badge
+                :outline="!item.isSelected"
+                color="primary"
+                v-for="(item, index) in storeSupabase.listDiscount"
+                :key="index"
+                :label="`-${item.value}${
+                  item.type === 'none' ? '€' : item.type
+                }`"
+                class="q-pa-sm q-px-lg"
+                @click="storeSupabase.handleClickDiscount(item.id)"
+              />
+            </div>
+
             <span
               v-if="storeSupabase.newData.menuSelected?.length"
               class="text-subtitle1"
@@ -438,52 +498,6 @@ const getColor = (status) => {
                 </q-item>
               </q-slide-item>
             </q-list>
-
-            <!-- <div
-              v-if="storeSupabase.newData.menuSelected?.length"
-              class="flex column"
-            >
-              <div
-                v-for="(
-                  item, index
-                ) in storeSupabase.newData.menuMultipleSelect.sort(
-                  (a, b) => a.price - b.price
-                )"
-                :key="index"
-                class="flex justify-between"
-                style="align-items: center"
-              >
-                <span class="text-bold text-subtitle1 text-grey-7">
-                  {{ item.label }}
-                </span>
-
-                <q-input
-                  v-model="item.selectCount"
-                  type="number"
-                  filled
-                  style="width: 20%"
-                  class="flex flex-center"
-                  dense
-                  :rules="[
-                    (val) => (val !== null && val !== '') || '',
-                    (val) => val > -1 || '',
-                  ]"
-                />
-              </div>
-            </div> -->
-
-            <div>
-              <q-badge
-                outline
-                color="primary"
-                v-for="(item, index) in storeSupabase.listDiscount"
-                :key="index"
-                :label="`${item.value}${
-                  item.type === 'none' ? '€' : item.type
-                }`"
-                class="q-pa-sm q-px-lg q-mr-lg"
-              />
-            </div>
 
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
