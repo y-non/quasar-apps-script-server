@@ -19,14 +19,15 @@ const role = ref("");
 const routerName = ref("");
 const listRouter = [
   {
-    path: "/admin/invoice",
-    name: "Quản lý hóa đơn",
-    icon: "eva-file-text-outline",
-  },
-  {
     path: "/admin",
     name: "Quản lý tài khoản",
     icon: "eva-people-outline",
+  },
+
+  {
+    path: "/admin/order",
+    name: "Quản lý đơn hàng",
+    icon: "eva-file-text-outline",
   },
 
   {
@@ -214,10 +215,7 @@ watch(
             <router-link :to="item.path">
               <q-item clickable v-ripple>
                 <q-item-section avatar>
-                  <q-icon
-                    class="text-primary text-bold"
-                    :name="item.icon"
-                  />
+                  <q-icon class="text-primary text-bold" :name="item.icon" />
                 </q-item-section>
 
                 <q-item-section class="text-grey-9">

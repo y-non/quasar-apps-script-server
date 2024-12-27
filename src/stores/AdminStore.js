@@ -12,6 +12,8 @@ export const useAdminStore = defineStore("admin", {
   actions: {
     async getOrderList() {
       try {
+        const { data, error } = await supabase.from("orders").select("*");
+        console.log(data);
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
