@@ -3,7 +3,7 @@ import { ref, onMounted, computed, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
-import { QSpinnerIos } from "quasar";
+import { Dialog, QSpinnerIos } from "quasar";
 import { useQuasar } from "quasar";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
@@ -254,13 +254,13 @@ const getColor = (status) => {
 
             <div class="flex flex-center">
               <q-badge
-                v-if="item.objectDiscount.id"
+                v-if="item.discountObject.id"
                 color="primary"
                 outline
-                :label="`-${item.objectDiscount.value}${
-                  item.objectDiscount.type === none
+                :label="`-${item.discountObject.value}${
+                  item.discountObject.type === none
                     ? ''
-                    : item.objectDiscount.type
+                    : item.discountObject.type
                 }`"
               />
 
@@ -367,21 +367,40 @@ const getColor = (status) => {
               class="float-bottom text-subtitle2 flex justify-between"
               style="right: 5%; width: 100%"
             >
-              <span class="text-red-8">Mã giảm giá: </span>
+              <span>Mã giảm giá: </span>
 
-              <span v-if="storeSupabase.newData.objectDiscount.type === 'none'"
+              <span
+                class="text-red-8"
+                v-if="storeSupabase.newData.discountObject.type === 'none'"
                 >-{{
                   dateUtil.formatter.format(
-                    storeSupabase.newData.objectDiscount.value
+                    storeSupabase.newData.discountObject.value
                   )
                 }}</span
               >
 
               <span v-else class="text-red-8"
-                >-{{ storeSupabase.newData.objectDiscount.value }}
-                {{ storeSupabase.newData.objectDiscount.type }}</span
+                >-{{ storeSupabase.newData.discountObject.value }}
+                {{ storeSupabase.newData.discountObject.type }}</span
               >
             </div>
+
+            <div
+              v-if="storeSupabase.newData.isHaveGiftCard"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã quà tặng: </span>
+
+              <span class="text-red-8"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.newData.giftCardObject.value
+                  )
+                }}</span
+              >
+            </div>
+
             <div
               class="float-bottom text-subtitle1 flex justify-between"
               style="right: 5%; width: 100%"
@@ -390,17 +409,24 @@ const getColor = (status) => {
               <span>
                 {{
                   dateUtil.formatter.format(
-                    storeSupabase.newData.isHaveDiscount
-                      ? storeSupabase.newData.objectDiscount.type === "none"
-                        ? storeSupabase.newData.umsatz -
-                          storeSupabase.newData.objectDiscount.value
-                        : storeSupabase.newData.umsatz -
-                          (storeSupabase.newData.umsatz / 100) *
-                            storeSupabase.newData.objectDiscount.value
-                      : storeSupabase.newData.umsatz
+                    Math.max(
+                      (storeSupabase.newData.isHaveDiscount
+                        ? storeSupabase.newData.discountObject.type === "none"
+                          ? storeSupabase.newData.umsatz -
+                            storeSupabase.newData.discountObject.value
+                          : storeSupabase.newData.umsatz -
+                            (storeSupabase.newData.umsatz / 100) *
+                              storeSupabase.newData.discountObject.value
+                        : storeSupabase.newData.umsatz) -
+                        // Trừ gift card
+                        (storeSupabase.newData.isHaveGiftCard
+                          ? storeSupabase.newData.giftCardObject.value
+                          : 0),
+                      0 // Ensure the value is at least 0
+                    )
                   )
-                }}</span
-              >
+                }}
+              </span>
             </div>
           </div>
         </div>
@@ -664,6 +690,82 @@ const getColor = (status) => {
                 </q-item>
               </template>
             </q-select>
+
+            <div>
+              <span class="text-subtitle1">Gift card</span>
+
+              <q-input
+                v-model="storeSupabase.newData.giftCard"
+                placeholder="Vui lòng nhập gift card tại đây..."
+                outlined
+              >
+                <template v-slot:append>
+                  <q-icon
+                    name="eva-search-outline"
+                    @click="
+                      storeSupabase.validateGiftCard(
+                        storeSupabase.newData.giftCard
+                      )
+                    "
+                  />
+                </template>
+              </q-input>
+
+              <q-card
+                v-if="storeSupabase.newData.isHaveGiftCard"
+                class="my-card"
+              >
+                <q-card-section>
+                  <div class="flex justify-between">
+                    <div class="text-h6">Thẻ quà tặng</div>
+                    <q-icon
+                      name="eva-trash-2-outline"
+                      size="md"
+                      color="red-8"
+                      @click="
+                        Dialog.create({
+                          title: 'Xác nhận',
+                          message:
+                            'Bạn có chắc chắn muốn xoá thẻ quà tặng này?',
+                          ok: true,
+                          cancel: true,
+                        }).onOk(() => {
+                          storeSupabase.newData.isHaveGiftCard = false;
+                          storeSupabase.newData.giftCardObject = {};
+                          storeSupabase.newData.giftCard = '';
+                        })
+                      "
+                    />
+                  </div>
+                  <div class="text-subtitle2">
+                    Giá trị:
+                    <span class="text-primary">{{
+                      storeSupabase.newData.giftCardObject.value
+                    }}</span>
+                  </div>
+                </q-card-section>
+                <q-card-section>
+                  <div class="full-width text-grey-6 flex justify-between">
+                    <span>
+                      Từ ngày:
+                      {{
+                        new Date(
+                          storeSupabase.newData.giftCardObject.date_from
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                    <span>
+                      Đến ngày:
+                      {{
+                        new Date(
+                          storeSupabase.newData.giftCardObject.date_expired
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
 
             <!-- checkbox customer order -->
             <div class="flex justify-end">

@@ -26,6 +26,7 @@ export const useSupabaseStore = defineStore("supabase", {
     statusServing: "serving",
     statusWaiting: "waiting",
     statusOff: "off",
+    giftCard: "",
 
     /* add section */
     newData: {
@@ -34,7 +35,9 @@ export const useSupabaseStore = defineStore("supabase", {
       menuSelected: [],
       isCustomerOrder: false,
       isHaveDiscount: false,
-      objectDiscount: {},
+      discountObject: {},
+      isHaveGiftCard: false,
+      giftCardObject: {},
     },
     updateData: {
       umsatz: 0,
@@ -172,7 +175,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 datum: formattedTime,
                 isHandled: true,
                 totalPrice: totalPrice,
-                objectDiscount: discount ? discount : {},
+                discountObject: discount ? discount : {},
               };
             })
             .filter((item) => item)
@@ -347,8 +350,12 @@ export const useSupabaseStore = defineStore("supabase", {
             is_customer_order: newData.isCustomerOrder,
             menu_items: menuItems,
             ...(newData.isHaveDiscount
-              ? { discount: newData.objectDiscount.id }
+              ? { discount: newData.discountObject.id }
               : { discount: "" }),
+
+            ...(newData.isHaveGiftCard
+              ? { giftcard: newData.giftCardObject.code }
+              : { giftcard: "" }),
           };
 
           let { data, error } = await supabase.rpc(
@@ -763,6 +770,39 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
+    async validateGiftCard(code) {
+      try {
+        this.newData.isHaveGiftCard = false;
+        this.newData.giftCardObject = {};
+        const { data, error } = await supabase
+          .from("giftcards")
+          .select("*")
+          .eq("code", code);
+        // .gte("date_from", new Date().toISOString().split("T")[0])
+        // .lte("date_expired", new Date().toISOString().split("T")[0]);
+
+        if (error) {
+          console.error("Error validating gift card:", error);
+          return;
+        }
+
+        if (data.length > 0) {
+          console.log(data[0]);
+          this.newData.isHaveGiftCard = true;
+          this.newData.giftCardObject = data[0];
+        } else {
+          Notify.create({
+            type: "negative",
+            message: "Thẻ quà tặng không hợp lệ hoặc đã hết hạn",
+            position: "top",
+            timeout: 2000,
+          });
+        }
+      } catch (err) {
+        console.error("Internal Server Error:", err);
+      }
+    },
+
     /* FUNCTIONAL */
     handleClickDiscount(id) {
       try {
@@ -771,13 +811,13 @@ export const useSupabaseStore = defineStore("supabase", {
           if (item.id === id) {
             if (item.isSelected) {
               this.newData.isHaveDiscount = false;
-              this.newData.objectDiscount = {};
+              this.newData.discountObject = {};
               return {
                 ...item,
                 isSelected: false,
               };
             } else {
-              this.newData.objectDiscount = item;
+              this.newData.discountObject = item;
               return {
                 ...item,
                 isSelected: true,
