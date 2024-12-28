@@ -259,9 +259,17 @@ const getColor = (status) => {
                 outline
                 :label="`-${item.discountObject.value}${
                   item.discountObject.type === none
-                    ? ''
+                    ? '€'
                     : item.discountObject.type
                 }`"
+              />
+
+              <q-badge
+                v-if="item.giftCardObject.id"
+                color="red"
+                outline
+                :label="`-${item.giftCardObject.value}€`"
+                class="q-ml-sm"
               />
 
               <q-icon

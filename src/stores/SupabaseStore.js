@@ -73,14 +73,15 @@ export const useSupabaseStore = defineStore("supabase", {
         this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
-        // const result = await supabase
-        //   .from("umsatz")
-        //   .select()
-        //   .order("created_at", { ascending: true });
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0); // Set time to the start of the day (midnight)
+
+        // Query for today's orders
         const { data, error } = await supabase
           .from("orders")
           .select("*")
-          .order("created_at", { ascending: true });
+          .order("created_at", { ascending: true })
+          .gte("created_at", startOfToday.toISOString()); // Filter for today only
 
         let dataResponse = data || [];
 
@@ -156,6 +157,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 totalPrice += item.price;
               });
 
+              //handle check discount
               let discount = this.listDiscount.filter(
                 (discount) => discount.id == item.discount
               )[0];
@@ -168,6 +170,17 @@ export const useSupabaseStore = defineStore("supabase", {
                 }
               }
 
+              //handle check gift card
+              let giftCard = 0;
+
+              if (item.giftcard?.length > 0) {
+                giftCard = await this.getGiftCard(item.giftcard);
+              }
+
+              if (giftCard) {
+                totalPrice -= giftCard.value;
+              }
+
               return {
                 id: item.id,
                 notizen: item.description,
@@ -176,6 +189,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 isHandled: true,
                 totalPrice: totalPrice,
                 discountObject: discount ? discount : {},
+                giftCardObject: giftCard ? giftCard : {},
               };
             })
             .filter((item) => item)
@@ -229,8 +243,6 @@ export const useSupabaseStore = defineStore("supabase", {
         if (!data.length) {
           data = [];
         }
-
-        console.log(data);
 
         return data;
       } catch (err) {
@@ -520,7 +532,6 @@ export const useSupabaseStore = defineStore("supabase", {
           }
         );
         if (error) console.error(error);
-        else console.log(data);
 
         Loading.hide();
       } catch (error) {
@@ -764,7 +775,27 @@ export const useSupabaseStore = defineStore("supabase", {
     async getListAccount() {
       try {
         let { data: users, error } = await supabase.from("users").select("*");
-        console.log(users);
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async getGiftCard(code) {
+      try {
+        const { data, error } = await supabase
+          .from("giftcards")
+          .select("*")
+          .eq("code", code);
+
+        if (error) {
+          return false;
+        }
+
+        if (data.length > 0) {
+          return data[0];
+        } else {
+          return false;
+        }
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
@@ -774,22 +805,18 @@ export const useSupabaseStore = defineStore("supabase", {
       try {
         this.newData.isHaveGiftCard = false;
         this.newData.giftCardObject = {};
-        const { data, error } = await supabase
-          .from("giftcards")
-          .select("*")
-          .eq("code", code);
-        // .gte("date_from", new Date().toISOString().split("T")[0])
-        // .lte("date_expired", new Date().toISOString().split("T")[0]);
+        const { data, error } = await supabase.rpc("check_giftcard_usage", {
+          giftcard_code: code,
+        });
 
         if (error) {
           console.error("Error validating gift card:", error);
           return;
         }
 
-        if (data.length > 0) {
-          console.log(data[0]);
+        if (data.id) {
           this.newData.isHaveGiftCard = true;
-          this.newData.giftCardObject = data[0];
+          this.newData.giftCardObject = data;
         } else {
           Notify.create({
             type: "negative",
