@@ -258,11 +258,12 @@ const getColor = (status) => {
                 color="primary"
                 outline
                 :label="`-${item.discountObject.value}${
-                  item.discountObject.type === none
+                  item.discountObject.type === 'none'
                     ? '€'
                     : item.discountObject.type
                 }`"
-              />
+              >
+              </q-badge>
 
               <q-badge
                 v-if="item.giftCardObject.id"

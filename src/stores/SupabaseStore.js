@@ -279,24 +279,12 @@ export const useSupabaseStore = defineStore("supabase", {
                 };
               });
 
-              //arrange data
-              // const menuItemMultiSelect = this.menuData.filter(
-              //   (item) => item.isMultiSelect
-              // );
-              // const menuItem = this.menuData.filter(
-              //   (item) => !item.isMultiSelect
-              // );
-
-              // this.menuData = [...menuItemMultiSelect, ...menuItem];
-
               this.menuData = this.menuData.map((item) => ({
                 ...item,
                 filterSearch: `${item.label}${dateUtil.formatter.format(item)}`,
               }));
 
               storageUtil.setLocalStorageData("menuData", this.menuData);
-
-              // localStorage.setItem("menuData", JSON.stringify(this.menuData));
             }
           } else {
             console.error("Error when fetching menu data: ", error);
@@ -564,21 +552,6 @@ export const useSupabaseStore = defineStore("supabase", {
             Loading.hide();
 
             this.dataItem = this.dataItem.filter((item) => item.id !== rowId);
-            // await this.updateUserStatus("", this.dataItem.length);
-            // const localUserData = storageUtil.getLocalStorageData("userData");
-            // this.listUserData = this.listUserData.map((item) => {
-            //   if (localUserData.id === item.user_id) {
-            //     return {
-            //       ...item,
-            //       orderCount: this.dataItem.length,
-            //     };
-            //   }
-            //   return item;
-            // });
-
-            // this.userStatus = currentStatus;
-
-            // this.getUserStatus();
           } else {
             alert("Failed to delete data");
           }

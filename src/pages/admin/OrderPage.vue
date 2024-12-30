@@ -2,7 +2,6 @@
 import { ref, onMounted, computed, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
-import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { useAdminStore } from "src/stores/AdminStore";
 
 import { QSpinnerIos } from "quasar";
@@ -22,20 +21,19 @@ const router = useRouter();
 
 const storeAdmin = useAdminStore();
 const storeAuthentication = useAuthenticationStore();
-const storeSupabase = useSupabaseStore();
 const selectMenuRef = ref(null);
 const selectMenuRefUpdate = ref(null);
 
 const optionsMenuData = ref([]);
 
 /* state for handle reactive in UI */
-const slideItems = ref(storeSupabase.slideItems);
-const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
+const slideItems = ref(storeAdmin.slideItems);
+const slideItemsUpdate = ref(storeAdmin.slideItemsUpdate);
 
 onMounted(async () => {
   storeAdmin.isLoadingMainScreen = true;
 
-  await storeAdmin.getOrderList();
+  await storeAdmin.getInit();
 
   supabase.auth.onAuthStateChange(async (_, session) => {
     if (session) {
@@ -71,17 +69,17 @@ function showAction(grid) {
     .onOk((action) => {
       switch (action.id) {
         case "update":
-          storeSupabase.showUpdateDialog = true;
+          storeAdmin.showUpdateDialog = true;
 
-          storeSupabase.updateData = storeSupabase.dataItem.filter(
+          storeAdmin.updateData = storeAdmin.listOrder.filter(
             (item) => item.id === grid
           )[0];
 
-          storeSupabase.updateData.isCustomerOrder = false;
+          storeAdmin.updateData.isCustomerOrder = false;
 
           /* test */
-          storeSupabase.updateData.menuSelected =
-            storeSupabase.updateData.menuSelected
+          storeAdmin.updateData.menuSelected =
+            storeAdmin.updateData.menuSelected
               .map((item) => {
                 if (item.isMultiSelect) {
                   return {
@@ -93,10 +91,10 @@ function showAction(grid) {
               })
               .filter((item) => item);
 
-          storeSupabase.updateData.menuMultipleSelect = storeSupabase.menuData
+          storeAdmin.updateData.menuMultipleSelect = storeAdmin.menuData
             .map((item) => {
               if (item.isMultiSelect) {
-                const quantity = storeSupabase.updateData.menu.filter(
+                const quantity = storeAdmin.updateData.menu.filter(
                   (itemMultiSelect) => itemMultiSelect.menu_id === item.id
                 )[0];
 
@@ -111,16 +109,16 @@ function showAction(grid) {
             })
             .filter((item) => item);
 
-          storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
+          storeAdmin.updateData.umsatz = storeAdmin.updateData.totalPrice;
           break;
 
         case "delete":
-          storeSupabase.deleteData(grid);
+          storeAdmin.deleteData(grid);
           break;
 
         case "history":
-          storeSupabase.showHistoryDialog = true;
-          storeSupabase.fetchHistoryData(grid);
+          storeAdmin.showHistoryDialog = true;
+          storeAdmin.fetchHistoryData(grid);
           break;
 
         default:
@@ -134,7 +132,7 @@ function showAction(grid) {
 const filterFn = (val, update) => {
   if (val === "") {
     update(() => {
-      optionsMenuData.value = storeSupabase.menuData.filter(
+      optionsMenuData.value = storeAdmin.menuData.filter(
         (item) => !item.isMultiSelect
       );
 
@@ -146,7 +144,7 @@ const filterFn = (val, update) => {
 
   update(() => {
     const needle = val.toLowerCase();
-    optionsMenuData.value = storeSupabase.menuData.filter(
+    optionsMenuData.value = storeAdmin.menuData.filter(
       (v) =>
         v.filterSearch.toLowerCase().indexOf(needle) > -1 && !v.isMultiSelect
     );
@@ -165,9 +163,31 @@ const filterFn = (val, update) => {
     </div>
 
     <q-list class="q-mt-md" v-else>
-      <div v-if="storeSupabase.dataItem?.length">
+      <div class="flex full-width justify-end">
+        <!-- <q-btn class="q-mb-md" icon="event" round color="primary">
+          <q-popup-proxy
+            cover
+            transition-show="scale"
+            transition-hide="scale"
+          >
+            <q-date v-model="storeAdmin.datePicker" range >
+              <div class="row items-center justify-end q-gutter-sm">
+                <q-btn label="Cancel" color="primary" flat v-close-popup />
+                <q-btn
+                  label="OK"
+                  color="primary"
+                  flat
+                  @click="save"
+                  v-close-popup
+                />
+              </div>
+            </q-date>
+          </q-popup-proxy>
+        </q-btn> -->
+      </div>
+      <div v-if="storeAdmin.listOrder?.length">
         <q-card
-          v-for="(item, index) in storeSupabase.dataItem"
+          v-for="(item, index) in storeAdmin.listOrder"
           :key="index"
           flat
           bordered
@@ -179,25 +199,40 @@ const filterFn = (val, update) => {
           >
             <div>
               <div class="text-subtitle2 text-grey">{{ item.datum }}</div>
+              <div
+                class="text-subtitle2 text-grey flex"
+                style="align-items: center"
+              >
+                <q-icon name="eva-person-outline" size="xs" />:
+                {{ item.users.display_name }}
+              </div>
+
+              <div
+                class="text-subtitle2 text-grey flex"
+                style="align-items: center"
+              >
+                <q-icon name="eva-home-outline" size="xs" />:
+                Site {{ item.users.site }}
+              </div>
             </div>
 
             <div class="flex flex-center">
               <q-badge
-                v-if="item.objectDiscount.id"
+                v-if="item.discountObject?.id"
                 color="primary"
                 outline
-                :label="`-${item.objectDiscount.value}${
-                  item.objectDiscount.type === none
-                    ? ''
-                    : item.objectDiscount.type
+                :label="`-${item.discountObject.value}${
+                  item.discountObject.type === 'none'
+                    ? '€'
+                    : item.discountObject.type
                 }`"
               />
 
               <q-icon
                 name="more_vert"
                 size="sm"
-                :color="storeSupabase.loadingSelect ? 'grey-3' : 'grey-5'"
-                @click="!storeSupabase.loadingSelect ? showAction(item.id) : []"
+                :color="storeAdmin.loadingSelect ? 'grey-3' : 'grey-5'"
+                @click="!storeAdmin.loadingSelect ? showAction(item.id) : []"
               />
             </div>
           </q-card-section>
@@ -253,20 +288,38 @@ const filterFn = (val, update) => {
     </q-list>
 
     <q-page-sticky position="bottom-right" :offset="[18, 48]">
-      <q-btn
-        icon="add"
-        color="green-7"
-        class="q-pa-md"
-        round
-        :disable="storeAdmin.isLoadingMainScreen"
-        @click="storeSupabase.showAddDialog = true"
-      />
+      <q-btn icon="event" round color="primary" class="q-pa-md">
+        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+          <q-date v-model="storeAdmin.datePicker" range>
+            <div class="row items-center justify-end q-gutter-sm">
+              <q-btn
+                @click="
+                  storeAdmin.listOrder = storeAdmin.listOrderOriginal;
+                  storeAdmin.datePicker = [];
+                "
+                label="Hủy chọn"
+                color="primary"
+                flat
+                v-close-popup
+              />
+              <q-btn
+                label="OK"
+                color="primary"
+                @click="
+                  storeAdmin.clickSelectDateRangeOrder(storeAdmin.datePicker)
+                "
+                v-close-popup
+              />
+            </div>
+          </q-date>
+        </q-popup-proxy>
+      </q-btn>
     </q-page-sticky>
 
     <q-dialog
-      :maximized="storeSupabase.showAddDialog"
+      :maximized="storeAdmin.showAddDialog"
       class="full-width full-height"
-      v-model="storeSupabase.showAddDialog"
+      v-model="storeAdmin.showAddDialog"
     >
       <q-card class="full-width full-height">
         <div
@@ -277,7 +330,7 @@ const filterFn = (val, update) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeSupabase.showAddDialog = false"
+            @click="storeAdmin.showAddDialog = false"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
@@ -287,28 +340,28 @@ const filterFn = (val, update) => {
               <span class="text-grey-8">Giá gốc: </span>
 
               <span>
-                {{ dateUtil.formatter.format(storeSupabase.newData.umsatz) }}
+                {{ dateUtil.formatter.format(storeAdmin.newData.umsatz) }}
               </span>
             </div>
 
             <div
-              v-if="storeSupabase.newData.isHaveDiscount"
+              v-if="storeAdmin.newData.isHaveDiscount"
               class="float-bottom text-subtitle2 flex justify-between"
               style="right: 5%; width: 100%"
             >
               <span class="text-red-8">Mã giảm giá: </span>
 
-              <span v-if="storeSupabase.newData.objectDiscount.type === 'none'"
+              <span v-if="storeAdmin.newData.discountObject.type === 'none'"
                 >-{{
                   dateUtil.formatter.format(
-                    storeSupabase.newData.objectDiscount.value
+                    storeAdmin.newData.discountObject.value
                   )
                 }}</span
               >
 
               <span v-else class="text-red-8"
-                >-{{ storeSupabase.newData.objectDiscount.value }}
-                {{ storeSupabase.newData.objectDiscount.type }}</span
+                >-{{ storeAdmin.newData.discountObject.value }}
+                {{ storeAdmin.newData.discountObject.type }}</span
               >
             </div>
             <div
@@ -319,14 +372,14 @@ const filterFn = (val, update) => {
               <span>
                 {{
                   dateUtil.formatter.format(
-                    storeSupabase.newData.isHaveDiscount
-                      ? storeSupabase.newData.objectDiscount.type === "none"
-                        ? storeSupabase.newData.umsatz -
-                          storeSupabase.newData.objectDiscount.value
-                        : storeSupabase.newData.umsatz -
-                          (storeSupabase.newData.umsatz / 100) *
-                            storeSupabase.newData.objectDiscount.value
-                      : storeSupabase.newData.umsatz
+                    storeAdmin.newData.isHaveDiscount
+                      ? storeAdmin.newData.discountObject.type === "none"
+                        ? storeAdmin.newData.umsatz -
+                          storeAdmin.newData.discountObject.value
+                        : storeAdmin.newData.umsatz -
+                          (storeAdmin.newData.umsatz / 100) *
+                            storeAdmin.newData.discountObject.value
+                      : storeAdmin.newData.umsatz
                   )
                 }}</span
               >
@@ -336,37 +389,37 @@ const filterFn = (val, update) => {
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeSupabase.addData(storeSupabase.newData)"
+            @submit="storeAdmin.addData(storeAdmin.newData)"
           >
             <div class="full-width justify-between flex q-px-md">
               <q-badge
                 :outline="!item.isSelected"
                 color="primary"
-                v-for="(item, index) in storeSupabase.listDiscount"
+                v-for="(item, index) in storeAdmin.listDiscount"
                 :key="index"
                 :label="`-${item.value}${
                   item.type === 'none' ? '€' : item.type
                 }`"
                 class="q-pa-sm q-px-lg"
-                @click="storeSupabase.handleClickDiscount(item.id)"
+                @click="storeAdmin.handleClickDiscount(item.id)"
               />
             </div>
 
             <span
-              v-if="storeSupabase.newData.menuSelected?.length"
+              v-if="storeAdmin.newData.menuSelected?.length"
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
             <q-list
-              v-if="storeSupabase.newData.menuSelected?.length"
+              v-if="storeAdmin.newData.menuSelected?.length"
               bordered
               separator
             >
               <q-slide-item
-                v-for="(item, index) in storeSupabase.newData.menuSelected"
+                v-for="(item, index) in storeAdmin.newData.menuSelected"
                 :key="index"
                 ref="slideItems"
-                @right="storeSupabase.onRightSlide(item.id, index)"
+                @right="storeAdmin.onRightSlide(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -399,9 +452,7 @@ const filterFn = (val, update) => {
                               color="grey-6"
                               icon="eva-minus-outline"
                               @click="
-                                storeSupabase.clickMultiSelectInAddDataMinus(
-                                  item
-                                )
+                                storeAdmin.clickMultiSelectInAddDataMinus(item)
                               "
                               outline
                             />
@@ -410,7 +461,7 @@ const filterFn = (val, update) => {
                               color="grey-6"
                               icon="eva-plus-outline"
                               @click="
-                                storeSupabase.clickMultiSelectInAddData(item)
+                                storeAdmin.clickMultiSelectInAddData(item)
                               "
                               class="q-ml-sm"
                               outline
@@ -441,7 +492,7 @@ const filterFn = (val, update) => {
             <span class="text-subtitle1">Chọn dịch vụ</span>
             <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
               <q-btn
-                v-for="(item, index) in storeSupabase.menuData.filter(
+                v-for="(item, index) in storeAdmin.menuData.filter(
                   (item) => item.isMultiSelect
                 )"
                 :key="index"
@@ -459,7 +510,7 @@ const filterFn = (val, update) => {
             <q-select
               ref="selectMenuRef"
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeSupabase.newData.menuSelected"
+              v-model="storeAdmin.newData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -469,12 +520,11 @@ const filterFn = (val, update) => {
               @filter="filterFn"
               input-debounce="300"
               @update:model-value="
-                storeSupabase.newData.umsatz =
-                  storeSupabase.newData.menuSelected
-                    .map((item) => item.value)
-                    .reduce((acc, current) => acc + current, 0)
+                storeAdmin.newData.umsatz = storeAdmin.newData.menuSelected
+                  .map((item) => item.value)
+                  .reduce((acc, current) => acc + current, 0)
               "
-              :disable="storeSupabase.loadingSelect"
+              :disable="storeAdmin.loadingSelect"
               hide-selected
               behavior="menu"
               style="position: relative"
@@ -498,13 +548,13 @@ const filterFn = (val, update) => {
                     style="display: grid; grid-template-columns: 1fr 1fr 1fr"
                     class="q-mb-md"
                   >
-                    <!-- v-for="(item, index) in storeSupabase.menuData
+                    <!-- v-for="(item, index) in storeAdmin.menuData
                     .filter((item) => item.isMultiSelect) .sort((a, b) =>
                     a.value - b.value)" -->
                     <q-btn
                       v-for="(
                         item, index
-                      ) in storeSupabase.newData.menuMultipleSelect.sort(
+                      ) in storeAdmin.newData.menuMultipleSelect.sort(
                         (a, b) => a.price - b.price
                       )"
                       :key="index"
@@ -513,12 +563,12 @@ const filterFn = (val, update) => {
                       color="white"
                       text-color="primary"
                       :label="item.label"
-                      @click="storeSupabase.clickMultiSelectInAddData(item)"
+                      @click="storeAdmin.clickMultiSelectInAddData(item)"
                     >
                       <q-badge color="red" :label="item.selectCount" floating />
                     </q-btn>
                     <!-- <q-btn
-                      v-for="(item, index) in storeSupabase.menuData.filter(
+                      v-for="(item, index) in storeAdmin.menuData.filter(
                         (item) => item.isMultiSelect
                       )"
                       :key="index"
@@ -586,7 +636,7 @@ const filterFn = (val, update) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="storeSupabase.clickToggleAddMenuItem(scope)"
+                        @click="storeAdmin.clickToggleAddMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
@@ -598,30 +648,30 @@ const filterFn = (val, update) => {
             <div class="flex justify-end">
               <q-checkbox
                 left-label
-                v-model="storeSupabase.newData.isCustomerOrder"
+                v-model="storeAdmin.newData.isCustomerOrder"
                 label="Khách đặt"
               />
             </div>
 
             <!-- notizen -->
             <div
-              v-if="!storeSupabase.showNotizen"
-              @click="storeSupabase.showNotizen = true"
+              v-if="!storeAdmin.showNotizen"
+              @click="storeAdmin.showNotizen = true"
               class="flex flex-center text-blue"
             >
               <q-icon name="add" size="sm" rounded />Hiện ghi chú
             </div>
 
             <q-input
-              v-if="storeSupabase.showNotizen"
-              v-model="storeSupabase.newData.notizen"
+              v-if="storeAdmin.showNotizen"
+              v-model="storeAdmin.newData.notizen"
               label="Thêm ghi chú"
               outlined
             />
 
             <div
-              v-if="storeSupabase.showNotizen"
-              @click="storeSupabase.showNotizen = false"
+              v-if="storeAdmin.showNotizen"
+              @click="storeAdmin.showNotizen = false"
               class="flex flex-center text-blue"
             >
               <q-icon name="remove" size="sm" rounded />Ẩn ghi chú
@@ -641,11 +691,11 @@ const filterFn = (val, update) => {
     </q-dialog>
 
     <q-dialog
-      :maximized="storeSupabase.showHistoryDialog"
-      v-model="storeSupabase.showHistoryDialog"
+      :maximized="storeAdmin.showHistoryDialog"
+      v-model="storeAdmin.showHistoryDialog"
     >
       <q-card
-        v-if="!storeSupabase.isLoadingHistory"
+        v-if="!storeAdmin.isLoadingHistory"
         class="full-width full-height"
       >
         <div
@@ -656,7 +706,7 @@ const filterFn = (val, update) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeSupabase.showHistoryDialog = false"
+            @click="storeAdmin.showHistoryDialog = false"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
@@ -664,21 +714,8 @@ const filterFn = (val, update) => {
         <q-card-section>
           <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
           <q-list bordered>
-            <!-- <q-item
-              v-for="(item, index) in storeSupabase.listOrderHistories"
-              :key="index"
-              clickable
-              v-ripple
-              class="column"
-            >
-              <q-item-section avatar>
-                {{ item.operation }}
-              </q-item-section>
-              <q-item-section>{{ item }}</q-item-section>
-            </q-item> -->
-
             <q-card
-              v-for="(item, index) in storeSupabase.listOrderHistories"
+              v-for="(item, index) in storeAdmin.listOrderHistories"
               :key="index"
               class="my-card"
             >
@@ -728,7 +765,7 @@ const filterFn = (val, update) => {
                 >
                   <q-item-section style="width: 70%">
                     {{
-                      storeSupabase.menuData.filter(
+                      storeAdmin.menuData.filter(
                         (menuItem) => menuItem.id === step.menu_id
                       )[0].label
                     }}
@@ -756,8 +793,8 @@ const filterFn = (val, update) => {
     </q-dialog>
 
     <q-dialog
-      :maximized="storeSupabase.showUpdateDialog"
-      v-model="storeSupabase.showUpdateDialog"
+      :maximized="storeAdmin.showUpdateDialog"
+      v-model="storeAdmin.showUpdateDialog"
     >
       <q-card class="full-width full-height">
         <div
@@ -768,38 +805,38 @@ const filterFn = (val, update) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeSupabase.handleClickBackButtonShowAlert"
+            @click="storeAdmin.handleClickBackButtonShowAlert"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
 
           <div class="float-bottom text-h6" style="right: 5%">
             <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }}
+            {{ dateUtil.formatter.format(storeAdmin.updateData.umsatz) }}
           </div>
         </div>
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeSupabase.postUpdateItem(storeSupabase.updateData)"
+            @submit="storeAdmin.postUpdateItem(storeAdmin.updateData)"
           >
             <span
-              v-if="storeSupabase.updateData.menuSelected?.length"
+              v-if="storeAdmin.updateData.menuSelected?.length"
               class="text-subtitle1"
               >Dịch vụ đã chọn</span
             >
 
             <q-list
-              v-if="storeSupabase.updateData.menuSelected?.length"
+              v-if="storeAdmin.updateData.menuSelected?.length"
               bordered
               separator
             >
               <!-- test -->
               <q-slide-item
-                v-for="(item, index) in storeSupabase.updateData.menuSelected"
+                v-for="(item, index) in storeAdmin.updateData.menuSelected"
                 :key="index"
                 ref="slideItems"
-                @right="storeSupabase.onRightSlide(item.id, index)"
+                @right="storeAdmin.onRightSlide(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -832,7 +869,7 @@ const filterFn = (val, update) => {
                               color="grey-6"
                               icon="eva-minus-outline"
                               @click="
-                                storeSupabase.clickMultiSelectInUpdateDataMinus(
+                                storeAdmin.clickMultiSelectInUpdateDataMinus(
                                   item
                                 )
                               "
@@ -843,7 +880,7 @@ const filterFn = (val, update) => {
                               color="grey-6"
                               icon="eva-plus-outline"
                               @click="
-                                storeSupabase.clickMultiSelectInUpdateData(item)
+                                storeAdmin.clickMultiSelectInUpdateData(item)
                               "
                               class="q-ml-sm"
                               outline
@@ -876,7 +913,7 @@ const filterFn = (val, update) => {
             <q-select
               ref="selectMenuRefUpdate"
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeSupabase.updateData.menuSelected"
+              v-model="storeAdmin.updateData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -887,21 +924,21 @@ const filterFn = (val, update) => {
               input-debounce="300"
               behavior="menu"
               @update:model-value="
-                storeSupabase.updateData.umsatz =
-                  storeSupabase.updateData.menuSelected
+                storeAdmin.updateData.umsatz =
+                  storeAdmin.updateData.menuSelected
                     .map((item) => item.value)
                     .reduce((acc, current) => acc + current, 0);
 
-                storeSupabase.isHaveNotSaveDataYet = true;
+                storeAdmin.isHaveNotSaveDataYet = true;
               "
-              :disable="storeSupabase.loadingSelect"
+              :disable="storeAdmin.loadingSelect"
               hide-selected
             >
               <template v-slot:selected>
                 <!-- <div>
                   Already checked
                   <span class="text-bold">{{
-                    storeSupabase.updateData.menuSelected?.length
+                    storeAdmin.updateData.menuSelected?.length
                   }}</span>
                   items
                 </div> -->
@@ -925,7 +962,7 @@ const filterFn = (val, update) => {
                     <q-btn
                       v-for="(
                         item, index
-                      ) in storeSupabase.updateData.menuMultipleSelect.sort(
+                      ) in storeAdmin.updateData.menuMultipleSelect.sort(
                         (a, b) => a.price - b.price
                       )"
                       :key="index"
@@ -934,7 +971,7 @@ const filterFn = (val, update) => {
                       color="white"
                       text-color="primary"
                       :label="item.label"
-                      @click="storeSupabase.clickMultiSelectInUpdateData(item)"
+                      @click="storeAdmin.clickMultiSelectInUpdateData(item)"
                     >
                       <q-badge color="red" :label="item.selectCount" floating />
                     </q-btn>
@@ -993,7 +1030,7 @@ const filterFn = (val, update) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="storeSupabase.clickToggleUpdateMenuItem(scope)"
+                        @click="storeAdmin.clickToggleUpdateMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
@@ -1002,24 +1039,24 @@ const filterFn = (val, update) => {
             </q-select>
             <!-- notizen -->
             <div
-              v-if="!storeSupabase.showNotizen"
-              @click="storeSupabase.showNotizen = true"
+              v-if="!storeAdmin.showNotizen"
+              @click="storeAdmin.showNotizen = true"
               class="flex flex-center text-blue"
             >
               <q-icon name="add" size="sm" rounded />Hiện ghi chú
             </div>
 
             <q-input
-              v-if="storeSupabase.showNotizen"
-              v-model="storeSupabase.updateData.notizen"
+              v-if="storeAdmin.showNotizen"
+              v-model="storeAdmin.updateData.notizen"
               label="Thêm ghi chú"
-              @update:model-value="storeSupabase.isHaveNotSaveDataYet = true"
+              @update:model-value="storeAdmin.isHaveNotSaveDataYet = true"
               outlined
             />
 
             <div
-              v-if="storeSupabase.showNotizen"
-              @click="storeSupabase.showNotizen = false"
+              v-if="storeAdmin.showNotizen"
+              @click="storeAdmin.showNotizen = false"
               class="flex flex-center text-blue"
             >
               <q-icon name="remove" size="sm" rounded />Ẩn ghi chú
