@@ -5,7 +5,6 @@ import { Dialog, Loading, Notify } from "quasar";
 
 export const useAdminStore = defineStore("admin", {
   state: () => ({
-    listAccount: [],
     listDiscount: [],
     listOrder: [],
     listOrderOriginal: [],
@@ -71,17 +70,6 @@ export const useAdminStore = defineStore("admin", {
         } else {
           return data;
         }
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
-      }
-    },
-
-    async getListAccount() {
-      try {
-        this.isLoadingMainScreen = true;
-        let { data: users, error } = await supabase.from("users").select("*");
-        this.isLoadingMainScreen = false;
-        return users.filter((item) => item.role !== "admin");
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
@@ -162,15 +150,6 @@ export const useAdminStore = defineStore("admin", {
         return data;
       } catch (err) {
         console.error("Error fetching data:", err);
-      }
-    },
-
-    editAccount(item) {
-      try {
-        this.showEditDialog = true;
-        this.selectedAccount = item;
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
       }
     },
 

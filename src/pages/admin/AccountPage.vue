@@ -1,21 +1,23 @@
 <script setup>
 import { onMounted } from "vue";
-import { useAdminStore } from "../../stores/AdminStore";
+import { useAccountManagementStore } from "src/stores/admin/AccountManagementStore";
 
 import noData from "../../assets/images/nodata.jpg";
-import { dateUtil } from "src/utils/dateUtil";
 
-const storeAdmin = useAdminStore();
+const storeAccountManagement = useAccountManagementStore();
 
 onMounted(async () => {
-  storeAdmin.listAccount = await storeAdmin.getListAccount();
+  await storeAccountManagement.getInit();
+
+  storeAccountManagement.listAccount =
+    await storeAccountManagement.getListAccount();
 });
 </script>
 
 <template>
   <div>
     <div
-      v-if="storeAdmin.isLoadingMainScreen"
+      v-if="storeAccountManagement.isLoadingMainScreen"
       style="height: 30vh"
       class="full-width flex column flex-center"
     >
@@ -23,9 +25,9 @@ onMounted(async () => {
     </div>
 
     <q-list class="q-mt-md" v-else>
-      <div v-if="storeAdmin.listAccount?.length">
+      <div v-if="storeAccountManagement.listAccount?.length">
         <q-card
-          v-for="(item, index) in storeAdmin.listAccount"
+          v-for="(item, index) in storeAccountManagement.listAccount"
           :key="index"
           flat
           bordered
@@ -40,16 +42,20 @@ onMounted(async () => {
 
           <q-card-section>
             <div class="q-mb-sm">
-              <span class="text-bold">Provider:</span> {{ item.provider }}
+              <span class="text-bold">Phương thức:</span> {{ item.provider }}
             </div>
             <div class="q-mb-sm">
-              <span class="text-bold">Role:</span> {{ item.role }}
+              <span class="text-bold">Quyền:</span> {{ item.role }}
             </div>
             <div class="q-mb-sm">
-              <span class="text-bold">Status:</span> {{ item.status }}
+              <span class="text-bold">Trạng thái:</span> {{ item.status.name }}
+            </div>
+
+            <div class="q-mb-sm">
+              <span class="text-bold">Site:</span> {{ item.site.name }}
             </div>
             <div>
-              <span class="text-bold">Created At:</span>
+              <span class="text-bold">Ngày tạo:</span>
               {{ new Date(item.created_at).toDateString("vi-VN") }}
             </div>
           </q-card-section>
@@ -58,15 +64,15 @@ onMounted(async () => {
 
           <q-card-actions align="right">
             <q-btn
-              label="Edit"
+              label="Sửa"
               color="primary"
-              @click="storeAdmin.editAccount(item)"
+              @click="storeAccountManagement.editAccount(item)"
             />
             <q-btn
-              label="Delete"
+              label="Xóa"
               color="negative"
               flat
-              @click="storeAdmin.deleteAccount(item.id)"
+              @click="storeAccountManagement.deleteAccount(item.id)"
             />
           </q-card-actions>
         </q-card>
@@ -93,47 +99,96 @@ onMounted(async () => {
         color="green-7"
         class="q-pa-md"
         round
-        :disable="storeAdmin.isLoadingMainScreen"
-        @click="storeAdmin.showAddDialog = true"
+        :disable="storeAccountManagement.isLoadingMainScreen"
+        @click="storeAccountManagement.showAddDialog = true"
       />
     </q-page-sticky>
   </div>
 
-  <q-dialog v-model="storeAdmin.showEditDialog">
-    <q-card style="min-width: 400px; max-width: 500px">
+  <q-dialog v-model="storeAccountManagement.isShowEditDialog">
+    <q-card style="min-width: 90vw">
       <q-card-section>
-        <div class="text-h6">Edit Account</div>
+        <div class="text-h6 text-bold text-primary">Cập nhật tài khoản</div>
       </q-card-section>
 
       <q-card-section>
+        <!-- Display Name -->
         <q-input
-          v-model="storeAdmin.selectedAccount.display_name"
+          v-model="storeAccountManagement.selectedAccount.display_name"
           label="Display Name"
           outlined
+          dense
+          class="q-mb-md"
+          placeholder="Enter account's display name"
         />
+
+        <!-- Role -->
         <q-input
-          v-model="storeAdmin.selectedAccount.role"
+          v-model="storeAccountManagement.selectedAccount.role"
           label="Role"
           outlined
-          class="q-mt-md"
+          dense
+          class="q-mb-md"
+          placeholder="Enter account's role"
         />
+
+        <!-- Status -->
         <q-select
-          v-model="storeAdmin.selectedAccount.status"
-          :options="['serving', 'inactive']"
+          v-model="storeAccountManagement.selectedAccount.status"
+          :options="storeAccountManagement.listStatus"
+          option-label="name"
+          option-value="id"
           label="Status"
           outlined
-          class="q-mt-md"
+          dense
+          class="q-mb-md"
+          placeholder="Select account status"
+        />
+
+        <q-select
+          v-model="storeAccountManagement.selectedAccount.site"
+          :options="storeAccountManagement.listSite"
+          option-label="name"
+          option-value="id"
+          label="Site"
+          outlined
+          class="q-mb-md"
+          dense
+        />
+
+        <q-input
+          v-model="storeAccountManagement.selectedAccount.provider"
+          label="Provider"
+          outlined
+          dense
+          class="q-mb-md"
+          readonly
+          placeholder="Account provider"
+        />
+
+        <!-- Creation Date (readonly) -->
+        <q-input
+          v-model="storeAccountManagement.selectedAccount.created_at"
+          label="Created At"
+          outlined
+          dense
+          readonly
+          class="q-mb-md"
         />
       </q-card-section>
 
       <q-card-actions align="right">
         <q-btn
           flat
-          label="Cancel"
-          color="primary"
-          @click="storeAdmin.showEditDialog = false"
+          label="Hủy"
+          color="negative"
+          @click="storeAccountManagement.isShowEditDialog = false"
         />
-        <q-btn flat label="Save" color="primary" @click="updateAccount" />
+        <q-btn
+          label="Lưu"
+          color="positive"
+          @click="storeAccountManagement.postUpdateAccount(storeAccountManagement.selectedAccount)"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
