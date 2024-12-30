@@ -6,11 +6,23 @@ export const useAccountManagementStore = defineStore("accountManagement", {
   state: () => ({
     isLoadingMainScreen: false,
     isShowEditDialog: false,
+    isShowCreateDialog: false,
 
     listAccount: [],
     listSite: [],
     listStatus: [],
+    listRole: [
+      {
+        id: "user",
+        label: "User",
+      },
+      {
+        id: "admin",
+        label: "Admin",
+      },
+    ],
     selectedAccount: {},
+    newAccount: {},
   }),
   actions: {
     async getInit() {
@@ -30,7 +42,8 @@ export const useAccountManagementStore = defineStore("accountManagement", {
         if (error) {
           console.error("Caught error when fetching data: ", error);
         } else {
-          return users.filter((item) => item.role !== "admin");
+          // return users.filter((item) => item.role !== "admin");
+          return users;
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);
@@ -71,6 +84,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
       try {
         const payload = {
           display_name: inputData.display_name,
+          role: inputData.role.id,
           site: inputData.site.id,
           status: inputData.status.id,
         };
@@ -103,6 +117,9 @@ export const useAccountManagementStore = defineStore("accountManagement", {
       try {
         this.isShowEditDialog = true;
         this.selectedAccount = { ...item };
+        this.selectedAccount.role = this.listRole.find(
+          (item) => item.id === this.selectedAccount.role
+        );
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }

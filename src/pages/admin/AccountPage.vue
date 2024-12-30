@@ -52,7 +52,7 @@ onMounted(async () => {
             </div>
 
             <div class="q-mb-sm">
-              <span class="text-bold">Site:</span> {{ item.site.name }}
+              <span class="text-bold">Site:</span> {{ item.site?.name }}
             </div>
             <div>
               <span class="text-bold">Ngày tạo:</span>
@@ -68,12 +68,12 @@ onMounted(async () => {
               color="primary"
               @click="storeAccountManagement.editAccount(item)"
             />
-            <q-btn
+            <!-- <q-btn
               label="Xóa"
               color="negative"
               flat
               @click="storeAccountManagement.deleteAccount(item.id)"
-            />
+            /> -->
           </q-card-actions>
         </q-card>
       </div>
@@ -93,17 +93,71 @@ onMounted(async () => {
       </div>
     </q-list>
 
-    <q-page-sticky position="bottom-right" :offset="[18, 48]">
+    <!-- <q-page-sticky position="bottom-right" :offset="[18, 48]">
       <q-btn
         icon="add"
         color="green-7"
         class="q-pa-md"
         round
         :disable="storeAccountManagement.isLoadingMainScreen"
-        @click="storeAccountManagement.showAddDialog = true"
+        @click="storeAccountManagement.isShowCreateDialog = true"
       />
-    </q-page-sticky>
+    </q-page-sticky> -->
   </div>
+
+  <q-dialog v-model="storeAccountManagement.isShowCreateDialog">
+    <q-card style="min-width: 400px; max-width: 500px">
+      <q-card-section>
+        <div class="text-h6">Tạo tài khoản mới</div>
+      </q-card-section>
+
+      <q-card-section>
+        <!-- Display Name Input -->
+        <q-input
+          v-model="storeAccountManagement.newAccount.display_name"
+          label="Display Name"
+          outlined
+          autofocus
+        />
+
+        <!-- Role Input -->
+        <q-input
+          v-model="storeAccountManagement.newAccount.role"
+          label="Role"
+          outlined
+          class="q-mt-md"
+        />
+
+        <!-- Status Select -->
+        <q-select
+          v-model="storeAccountManagement.newAccount.status"
+          :options="['serving', 'inactive']"
+          label="Status"
+          outlined
+          class="q-mt-md"
+        />
+
+        <!-- Site Select -->
+        <q-select
+          v-model="storeAccountManagement.newAccount.site"
+          :options="siteOptions"
+          label="Site"
+          outlined
+          class="q-mt-md"
+        />
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="primary"
+          @click="storeAccountManagement.isShowCreateDialog = false"
+        />
+        <q-btn flat label="Create" color="primary" @click="createAccount" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 
   <q-dialog v-model="storeAccountManagement.isShowEditDialog">
     <q-card style="min-width: 90vw">
@@ -115,7 +169,7 @@ onMounted(async () => {
         <!-- Display Name -->
         <q-input
           v-model="storeAccountManagement.selectedAccount.display_name"
-          label="Display Name"
+          label="Tên"
           outlined
           dense
           class="q-mb-md"
@@ -123,13 +177,25 @@ onMounted(async () => {
         />
 
         <!-- Role -->
-        <q-input
+        <!-- <q-input
           v-model="storeAccountManagement.selectedAccount.role"
-          label="Role"
+          label="Phân quyền"
           outlined
           dense
           class="q-mb-md"
-          placeholder="Enter account's role"
+          placeholder="Vui lòng chọn phân quyền"
+        /> -->
+
+        <q-select
+          v-model="storeAccountManagement.selectedAccount.role"
+          :options="storeAccountManagement.listRole"
+          option-label="label"
+          option-value="id"
+          label="Phân quyền"
+          outlined
+          dense
+          class="q-mb-md"
+          placeholder="Vui lòng chọn phân quyền"
         />
 
         <!-- Status -->
@@ -138,11 +204,11 @@ onMounted(async () => {
           :options="storeAccountManagement.listStatus"
           option-label="name"
           option-value="id"
-          label="Status"
+          label="Trạng thái"
           outlined
           dense
           class="q-mb-md"
-          placeholder="Select account status"
+          placeholder="Vui lòng chọn trạng thái"
         />
 
         <q-select
@@ -158,18 +224,18 @@ onMounted(async () => {
 
         <q-input
           v-model="storeAccountManagement.selectedAccount.provider"
-          label="Provider"
+          label="Phương thức"
           outlined
           dense
           class="q-mb-md"
           readonly
-          placeholder="Account provider"
         />
 
         <!-- Creation Date (readonly) -->
         <q-input
-          v-model="storeAccountManagement.selectedAccount.created_at"
-          label="Created At"
+          :placeholder="`${new Date(
+            storeAccountManagement.selectedAccount.created_at
+          ).toLocaleDateString('vi-VN')}`"
           outlined
           dense
           readonly
@@ -187,7 +253,11 @@ onMounted(async () => {
         <q-btn
           label="Lưu"
           color="positive"
-          @click="storeAccountManagement.postUpdateAccount(storeAccountManagement.selectedAccount)"
+          @click="
+            storeAccountManagement.postUpdateAccount(
+              storeAccountManagement.selectedAccount
+            )
+          "
         />
       </q-card-actions>
     </q-card>

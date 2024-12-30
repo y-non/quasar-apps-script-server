@@ -212,7 +212,7 @@ const filterFn = (val, update) => {
                 style="align-items: center"
               >
                 <q-icon name="eva-home-outline" size="xs" />: Site
-                {{ item.users.site }}
+                <!-- {{ item.users }} -->
               </div>
             </div>
 
