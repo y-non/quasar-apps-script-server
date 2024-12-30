@@ -101,7 +101,49 @@ export const useAdminStore = defineStore("admin", {
             error
           );
         } else {
-          this.listOrderHistories = data;
+          this.listOrderHistories = await Promise.all(
+            data.map(async (historyItem) => {
+              let totalPrice = 0;
+              historyItem.details.menu_items.forEach((item) => {
+                totalPrice += item.price * item.quantity;
+              });
+
+              //handle check discount
+              let discount = this.listDiscount.filter(
+                (discount) => discount.id == historyItem.details.discount
+              )[0];
+
+              // if (discount) {
+              //   if (discount.type === "none") {
+              //     totalPrice -= discount.value;
+              //   } else {
+              //     totalPrice -= (totalPrice / 100) * discount.value;
+              //   }
+              // }
+
+              //handle check gift card
+              let giftCard = 0;
+
+              if (historyItem.giftcard?.length > 0) {
+                giftCard = this.listGiftCard.filter(
+                  (giftCard) => giftCard.id == historyItem.details.giftcard
+                )[0];
+              }
+
+              // if (giftCard) {
+              //   totalPrice -= giftCard.value;
+              // }
+
+              return {
+                ...historyItem,
+                totalPrice: totalPrice,
+                discountObject: discount ? discount : {},
+                giftCardObject: giftCard ? giftCard : {},
+                isHaveDiscount: discount ? true : false,
+                isHaveGiftCard: giftCard ? true : false,
+              };
+            })
+          );
         }
         this.isLoadingHistory = false;
       } catch (err) {

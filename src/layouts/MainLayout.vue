@@ -215,7 +215,7 @@ watch(
             <router-link :to="item.path">
               <q-item clickable v-ripple>
                 <q-item-section avatar>
-                  <q-icon class="text-primary text-bold" :name="item.icon" />
+                  <q-icon class="text-primary" :name="item.icon" />
                 </q-item-section>
 
                 <q-item-section class="text-grey-9">

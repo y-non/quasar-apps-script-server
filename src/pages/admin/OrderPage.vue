@@ -368,7 +368,7 @@ const filterFn = (val, update) => {
                       }}
                     </div>
                   </div>
-                  <div>
+                  <!-- <div>
                     <span class="text-blue text-h4 text-right">{{
                       dateUtil.formatter.format(
                         item.details.menu_items.reduce(
@@ -377,6 +377,78 @@ const filterFn = (val, update) => {
                         )
                       )
                     }}</span>
+                  </div> -->
+
+                  <div class="column flex" style="align-items: end">
+                    <div style="width: 100%" class="flex justify-between">
+                      <span class="text-grey-8">Giá gốc: </span>
+
+                      <span>
+                        {{ dateUtil.formatter.format(item.totalPrice) }}
+                      </span>
+                    </div>
+
+                    <div
+                      v-if="item.isHaveDiscount"
+                      class="float-bottom text-subtitle2 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span>Mã giảm giá: </span>
+
+                      <span
+                        class="text-red-8"
+                        v-if="item.discountObject.type === 'none'"
+                        >-{{
+                          dateUtil.formatter.format(item.discountObject.value)
+                        }}</span
+                      >
+
+                      <span v-else class="text-red-8"
+                        >-{{ item.discountObject.value }}
+                        {{ item.discountObject.type }}</span
+                      >
+                    </div>
+
+                    <div
+                      v-if="item.isHaveGiftCard"
+                      class="float-bottom text-subtitle2 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span>Mã quà tặng: </span>
+
+                      <span class="text-red-8"
+                        >-{{
+                          dateUtil.formatter.format(item.giftCardObject.value)
+                        }}</span
+                      >
+                    </div>
+
+                    <div
+                      class="float-bottom text-subtitle1 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span class="text-bold q-pr-md">Tổng cộng:</span>
+                      <span>
+                        {{
+                          dateUtil.formatter.format(
+                            Math.max(
+                              (item.isHaveDiscount
+                                ? item.discountObject.type === "none"
+                                  ? item.totalPrice - item.discountObject.value
+                                  : item.totalPrice -
+                                    (item.totalPrice / 100) *
+                                      item.discountObject.value
+                                : item.totalPrice) -
+                                // Trừ gift card
+                                (item.isHaveGiftCard
+                                  ? item.giftCardObject.value
+                                  : 0),
+                              0 // Ensure the value is at least 0
+                            )
+                          )
+                        }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </q-card-section>
