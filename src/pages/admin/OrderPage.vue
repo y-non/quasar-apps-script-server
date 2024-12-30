@@ -211,8 +211,8 @@ const filterFn = (val, update) => {
                 class="text-subtitle2 text-grey flex"
                 style="align-items: center"
               >
-                <q-icon name="eva-home-outline" size="xs" />:
-                Site {{ item.users.site }}
+                <q-icon name="eva-home-outline" size="xs" />: Site
+                {{ item.users.site }}
               </div>
             </div>
 
@@ -317,380 +317,6 @@ const filterFn = (val, update) => {
     </q-page-sticky>
 
     <q-dialog
-      :maximized="storeAdmin.showAddDialog"
-      class="full-width full-height"
-      v-model="storeAdmin.showAddDialog"
-    >
-      <q-card class="full-width full-height">
-        <div
-          class="flex justify-between q-py-none q-pr-md bg-white z-max"
-          style="position: sticky; top: 0"
-        >
-          <q-btn
-            icon="eva-arrow-ios-back-outline"
-            class="text-blue"
-            flat
-            @click="storeAdmin.showAddDialog = false"
-          >
-            <span class="text-subtitle1">Quay lại</span>
-          </q-btn>
-
-          <div class="column flex q-pt-lg" style="align-items: end">
-            <div style="width: 100%" class="flex justify-between">
-              <span class="text-grey-8">Giá gốc: </span>
-
-              <span>
-                {{ dateUtil.formatter.format(storeAdmin.newData.umsatz) }}
-              </span>
-            </div>
-
-            <div
-              v-if="storeAdmin.newData.isHaveDiscount"
-              class="float-bottom text-subtitle2 flex justify-between"
-              style="right: 5%; width: 100%"
-            >
-              <span class="text-red-8">Mã giảm giá: </span>
-
-              <span v-if="storeAdmin.newData.discountObject.type === 'none'"
-                >-{{
-                  dateUtil.formatter.format(
-                    storeAdmin.newData.discountObject.value
-                  )
-                }}</span
-              >
-
-              <span v-else class="text-red-8"
-                >-{{ storeAdmin.newData.discountObject.value }}
-                {{ storeAdmin.newData.discountObject.type }}</span
-              >
-            </div>
-            <div
-              class="float-bottom text-subtitle1 flex justify-between"
-              style="right: 5%; width: 100%"
-            >
-              <span class="text-bold q-pr-md">Tổng cộng:</span>
-              <span>
-                {{
-                  dateUtil.formatter.format(
-                    storeAdmin.newData.isHaveDiscount
-                      ? storeAdmin.newData.discountObject.type === "none"
-                        ? storeAdmin.newData.umsatz -
-                          storeAdmin.newData.discountObject.value
-                        : storeAdmin.newData.umsatz -
-                          (storeAdmin.newData.umsatz / 100) *
-                            storeAdmin.newData.discountObject.value
-                      : storeAdmin.newData.umsatz
-                  )
-                }}</span
-              >
-            </div>
-          </div>
-        </div>
-        <q-card-section>
-          <q-form
-            class="q-gutter-md q-py-lg flex column"
-            @submit="storeAdmin.addData(storeAdmin.newData)"
-          >
-            <div class="full-width justify-between flex q-px-md">
-              <q-badge
-                :outline="!item.isSelected"
-                color="primary"
-                v-for="(item, index) in storeAdmin.listDiscount"
-                :key="index"
-                :label="`-${item.value}${
-                  item.type === 'none' ? '€' : item.type
-                }`"
-                class="q-pa-sm q-px-lg"
-                @click="storeAdmin.handleClickDiscount(item.id)"
-              />
-            </div>
-
-            <span
-              v-if="storeAdmin.newData.menuSelected?.length"
-              class="text-subtitle1"
-              >Dịch vụ đã chọn</span
-            >
-            <q-list
-              v-if="storeAdmin.newData.menuSelected?.length"
-              bordered
-              separator
-            >
-              <q-slide-item
-                v-for="(item, index) in storeAdmin.newData.menuSelected"
-                :key="index"
-                ref="slideItems"
-                @right="storeAdmin.onRightSlide(item.id, index)"
-                right-color="red-5"
-              >
-                <template v-slot:right>
-                  <q-icon name="delete" /> Xoá...
-                </template>
-
-                <q-item>
-                  <q-item-section>
-                    <div
-                      class="flex justify-between"
-                      style="align-items: center"
-                    >
-                      <div
-                        class="flex justify-between full-width"
-                        style="align-items: center"
-                      >
-                        <div class="flex text-grey-7" style="width: 70%">
-                          <div
-                            class="column"
-                            :style="item.isMultiSelect ? 'width: 30%' : []"
-                          >
-                            {{ item.label }}
-                            <span v-if="item.isMultiSelect" class="text-blue"
-                              >x {{ item.selectCount }}</span
-                            >
-                          </div>
-
-                          <div v-if="item.isMultiSelect" class="flex">
-                            <q-btn
-                              color="grey-6"
-                              icon="eva-minus-outline"
-                              @click="
-                                storeAdmin.clickMultiSelectInAddDataMinus(item)
-                              "
-                              outline
-                            />
-
-                            <q-btn
-                              color="grey-6"
-                              icon="eva-plus-outline"
-                              @click="
-                                storeAdmin.clickMultiSelectInAddData(item)
-                              "
-                              class="q-ml-sm"
-                              outline
-                            />
-                          </div>
-                        </div>
-                        <div
-                          v-if="item.isMultiSelect"
-                          class="text-blue text-bold"
-                        >
-                          {{
-                            dateUtil.formatter.format(
-                              item.value * item.selectCount
-                            )
-                          }}
-                        </div>
-
-                        <div v-else class="text-blue text-bold">
-                          {{ dateUtil.formatter.format(item.value) }}
-                        </div>
-                      </div>
-                    </div>
-                  </q-item-section>
-                </q-item>
-              </q-slide-item>
-            </q-list>
-
-            <span class="text-subtitle1">Chọn dịch vụ</span>
-            <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
-              <q-btn
-                v-for="(item, index) in storeAdmin.menuData.filter(
-                  (item) => item.isMultiSelect
-                )"
-                :key="index"
-                push
-                color="white"
-                text-color="primary"
-                class="q-mx-sm"
-                :label="item.label"
-              >
-                <q-badge color="orange" floating>{{
-                  item.selectCount
-                }}</q-badge>
-              </q-btn>
-            </div> -->
-            <q-select
-              ref="selectMenuRef"
-              :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeAdmin.newData.menuSelected"
-              :options="optionsMenuData"
-              option-label="label"
-              option-value="id"
-              outlined
-              multiple
-              use-input
-              @filter="filterFn"
-              input-debounce="300"
-              @update:model-value="
-                storeAdmin.newData.umsatz = storeAdmin.newData.menuSelected
-                  .map((item) => item.value)
-                  .reduce((acc, current) => acc + current, 0)
-              "
-              :disable="storeAdmin.loadingSelect"
-              hide-selected
-              behavior="menu"
-              style="position: relative"
-            >
-              <template v-slot:before-options>
-                <div
-                  class="q-pt-md q-px-md bg-white"
-                  style="position: sticky; top: 0; z-index: 10"
-                >
-                  <div class="flex">
-                    <q-btn
-                      text-color="grey-5"
-                      icon="close"
-                      flat
-                      label="Đóng menu"
-                      class="full-width q-mb-md"
-                      @click="selectMenuRef.hidePopup()"
-                    ></q-btn>
-                  </div>
-                  <div
-                    style="display: grid; grid-template-columns: 1fr 1fr 1fr"
-                    class="q-mb-md"
-                  >
-                    <!-- v-for="(item, index) in storeAdmin.menuData
-                    .filter((item) => item.isMultiSelect) .sort((a, b) =>
-                    a.value - b.value)" -->
-                    <q-btn
-                      v-for="(
-                        item, index
-                      ) in storeAdmin.newData.menuMultipleSelect.sort(
-                        (a, b) => a.price - b.price
-                      )"
-                      :key="index"
-                      class="q-mr-sm"
-                      outline
-                      color="white"
-                      text-color="primary"
-                      :label="item.label"
-                      @click="storeAdmin.clickMultiSelectInAddData(item)"
-                    >
-                      <q-badge color="red" :label="item.selectCount" floating />
-                    </q-btn>
-                    <!-- <q-btn
-                      v-for="(item, index) in storeAdmin.menuData.filter(
-                        (item) => item.isMultiSelect
-                      )"
-                      :key="index"
-                      push
-                      color="white"
-                      text-color="primary"
-                      class="q-mx-sm"
-                      :label="item.label"
-                    >
-
-                    </q-btn> -->
-                  </div>
-                </div>
-              </template>
-
-              <template v-slot:after-options>
-                <div class="flex">
-                  <q-btn
-                    text-color="grey-5"
-                    icon="close"
-                    flat
-                    label="Đóng menu"
-                    class="full-width q-my-md"
-                    @click="selectMenuRef.hidePopup()"
-                  ></q-btn>
-                </div>
-              </template>
-
-              <template v-slot:option="scope">
-                <q-item
-                  clickable="false"
-                  v-bind="scope.itemProps"
-                  :class="[
-                    scope.selected
-                      ? 'bg-blue-1'
-                      : scope.index % 2 === 0
-                      ? 'bg-grey-1'
-                      : 'bg-grey-2',
-                  ]"
-                >
-                  <q-item-section avatar>
-                    <!-- <q-icon name="eva-pricetags-outline" /> -->
-                    <q-icon
-                      name="eva-pricetags-outline"
-                      v-bind:class="{
-                        'text-grey-4': !scope.selected,
-                        'text-blue': scope.selected,
-                      }"
-                    />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="text-subtitle2">{{
-                      scope.opt.label
-                    }}</q-item-label>
-                    <q-item-label caption
-                      >Preis:
-                      <span class="text-bold">{{
-                        dateUtil.formatter.format(scope.opt.value)
-                      }}</span></q-item-label
-                    >
-                  </q-item-section>
-
-                  <q-item-section side>
-                    <div class="flex justify-end full-width">
-                      <q-toggle
-                        v-model="scope.selected"
-                        color="green"
-                        @click="storeAdmin.clickToggleAddMenuItem(scope)"
-                      />
-                    </div>
-                  </q-item-section>
-                </q-item>
-              </template>
-            </q-select>
-
-            <!-- checkbox customer order -->
-            <div class="flex justify-end">
-              <q-checkbox
-                left-label
-                v-model="storeAdmin.newData.isCustomerOrder"
-                label="Khách đặt"
-              />
-            </div>
-
-            <!-- notizen -->
-            <div
-              v-if="!storeAdmin.showNotizen"
-              @click="storeAdmin.showNotizen = true"
-              class="flex flex-center text-blue"
-            >
-              <q-icon name="add" size="sm" rounded />Hiện ghi chú
-            </div>
-
-            <q-input
-              v-if="storeAdmin.showNotizen"
-              v-model="storeAdmin.newData.notizen"
-              label="Thêm ghi chú"
-              outlined
-            />
-
-            <div
-              v-if="storeAdmin.showNotizen"
-              @click="storeAdmin.showNotizen = false"
-              class="flex flex-center text-blue"
-            >
-              <q-icon name="remove" size="sm" rounded />Ẩn ghi chú
-            </div>
-
-            <q-btn
-              label="Lưu dữ liệu"
-              type="submit"
-              color="green-7"
-              icon="add"
-              class="q-py-sm"
-              push
-            />
-          </q-form>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
-
-    <q-dialog
       :maximized="storeAdmin.showHistoryDialog"
       v-model="storeAdmin.showHistoryDialog"
     >
@@ -727,13 +353,13 @@ const filterFn = (val, update) => {
                       :class="
                         item.operation.toLowerCase() === 'insert'
                           ? 'text-green'
-                          : ''
+                          : 'text-orange'
                       "
                     >
                       {{
                         item.operation.toLowerCase() === "insert"
                           ? "Tạo mới"
-                          : ""
+                          : "Cập nhật"
                       }}
                     </div>
                     <div class="text-subtitle2 text-grey-6 q-ml-xs">
@@ -761,19 +387,19 @@ const filterFn = (val, update) => {
                   :key="stepIndex"
                   clickable
                   v-ripple
-                  class="flex justify-between"
+                  class="flex justify-between q-px-none"
                 >
-                  <q-item-section style="width: 70%">
+                  <div style="width: 80%">
                     {{
                       storeAdmin.menuData.filter(
                         (menuItem) => menuItem.id === step.menu_id
                       )[0].label
                     }}
-                  </q-item-section>
-                  <q-item-section class="flex flex-end text-right"
-                    >{{ step.quantity }} x
-                    {{ step.price / step.quantity }}</q-item-section
-                  >
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-primary">{{ step.quantity }} x</span>
+                    <span>{{ step.price / step.quantity }}</span>
+                  </div>
                 </q-item>
               </q-card-section>
 
