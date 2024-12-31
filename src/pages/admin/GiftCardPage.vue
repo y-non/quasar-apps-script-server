@@ -3,11 +3,15 @@ import { onMounted, computed, ref } from "vue";
 import { useGiftCardStore } from "src/stores/admin/GiftCardStore";
 import { Notify, Dialog, copyToClipboard } from "quasar";
 
+import QRCodeVue from "src/components/QRCodeVue.vue";
+
 /* Utils import */
 import { generateCode } from "src/utils/generateCode";
 
 const storeGiftCard = useGiftCardStore();
 const sortOption = ref("all");
+const showQRCodeDialog = ref(false);
+const qrCodeData = ref("");
 
 const sortOptions = [
   { label: "Tất cả", value: "all" },
@@ -24,16 +28,6 @@ const applySort = () => {
     case "all":
       storeGiftCard.listGiftCards = storeGiftCard.listGiftCardsOriginal;
       break;
-    // case "dateNewest":
-    //   storeGiftCard.listGiftCards.sort(
-    //     (a, b) => new Date(b.date_created) - new Date(a.date_created)
-    //   );
-    //   break;
-    // case "dateOldest":
-    //   storeGiftCard.listGiftCards.sort(
-    //     (a, b) => new Date(a.date_created) - new Date(b.date_created)
-    //   );
-    //   break;
     case "valueAsc":
       storeGiftCard.listGiftCards.sort((a, b) => a.value - b.value);
       break;
@@ -53,6 +47,20 @@ const applySort = () => {
       );
       break;
   }
+};
+
+const openQRCodeDialog = (code) => {
+  qrCodeData.value = code;
+  showQRCodeDialog.value = true;
+};
+
+const downloadQRCode = (index) => {
+  const canvas = document.querySelectorAll("canvas")[index];
+  const dataUrl = canvas.toDataURL("image/png");
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = "qr-code.png";
+  link.click();
 };
 
 onMounted(async () => {
@@ -140,7 +148,7 @@ const copyCode = (code) => {
         />
       </div>
 
-      <q-list class="q-my-md" style="padding-bottom: 5em;">
+      <q-list class="q-my-md" style="padding-bottom: 5em">
         <q-card
           v-for="(giftCard, index) in storeGiftCard.listGiftCards"
           :key="index"
@@ -164,7 +172,28 @@ const copyCode = (code) => {
                 >
                   {{ giftCard.isused ? "Đã sử dụng" : "Chưa sử dụng" }}
                 </div>
+
+                <div class="flex full-width q-mt-md">
+                  <QRCodeVue :value="giftCard.code" size="50" />
+
+                  <q-btn
+                    icon="download"
+                    color="primary"
+                    dense
+                    flat
+                    @click="downloadQRCode(index)"
+                    class="q-ml-md"
+                  />
+                </div>
               </div>
+
+              <!-- <q-btn
+                flat
+                dense
+                icon="qr_code"
+                color="blue"
+                @click="openQRCodeDialog(giftCard.code)"
+              /> -->
               <q-btn
                 flat
                 dense
@@ -172,6 +201,14 @@ const copyCode = (code) => {
                 color="blue"
                 @click="copyCode(giftCard.code)"
               />
+
+              <!-- <q-btn
+                flat
+                dense
+                icon="share"
+                color="blue"
+                @click="copyCode(giftCard.code)"
+              /> -->
             </div>
           </q-card-section>
           <q-card-actions align="right">
@@ -291,6 +328,33 @@ const copyCode = (code) => {
             </q-card-actions>
           </div>
         </q-form>
+      </q-card>
+    </q-dialog>
+
+    <!-- QR Code Dialog -->
+    <q-dialog v-model="showQRCodeDialog">
+      <q-card style="min-width: 90vw">
+        <q-card-section>
+          <div class="text-h6">QR Code</div>
+        </q-card-section>
+        <q-card-section class="q-pa-md flex flex-center">
+          <QRCodeVue :value="qrCodeData" size="300" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            dense
+            label="Đóng"
+            color="grey"
+            @click="showQRCodeDialog = false"
+          />
+          <q-btn
+            dense
+            label="Tải xuống"
+            color="green"
+            @click="downloadQRCode"
+          />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </div>

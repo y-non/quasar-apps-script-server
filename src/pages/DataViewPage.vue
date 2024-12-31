@@ -5,6 +5,7 @@ import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { Dialog, QSpinnerIos } from "quasar";
 import { useQuasar } from "quasar";
+import { useScanQrStore } from "src/stores/ScanQrStore";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
 import noData from "../assets/images/nodata.jpg";
@@ -14,6 +15,21 @@ import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
+// Make sure to install vue-qrcode-reader
+
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
+import ScanQrComponent from "../components/ScanQrComponent.vue";
+import ScanQrComponentV2 from "../components/ScanQrComponentV2.vue";
+
+const showQRCodeDialog = ref(false); // Dialog visibility state
+const storeScanQr = useScanQrStore();
+
+// Handle the QR Code scan result
+const handleQRCodeScan = (decodedString) => {
+  // You can handle the decoded data here, for example, set the value to the input
+  storeSupabase.newData.giftCard = decodedString;
+  showQRCodeDialog.value = false; // Close the dialog after scanning
+};
 
 const $q = useQuasar();
 const router = useRouter();
@@ -198,6 +214,11 @@ const getColor = (status) => {
     default:
       return "primary";
   }
+};
+
+const onDetect = (decodedString) => {
+  console.log(decodedString);
+  handleQRCodeScan(decodedString);
 };
 </script>
 
@@ -825,18 +846,47 @@ const getColor = (status) => {
                 v-model="storeSupabase.newData.giftCard"
                 placeholder="Vui lòng nhập gift card tại đây..."
                 outlined
+                debounce="500"
+                @update:model-value="
+                  storeSupabase.validateGiftCard(storeSupabase.newData.giftCard)
+                "
               >
                 <template v-slot:append>
+                  <!-- QR Code Icon with click event to show QR Scanner dialog -->
                   <q-icon
-                    name="eva-search-outline"
-                    @click="
-                      storeSupabase.validateGiftCard(
-                        storeSupabase.newData.giftCard
-                      )
-                    "
+                    name="qr_code_scanner"
+                    @click="showQRCodeDialog = true"
                   />
                 </template>
               </q-input>
+
+              <!-- QR Code Scan Dialog -->
+              <q-dialog v-model="showQRCodeDialog">
+                <q-card style="min-width: 90vw">
+                  <q-card-section>
+                    <div class="text-h6">Scan QR Code</div>
+                  </q-card-section>
+
+                  <q-card-section class="q-pa-md flex flex-center">
+                    <!-- QR Scanner Component, make sure to install and use a QR scanning library -->
+                    <!-- <qrcode-stream @detect="onDetect"></qrcode-stream> -->
+                    <ScanQrComponent
+                      :height="500"
+                      :detect-func="storeScanQr.scanData"
+                    ></ScanQrComponent>
+                  </q-card-section>
+
+                  <q-card-actions align="right">
+                    <q-btn
+                      flat
+                      dense
+                      label="Đóng"
+                      color="grey"
+                      @click="showQRCodeDialog = false"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </q-dialog>
 
               <q-card
                 v-if="storeSupabase.newData.isHaveGiftCard"
