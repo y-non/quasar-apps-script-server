@@ -12,6 +12,42 @@ onMounted(async () => {
   storeAccountManagement.listAccount =
     await storeAccountManagement.getListAccount();
 });
+
+const validateDateRange = (val) => {
+  const { dayoff_from, dayoff_to } = storeAccountManagement.selectedAccount;
+
+  const currentDay = new Date().toISOString().split("T")[0];
+
+  if (!val) {
+    return "Không được để trống";
+  }
+
+  if (dayoff_to < dayoff_from) {
+    return "Ngày nghỉ đến phải sau ngày bắt đầu";
+  }
+
+  // if (dayoff_from < currentDay) {
+  //   return "Ngày bắt đầu nghỉ phải sau ngày hiện tại";
+  // }
+
+  return true;
+};
+
+const validateDateRangeFrom = (val) => {
+  const { dayoff_from, dayoff_to } = storeAccountManagement.selectedAccount;
+
+  const currentDay = new Date().toISOString().split("T")[0];
+
+  if (!val) {
+    return "Không được để trống";
+  }
+
+  if (dayoff_from < currentDay) {
+    return "Ngày bắt đầu nghỉ phải sau ngày hiện tại";
+  }
+
+  return true;
+};
 </script>
 
 <template>
@@ -165,19 +201,28 @@ onMounted(async () => {
         <div class="text-h6 text-bold text-primary">Cập nhật tài khoản</div>
       </q-card-section>
 
-      <q-card-section>
-        <!-- Display Name -->
-        <q-input
-          v-model="storeAccountManagement.selectedAccount.display_name"
-          label="Tên"
-          outlined
-          dense
-          class="q-mb-md"
-          placeholder="Enter account's display name"
-        />
+      <q-form
+        @submit="
+          storeAccountManagement.postUpdateAccount(
+            storeAccountManagement.selectedAccount
+          )
+        "
+        class="q-gutter-md"
+      >
+        <div>
+          <q-card-section>
+            <!-- Display Name -->
+            <q-input
+              v-model="storeAccountManagement.selectedAccount.display_name"
+              label="Tên"
+              outlined
+              dense
+              class="q-mb-md"
+              placeholder="Enter account's display name"
+            />
 
-        <!-- Role -->
-        <!-- <q-input
+            <!-- Role -->
+            <!-- <q-input
           v-model="storeAccountManagement.selectedAccount.role"
           label="Phân quyền"
           outlined
@@ -186,80 +231,102 @@ onMounted(async () => {
           placeholder="Vui lòng chọn phân quyền"
         /> -->
 
-        <q-select
-          v-model="storeAccountManagement.selectedAccount.role"
-          :options="storeAccountManagement.listRole"
-          option-label="label"
-          option-value="id"
-          label="Phân quyền"
-          outlined
-          dense
-          class="q-mb-md"
-          placeholder="Vui lòng chọn phân quyền"
-        />
+            <q-select
+              v-model="storeAccountManagement.selectedAccount.role"
+              :options="storeAccountManagement.listRole"
+              option-label="label"
+              option-value="id"
+              label="Phân quyền"
+              outlined
+              dense
+              class="q-mb-md"
+              placeholder="Vui lòng chọn phân quyền"
+            />
 
-        <!-- Status -->
-        <q-select
-          v-model="storeAccountManagement.selectedAccount.status"
-          :options="storeAccountManagement.listStatus"
-          option-label="name"
-          option-value="id"
-          label="Trạng thái"
-          outlined
-          dense
-          class="q-mb-md"
-          placeholder="Vui lòng chọn trạng thái"
-        />
+            <!-- Status -->
+            <q-select
+              v-model="storeAccountManagement.selectedAccount.status"
+              :options="storeAccountManagement.listStatus"
+              option-label="name"
+              option-value="id"
+              label="Trạng thái"
+              outlined
+              dense
+              class="q-mb-md"
+              placeholder="Vui lòng chọn trạng thái"
+              @update:model-value="
+                storeAccountManagement.selectedAccount.isChangeStatus = true
+              "
+            />
 
-        <q-select
-          v-model="storeAccountManagement.selectedAccount.site"
-          :options="storeAccountManagement.listSite"
-          option-label="name"
-          option-value="id"
-          label="Site"
-          outlined
-          class="q-mb-md"
-          dense
-        />
+            <div
+              v-if="
+                storeAccountManagement.selectedAccount.status.name === 'off' &&
+                storeAccountManagement.selectedAccount.isChangeStatus
+              "
+            >
+              <q-input
+                v-model="storeAccountManagement.selectedAccount.dayoff_from"
+                label="Ngày bắt đầu nghỉ"
+                dense
+                outlined
+                type="date"
+                :rules="[validateDateRangeFrom]"
+              />
 
-        <q-input
-          v-model="storeAccountManagement.selectedAccount.provider"
-          label="Phương thức"
-          outlined
-          dense
-          class="q-mb-md"
-          readonly
-        />
+              <q-input
+                v-model="storeAccountManagement.selectedAccount.dayoff_to"
+                label="Nghỉ đến ngày"
+                dense
+                outlined
+                type="date"
+                :rules="[validateDateRange]"
+              />
+            </div>
 
-        <!-- Creation Date (readonly) -->
-        <q-input
-          :placeholder="`${new Date(
-            storeAccountManagement.selectedAccount.created_at
-          ).toLocaleDateString('vi-VN')}`"
-          outlined
-          dense
-          readonly
-          class="q-mb-md"
-        />
-      </q-card-section>
+            <q-select
+              v-model="storeAccountManagement.selectedAccount.site"
+              :options="storeAccountManagement.listSite"
+              option-label="name"
+              option-value="id"
+              label="Site"
+              outlined
+              class="q-mb-md"
+              dense
+            />
 
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Hủy"
-          color="negative"
-          @click="storeAccountManagement.isShowEditDialog = false"
-        />
-        <q-btn
-          label="Lưu"
-          color="positive"
-          @click="
-            storeAccountManagement.postUpdateAccount(
-              storeAccountManagement.selectedAccount
-            )
-          "
-        />
-      </q-card-actions>
+            <q-input
+              v-model="storeAccountManagement.selectedAccount.provider"
+              label="Phương thức"
+              outlined
+              dense
+              class="q-mb-md"
+              readonly
+            />
+
+            <!-- Creation Date (readonly) -->
+            <q-input
+              :placeholder="`${new Date(
+                storeAccountManagement.selectedAccount.created_at
+              ).toLocaleDateString('vi-VN')}`"
+              outlined
+              dense
+              readonly
+              class="q-mb-md"
+            />
+          </q-card-section>
+
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              label="Hủy"
+              color="negative"
+              @click="storeAccountManagement.isShowEditDialog = false"
+            />
+            <q-btn label="Lưu" color="positive" type="submit" />
+          </q-card-actions>
+        </div>
+      </q-form>
     </q-card>
   </q-dialog>
 </template>

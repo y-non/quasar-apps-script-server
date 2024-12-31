@@ -58,6 +58,37 @@ export const useAuthenticationStore = defineStore("authentication", {
 
         // Handle post-login actions, such as redirecting the user
         if (data.session) {
+          //handle check data user day off
+          const userAuthData = storageUtil.getLocalStorageData("userAuthInfo");
+
+          const dayoffFrom = userAuthData.dayoff_from;
+          const dayoffTo = userAuthData.dayoff_to;
+
+          const currentDate = new Date();
+          const currentDateString = currentDate.toISOString().split("T")[0];
+
+          // Check if the current date is outside the range
+          const isExcluded =
+            currentDateString <= dayoffFrom || currentDateString >= dayoffTo;
+
+          if (isExcluded) {
+            Loading.hide();
+            Dialog.create({
+              title: "Thông báo",
+              message: "Nhân viên đang nghỉ phép, không thể đăng nhập!",
+              ok: true,
+              cancel: false,
+              persistent: "",
+            }).onOk(() => {
+              // this.router.push("/");
+              // setTimeout(() => {
+              //   window.location.reload();
+              // }, 300);
+            });
+
+            return;
+          }
+
           const role = storageUtil.getLocalStorageData("userAuthInfo").role;
           localStorage.setItem("access_token", data.session.access_token);
           localStorage.setItem("refresh_token", data.session.refresh_token);

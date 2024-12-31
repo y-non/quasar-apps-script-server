@@ -82,12 +82,20 @@ export const useAccountManagementStore = defineStore("accountManagement", {
 
     async postUpdateAccount(inputData) {
       try {
-        const payload = {
+        let payload = {
           display_name: inputData.display_name,
           role: inputData.role.id,
           site: inputData.site.id,
           status: inputData.status.id,
         };
+
+        if (inputData.status.name === "off") {
+          payload.dayoff_from = inputData.dayoff_from;
+          payload.dayoff_to = inputData.dayoff_to;
+        } else {
+          payload.dayoff_from = null;
+          payload.dayoff_to = null;
+        }
 
         let { data, error } = await supabase
           .from("users")
