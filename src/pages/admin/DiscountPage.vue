@@ -1,22 +1,69 @@
 <script setup>
 import { onMounted } from "vue";
-import { useAdminStore } from "../../stores/AdminStore";
+import { useUtilsStore } from "src/stores/UtilsStore";
+import { useDiscountStore } from "src/stores/admin/DiscountStore";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
 import noData from "../../assets/images/nodata.jpg";
 import { dateUtil } from "src/utils/dateUtil";
 
-const storeAdmin = useAdminStore();
+import updateImg from "../../assets/icons/update.png";
+import deleteImg from "../../assets/icons/delete.png";
+import { useQuasar } from "quasar";
+
+const storeDiscount = useDiscountStore();
+const storeUtils = useUtilsStore();
+const $q = useQuasar();
 
 onMounted(async () => {
-  storeAdmin.listDiscount = await storeAdmin.getDiscount();
+  storeDiscount.isLoadingMainScreen = true;
+  storeDiscount.listDiscount = await storeUtils.getDiscount();
+  storeDiscount.isLoadingMainScreen = false;
 });
+
+function showAction(item) {
+  $q.bottomSheet({
+    message: "Hành động",
+    item,
+    actions: [
+      {
+        label: "Sửa thông tin",
+        img: updateImg,
+        id: "update",
+      },
+      {},
+      {
+        label: "Xóa",
+        avatar: deleteImg,
+        id: "delete",
+      },
+    ],
+  })
+    .onOk((action) => {
+      switch (action.id) {
+        case "update":
+          storeDiscount.showEditDialog = true;
+          storeDiscount.editDiscount = { ...item };
+          break;
+
+        case "delete":
+          storeDiscount.showDeleteDialog = true;
+          storeDiscount.deleteObject = { ...item };
+          break;
+
+        default:
+          break;
+      }
+    })
+    .onCancel(() => {})
+    .onDismiss(() => {});
+}
 </script>
 
 <template>
   <div>
     <div
-      v-if="storeAdmin.isLoadingMainScreen"
+      v-if="storeDiscount.isLoadingMainScreen"
       style="height: 30vh"
       class="full-width flex column flex-center"
     >
@@ -24,9 +71,9 @@ onMounted(async () => {
     </div>
 
     <q-list class="q-mt-md" v-else>
-      <div v-if="storeAdmin.listDiscount?.length">
+      <div v-if="storeDiscount.listDiscount?.length">
         <q-card
-          v-for="(item, index) in storeAdmin.listDiscount"
+          v-for="(item, index) in storeDiscount.listDiscount"
           :key="index"
           flat
           bordered
@@ -43,11 +90,23 @@ onMounted(async () => {
             </div>
 
             <div class="flex flex-center">
+              <!-- <q-icon
+                name="eva-edit-2-outline"
+                size="sm"
+                :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
+                @click="
+                  () => {
+                    storeDiscount.showEditDialog = true;
+                    storeDiscount.editDiscount = { ...item };
+                  }
+                "
+              /> -->
+
               <q-icon
                 name="more_vert"
                 size="sm"
-                :color="storeAdmin.loadingSelect ? 'grey-3' : 'grey-5'"
-                @click="!storeAdmin.loadingSelect ? showAction(item.id) : []"
+                :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
+                @click="!storeDiscount.loadingSelect ? showAction(item) : []"
               />
             </div>
           </q-card-section>
@@ -92,11 +151,125 @@ onMounted(async () => {
         color="green-7"
         class="q-pa-md"
         round
-        :disable="storeAdmin.isLoadingMainScreen"
-        @click="storeAdmin.showAddDialog = true"
+        :disable="storeDiscount.isLoadingMainScreen"
+        @click="storeDiscount.showAddDialog = true"
       />
     </q-page-sticky>
   </div>
+
+  <q-dialog v-model="storeDiscount.showAddDialog">
+    <q-card style="min-width: 400px; max-width: 500px">
+      <q-card-section>
+        <div class="text-h6">Thêm mã giảm giá</div>
+      </q-card-section>
+
+      <q-form
+        @submit="storeDiscount.postCreateDiscount(storeDiscount.newDiscount)"
+        class="q-gutter-md"
+      >
+        <div>
+          <q-card-section>
+            <q-input
+              v-model="storeDiscount.newDiscount.value"
+              type="number"
+              label="Giá trị"
+              outlined
+              :rules="[(val) => !!val || 'Không được để trống']"
+            />
+            <q-select
+              v-model="storeDiscount.newDiscount.type"
+              :options="['€', '%']"
+              label="Loại giảm giá"
+              outlined
+              :rules="[(val) => !!val || 'Không được để trống']"
+            />
+            <q-input
+              v-model="storeDiscount.newDiscount.description"
+              label="Mô tả"
+              outlined
+              class="q-mb-md"
+            />
+          </q-card-section>
+
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              label="Hủy"
+              color="primary"
+              @click="storeDiscount.showAddDialog = false"
+            />
+            <q-btn label="Thêm" type="submit" color="primary" />
+          </q-card-actions>
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="storeDiscount.showEditDialog">
+    <q-card style="min-width: 400px; max-width: 500px">
+      <q-card-section>
+        <div class="text-h6">Edit Discount</div>
+      </q-card-section>
+
+      <q-form
+        @submit="storeDiscount.postUpdateDiscount(storeDiscount.editDiscount)"
+        class="q-gutter-md"
+      >
+        <div>
+          <q-card-section>
+            <q-input
+              v-model="storeDiscount.editDiscount.value"
+              type="number"
+              label="Giá trị"
+              outlined
+              :rules="[(val) => !!val || 'Không được để trống']"
+            />
+            <q-select
+              v-model="storeDiscount.editDiscount.type"
+              :options="['none', '%']"
+              label="Loại giảm giá"
+              outlined
+              :rules="[(val) => !!val || 'Không được để trống']"
+            />
+            <q-input
+              v-model="storeDiscount.editDiscount.description"
+              label="Mô tả"
+              outlined
+              class="q-mb-md"
+            />
+          </q-card-section>
+
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              label="Hủy"
+              color="primary"
+              @click="storeDiscount.showEditDialog = false"
+            />
+            <q-btn type="submit" label="Lưu" color="primary" />
+          </q-card-actions>
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="storeDiscount.showDeleteDialog">
+    <q-card style="min-width: 400px; max-width: 500px">
+      <q-card-section>
+        <div class="text-h6">Xác nhận</div>
+        <div>Bạn có chắc chắn muốn xóa mã giảm giá này không?</div>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Xóa" color="red" @click="storeDiscount.deleteDiscount(storeDiscount.deleteObject)" />
+        <q-btn
+          label="Hủy"
+          color="primary"
+          @click="storeDiscount.showDeleteDialog = false"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <style lang="scss" scoped></style>

@@ -62,7 +62,14 @@ export const useUtilsStore = defineStore("utils", {
         let { data: discounts, error } = await supabase
           .from("discounts")
           .select();
-        return discounts;
+
+        console.log(JSON.stringify(discounts, null, 2));
+
+        if (error) {
+          console.error("Caught error when fetching data: ", error);
+        } else {
+          return discounts;
+        }
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }

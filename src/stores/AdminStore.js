@@ -47,18 +47,18 @@ export const useAdminStore = defineStore("admin", {
     },
 
     /* fetch data session */
-    async getDiscount() {
-      try {
-        this.isLoadingMainScreen = true;
-        let { data: discounts, error } = await supabase
-          .from("discounts")
-          .select();
-        this.isLoadingMainScreen = false;
-        return discounts;
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
-      }
-    },
+    // async getDiscount() {
+    //   try {
+    //     this.isLoadingMainScreen = true;
+    //     let { data: discounts, error } = await supabase
+    //       .from("discounts")
+    //       .select();
+    //     this.isLoadingMainScreen = false;
+    //     return discounts;
+    //   } catch (err) {
+    //     console.error("Internal Server Error: ", err);
+    //   }
+    // },
 
     async getListGiftCard() {
       try {

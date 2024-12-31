@@ -453,7 +453,8 @@ const getColor = (status) => {
                 :label="`-${item.value}${
                   item.type === 'none' ? '€' : item.type
                 }`"
-                class="q-pa-sm q-px-lg"
+                class="q-pa-sm q-px-lg q-mb-sm"
+                style="width: 23%"
                 @click="storeSupabase.handleClickDiscount(item.id)"
               />
             </div>
