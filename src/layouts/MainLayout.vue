@@ -35,6 +35,12 @@ const listRouter = [
     name: "Quản lý mã giảm giá",
     icon: "eva-credit-card-outline",
   },
+
+  {
+    path: "/admin/giftcard",
+    name: "Quản lý mã quà tặng",
+    icon: "eva-gift-outline",
+  },
 ];
 
 function handleGetRouterName(value) {
