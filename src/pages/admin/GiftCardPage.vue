@@ -108,6 +108,8 @@ const copyCode = (code) => {
     Notify.create({
       message: "Đã sao chép mã vào clipboard!",
       color: "green",
+      timeout: 2000,
+      position: "top",
     });
   });
 };
@@ -138,7 +140,7 @@ const copyCode = (code) => {
         />
       </div>
 
-      <q-list class="q-my-md">
+      <q-list class="q-my-md" style="padding-bottom: 5em;">
         <q-card
           v-for="(giftCard, index) in storeGiftCard.listGiftCards"
           :key="index"
@@ -174,19 +176,19 @@ const copyCode = (code) => {
           </q-card-section>
           <q-card-actions align="right">
             <q-btn
+              v-if="!giftCard.isused"
               flat
               dense
               label="Chỉnh sửa"
               color="green"
-              :disable="giftCard.isused"
               @click="openUpdateDialog(giftCard)"
             />
             <q-btn
+              v-if="!giftCard.isused"
               flat
               dense
               label="Xóa"
               color="red"
-              :disable="giftCard.isused"
               @click="confirmDelete(giftCard.id)"
             />
           </q-card-actions>
@@ -194,7 +196,7 @@ const copyCode = (code) => {
       </q-list>
     </div>
 
-    <q-page-sticky position="bottom-right" :offset="[18, 18]">
+    <q-page-sticky position="bottom-right" :offset="[18, 38]">
       <q-btn
         icon="add"
         color="green"

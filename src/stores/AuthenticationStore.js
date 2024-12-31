@@ -143,8 +143,9 @@ export const useAuthenticationStore = defineStore("authentication", {
             cancel: false,
             persistent: "",
           }).onOk(() => {
+            this.router.push("/");
             setTimeout(() => {
-              this.router.push("/");
+              window.location.reload();
             }, 300);
           });
         }, 300);

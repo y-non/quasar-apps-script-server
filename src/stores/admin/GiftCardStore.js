@@ -23,7 +23,6 @@ export const useGiftCardStore = defineStore("giftCard", {
         if (error) {
           console.error("Caught error when fetching data: ", error);
         } else {
-          console.log(data);
           return data;
         }
       } catch (err) {

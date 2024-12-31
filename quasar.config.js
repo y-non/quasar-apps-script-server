@@ -56,7 +56,7 @@ module.exports = configure(function (/* ctx */) {
       // envFolder: "./",
       env: require("dotenv").config().parsed,
 
-      vueRouterMode: "history", // available values: 'hash', 'history'
+      vueRouterMode: "hash", // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,

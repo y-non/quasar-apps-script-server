@@ -103,6 +103,7 @@ function showAction(item) {
               /> -->
 
               <q-icon
+                v-if="!item.isused"
                 name="more_vert"
                 size="sm"
                 :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
@@ -125,7 +126,16 @@ function showAction(item) {
               >
             </div>
 
-            <span class="text-grey-6">{{ item.description }}</span>
+            <div class="flex justify-between">
+              <span class="text-grey-6">{{ item.description }}</span>
+
+              <div
+                class="text-body2"
+                :class="item.isused ? 'text-red' : 'text-green'"
+              >
+                {{ item.isused ? "Đã sử dụng" : "Chưa sử dụng" }}
+              </div>
+            </div>
           </q-card-section>
         </q-card>
       </div>
@@ -261,7 +271,12 @@ function showAction(item) {
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Xóa" color="red" @click="storeDiscount.deleteDiscount(storeDiscount.deleteObject)" />
+        <q-btn
+          flat
+          label="Xóa"
+          color="red"
+          @click="storeDiscount.deleteDiscount(storeDiscount.deleteObject)"
+        />
         <q-btn
           label="Hủy"
           color="primary"

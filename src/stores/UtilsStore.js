@@ -59,11 +59,9 @@ export const useUtilsStore = defineStore("utils", {
 
     async getDiscount() {
       try {
-        let { data: discounts, error } = await supabase
-          .from("discounts")
-          .select();
-
-        console.log(JSON.stringify(discounts, null, 2));
+        let { data: discounts, error } = await supabase.rpc(
+          "fetch_discounts_with_usage"
+        );
 
         if (error) {
           console.error("Caught error when fetching data: ", error);
