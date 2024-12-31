@@ -39,6 +39,22 @@ const hasMoreUsers = computed(
   () => visibleCount.value < storeSupabase.listUserData.length
 );
 
+const menuVisible = ref(false);
+const sortOrder = ref("asc"); // Default sorting order
+
+const sortedUsers = computed(() => {
+  return [...storeSupabase.listUserData].sort((a, b) => {
+    if (sortOrder.value === "asc") {
+      return a.ordernumber - b.ordernumber;
+    }
+    return b.ordernumber - a.ordernumber;
+  });
+});
+
+function sortUsers(order) {
+  sortOrder.value = order;
+}
+
 onMounted(async () => {
   await storeSupabase.getInit();
 
@@ -71,18 +87,19 @@ function showAction(grid) {
         img: updateImg,
         id: "update",
       },
+      {},
 
       {
         label: "Lịch sử chỉnh sửa",
         img: historyImg,
         id: "history",
       },
-      // {},
-      {
-        label: "Xóa",
-        avatar: deleteImg,
-        id: "delete",
-      },
+
+      // {
+      //   label: "Xóa",
+      //   avatar: deleteImg,
+      //   id: "delete",
+      // },
     ],
   })
     .onOk((action) => {
@@ -188,25 +205,125 @@ const getColor = (status) => {
   <q-page class="q-pa-sm">
     <!-- Display User Badges -->
     <div v-if="!storeSupabase.isLoadingMainScreen" class="q-my-sm">
-      <q-btn
-        v-for="user in visibleUsers"
-        :key="user.benutzername"
-        color="grey-6"
-        class="q-mx-xs q-pa-sm q-my-xs"
-        outline
-        size="md"
-        style="min-width: 100px"
-      >
-        <q-icon
-          name="circle"
-          :color="getColor(user.status)"
-          size="xs"
-          class="q-mx-xs"
-        />
-        {{ user.name }} - {{ user.orderCount }}
-      </q-btn>
+      <div v-if="!storeSupabase.isShowMoreUsers">
+        <q-btn
+          v-for="user in visibleUsers"
+          :key="user.userName"
+          color="grey-6"
+          class="q-mx-xs q-pa-sm q-my-xs"
+          outline
+          size="md"
+          style="min-width: 100px"
+        >
+          <q-icon
+            name="circle"
+            :color="getColor(user.status_name)"
+            size="xs"
+            class="q-mx-xs"
+          />
+          {{ user.username }} - {{ user.ordernumber }}
+        </q-btn>
 
-      <q-btn
+        <q-btn
+          v-if="!storeSupabase.isShowMoreUsers"
+          flat
+          text-color="grey-4"
+          icon-right="unfold_more"
+          class="q-ml-sm"
+          @click="
+            storeSupabase.isShowMoreUsers = !storeSupabase.isShowMoreUsers
+          "
+        />
+
+        <q-btn
+          v-else
+          flat
+          dense
+          text-color="grey-4"
+          icon-right="unfold_less"
+          class="q-ml-sm"
+          @click="
+            storeSupabase.isShowMoreUsers = !storeSupabase.isShowMoreUsers
+          "
+        />
+      </div>
+      <div class="column" v-else>
+        <!-- Filter Icon -->
+        <div
+          class="filter-icon"
+          style="position: absolute; top: 16px; right: 16px"
+        >
+          <q-btn
+            dense
+            round
+            flat
+            icon="filter_list"
+            @click="menuVisible.value = !menuVisible.value"
+            v-close-popup
+          >
+            <q-menu v-model="menuVisible">
+              <q-list>
+                <q-item clickable v-close-popup @click="sortUsers('asc')">
+                  <q-item-section>Sắp xếp theo thứ tự bé lớn</q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="sortUsers('desc')">
+                  <q-item-section>Sắp xếp theo thứ tự lớn bé</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </div>
+
+        <!-- User List -->
+        <div
+          v-for="user in sortedUsers"
+          :key="user.userName"
+          class="flex q-py-none"
+          style="align-items: center"
+        >
+          <div style="width: 30%">
+            <q-btn
+              :color="
+                user.status_name === 'serving'
+                  ? 'green-8'
+                  : user.status_name === 'waiting'
+                  ? 'yellow-8'
+                  : 'red-8'
+              "
+              class="q-pa-sm q-my-xs q-py-none"
+              outline
+              size="md"
+              style="min-width: 100px"
+            >
+              {{ user.username }}
+            </q-btn>
+          </div>
+
+          <div class="flex q-py-none" style="align-items: center">
+            <q-badge
+              v-for="(item, index) in +user.ordernumber + 6"
+              :key="index"
+              color="primary"
+              outline
+              class="q-pa-sm q-px-sm q-ml-sm"
+              :label="item"
+            />
+          </div>
+        </div>
+
+        <q-btn
+          flat
+          dense
+          text-color="grey-4"
+          icon-right="unfold_less"
+          class="q-ml-sm"
+          @click="
+            storeSupabase.isShowMoreUsers = !storeSupabase.isShowMoreUsers
+          "
+        />
+      </div>
+
+      <!-- <q-btn
         v-if="hasMoreUsers"
         flat
         text-color="grey-4"
@@ -224,7 +341,7 @@ const getColor = (status) => {
         icon-right="unfold_less"
         class="q-ml-sm"
         @click="showLess"
-      />
+      /> -->
     </div>
 
     <div
@@ -1260,4 +1377,10 @@ const getColor = (status) => {
   </q-page>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.filter-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+</style>

@@ -96,7 +96,7 @@ watch(
 
           <div v-if="role !== 'admin'" class="flex justify-end">
             <div v-if="isShowLogoutButton">
-              <div class="active">
+              <!-- <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
                   storeSupabase.userStatus
                 }}</span>
@@ -124,7 +124,7 @@ watch(
                   :color="'red'"
                   size="xs"
                 />
-              </div>
+              </div> -->
               <q-menu auto-close>
                 <q-list style="min-width: 150px">
                   <q-item clickable>

@@ -16,6 +16,7 @@ export const useSupabaseStore = defineStore("supabase", {
     /* reactive */
     isLogin: false,
     isLoadingMainScreen: false,
+    isShowMoreUsers: false,
     loadingSelect: false,
     isLoadingHistory: false,
     slideItems: [],
@@ -566,21 +567,17 @@ export const useSupabaseStore = defineStore("supabase", {
 
     async getUserStatus() {
       try {
-        const { data: result } = await supabase.from("user_status").select();
+        const { data: result, error } = await supabase.rpc(
+          "fetch_user_order_data"
+        );
 
-        if (result) {
+        if (error) {
+          console.error("Error fetching user status: ", error);
+        } else {
           this.listUserData = result;
-          const userData = storageUtil.getLocalStorageData("userData");
 
-          this.userStatusObject = this.listUserData.filter(
-            (item) => item?.user_id === userData?.id
-          )[0];
-
-          this.userStatus = this.userStatusObject.status;
+          console.log(this.listUserData);
         }
-        // else {
-        //   alert("Failed to fetch data user status");
-        // }
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
