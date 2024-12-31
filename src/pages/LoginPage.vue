@@ -11,6 +11,14 @@ const storeSupabase = useSupabaseStore();
 const router = useRouter();
 const isShowLogin = ref(true);
 
+// Password visibility toggle
+const showPassword = ref(false);
+
+// Methods
+const togglePassword = () => {
+  showPassword.value = !showPassword.value;
+};
+
 onMounted(async () => {
   await storeSupabase.fetchMenuData();
 });
@@ -35,17 +43,28 @@ onMounted(async () => {
           :rules="[(val) => !!val || 'Không được để rỗng']"
           outlined
           @input="storeAuthentication.username = $event.toLowerCase()"
-        />
+        >
+          <template v-slot:append> <span class="text-subtitle1">@gmail.com</span> </template>
+        </q-input>
+
         <q-input
           v-model="storeAuthentication.password"
           label="Mật khẩu"
-          type="password"
-          :rules="
-            ([(val) => !!val || 'Không được để rỗng'],
-            [(val) => val.length > 5 || 'Mật khẩu tối thiểu 6 ký tự'])
-          "
+          :type="showPassword ? 'text' : 'password'"
+          :rules="[
+            (val) => !!val || 'Không được để rỗng',
+            (val) => val.length > 5 || 'Mật khẩu tối thiểu 6 ký tự',
+          ]"
           outlined
-        />
+        >
+          <template v-slot:append>
+            <q-icon
+              :name="showPassword ? 'visibility' : 'visibility_off'"
+              class="cursor-pointer"
+              @click="togglePassword"
+            />
+          </template>
+        </q-input>
         <div class="full-width flex flex-center">
           <q-btn
             label="Đăng nhập"
@@ -121,12 +140,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="isShowLogin" class="flex flex-center">
+    <!-- <div v-if="isShowLogin" class="flex flex-center">
       Chưa có tài khoản?
       <b class="text-blue-8" @click="isShowLogin = false"
         >&nbsp;Đăng ký tại đây</b
       >
-    </div>
+    </div> -->
   </q-page>
 </template>
 

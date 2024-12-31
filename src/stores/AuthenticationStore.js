@@ -23,7 +23,7 @@ export const useAuthenticationStore = defineStore("authentication", {
         });
 
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.includes("@gmail.com") ? email : email + "@gmail.com",
           password,
         });
 
