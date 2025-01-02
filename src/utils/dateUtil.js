@@ -14,7 +14,19 @@ function parseDateString(dateString) {
   return new Date(year, month - 1, day, hours, minutes, seconds);
 }
 
+function formatDate(date) {
+  const newDate = new Date(date);
+  const hours = String(newDate.getHours()).padStart(2, "0");
+  const minutes = String(newDate.getMinutes()).padStart(2, "0");
+  const formattedTime = `${hours}:${minutes} ${newDate.toLocaleDateString(
+    "en-GB"
+  )}`;
+
+  return formattedTime;
+}
+
 export const dateUtil = {
   formatter,
   parseDateString,
+  formatDate,
 };

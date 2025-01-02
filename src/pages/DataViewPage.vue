@@ -1063,9 +1063,7 @@ const onDetect = (decodedString) => {
                       }}
                     </div>
                     <div class="text-subtitle2 text-grey-6 q-ml-xs">
-                      {{
-                        new Date(item.created_at).toLocaleDateString("vi-VN")
-                      }}
+                      {{ item.dateFormat }}
                     </div>
                   </div>
 
@@ -1118,22 +1116,45 @@ const onDetect = (decodedString) => {
                   v-ripple
                   class="flex justify-between"
                 >
-                  <q-item-section style="width: 70%">
-                    {{
-                      storeSupabase.menuData.filter(
-                        (menuItem) => menuItem.id === step.menu_id
-                      )[0].label
-                    }}
+                  <q-item-section>
+                    <div class="flex justify-between">
+                      <span style="width: 80%">
+                        {{
+                          storeSupabase.menuData.filter(
+                            (menuItem) => menuItem.id === step.menu_id
+                          )[0].label
+                        }}
+                      </span>
+
+                      <span
+                        >{{ step.quantity }} x
+                        {{ step.price / step.quantity }}</span
+                      >
+                    </div>
                   </q-item-section>
-                  <q-item-section class="flex flex-end text-right"
-                    >{{ step.quantity }} x
-                    {{ step.price / step.quantity }}</q-item-section
-                  >
                 </q-item>
               </q-card-section>
 
+              <!-- khách đặt -->
+              <div
+                class="flex full-width justify-end q-px-lg"
+                style="align-items: center"
+                v-if="item.details.is_customer_order"
+              >
+                <span class="text-blue text-bold">
+                  Khách đặt
+                  <q-icon
+                    name="eva-checkmark-circle-outline"
+                    size="sm"
+                    color="primary"
+                  />
+                </span>
+              </div>
+
               <q-card-section>
-                Mô tả: {{ item.details.description }}
+                <span class="q-px-md"
+                  >Mô tả: {{ item.details.description }}</span
+                >
               </q-card-section>
             </q-card>
           </q-list>

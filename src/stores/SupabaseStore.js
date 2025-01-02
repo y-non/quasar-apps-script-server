@@ -205,6 +205,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 }
               }
 
+              let dateFormat = dateUtil.formatDate(item.created_at);
               //return session
               if (item.operation.toLowerCase() === "update") {
                 return {
@@ -219,6 +220,7 @@ export const useSupabaseStore = defineStore("supabase", {
                   giftCardObject: giftCard ? giftCard : {},
                   isHaveDiscount: discount ? true : false,
                   isHaveGiftCard: giftCard ? true : false,
+                  dateFormat,
                 };
               }
 
@@ -230,6 +232,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 giftCardObject: giftCard ? giftCard : {},
                 isHaveDiscount: discount ? true : false,
                 isHaveGiftCard: giftCard ? true : false,
+                dateFormat,
               };
             })
           );
@@ -648,6 +651,21 @@ export const useSupabaseStore = defineStore("supabase", {
         );
 
         if (error) console.error(JSON.stringify(error, null, 2));
+        else {
+          this.fetchData();
+          Notify.create({
+            type: "positive",
+            message: "Cập nhật thành công!",
+            position: "top",
+          });
+          this.updateData = {
+            umsatz: 0,
+            notizen: "",
+            menuSelected: [],
+            isCustomerOrder: false,
+          };
+          this.showUpdateDialog = false;
+        }
 
         Loading.hide();
       } catch (error) {
