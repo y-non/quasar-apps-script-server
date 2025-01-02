@@ -13,7 +13,7 @@ const storeSupabase = useSupabaseStore();
 
 const drawer = ref(false);
 const isShowLogoutButton = ref(false);
-const username = storageUtil.getLocalStorageData("username");
+const selfUserData = storageUtil.getLocalStorageData("selfAppInfo");
 const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 const role = ref("");
 const routerName = ref("");
@@ -91,7 +91,7 @@ watch(
             aria-label="Menu"
             @click="drawer = !drawer"
           >
-            <span class="q-ml-md">{{ username }}</span>
+            <span class="q-ml-md">{{ selfUserData.username }} - {{ selfUserData.status_name }}</span>
           </q-btn>
 
           <div v-if="role !== 'admin'" class="flex justify-end">
@@ -203,7 +203,7 @@ watch(
             aria-label="Menu"
             @click="drawer = !drawer"
           >
-            <span class="q-ml-md">{{ username }}</span>
+            <span class="q-ml-md">{{ selfUserData.username }}</span>
           </q-btn>
         </div>
       </q-toolbar>

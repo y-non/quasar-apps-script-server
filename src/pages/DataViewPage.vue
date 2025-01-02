@@ -322,7 +322,7 @@ const onDetect = (decodedString) => {
 
           <div class="flex q-py-none" style="align-items: center">
             <q-badge
-              v-for="(item, index) in +user.ordernumber + 6"
+              v-for="(item, index) in +user.ordernumber"
               :key="index"
               color="primary"
               outline

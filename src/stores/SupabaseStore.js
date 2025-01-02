@@ -576,7 +576,21 @@ export const useSupabaseStore = defineStore("supabase", {
         } else {
           this.listUserData = result;
 
-          console.log(this.listUserData);
+          //set user data to local for quick access
+          // storageUtil.setLocalStorageData("listUserData", this.listUserData);
+
+          //and now gonna set self user status to localstorage
+          const userData = storageUtil.getLocalStorageData("userAuthInfo");
+
+          if (userData) {
+            const selfUserStatus = this.listUserData.filter(
+              (item) => item.userid === userData.user_id
+            )[0];
+
+            storageUtil.setLocalStorageData("selfAppInfo", selfUserStatus);
+          } else {
+            console.error("Data user not found");
+          }
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);
