@@ -155,10 +155,14 @@ export const useSupabaseStore = defineStore("supabase", {
 
               const menuData = await this.fetchOrderItem(item.id);
 
-              let totalPrice = 0;
+              let totalPrice = 0,
+                umsatz = 0;
+
               menuData.forEach((item) => {
                 totalPrice += item.price;
               });
+
+              umsatz = totalPrice;
 
               //handle check discount
               let discount = this.listDiscount.filter(
@@ -167,9 +171,9 @@ export const useSupabaseStore = defineStore("supabase", {
 
               if (discount) {
                 if (discount.type === "none") {
-                  totalPrice -= discount.value;
+                  umsatz -= discount.value;
                 } else {
-                  totalPrice -= (totalPrice / 100) * discount.value;
+                  umsatz -= (umsatz / 100) * discount.value;
                 }
               }
 
@@ -181,7 +185,7 @@ export const useSupabaseStore = defineStore("supabase", {
               }
 
               if (giftCard) {
-                totalPrice -= giftCard.value;
+                umsatz -= giftCard.value;
               }
 
               return {
@@ -191,8 +195,11 @@ export const useSupabaseStore = defineStore("supabase", {
                 datum: formattedTime,
                 isHandled: true,
                 totalPrice: totalPrice,
+                umsatz: umsatz,
                 discountObject: discount ? discount : {},
                 giftCardObject: giftCard ? giftCard : {},
+                isHaveDiscount: discount ? true : false,
+                isHaveGiftCard: giftCard ? true : false,
               };
             })
             .filter((item) => item)
@@ -644,79 +651,6 @@ export const useSupabaseStore = defineStore("supabase", {
         console.error("Error fetching data:", error);
       }
     },
-
-    // async subscribeToTable() {
-    //   try {
-    //     const subscription = supabase
-    //       .channel("public:umsatz")
-    //       .on(
-    //         "postgres_changes",
-    //         {
-    //           event: "*",
-    //           schema: "public",
-    //           table: "umsatz",
-    //         },
-    //         async (payload) => {
-    //           let indexToUpdate;
-    //           let dataAdd = {};
-    //           let newDate, hours, minutes, formattedTime, listSelectedMenu;
-    //           switch (payload.eventType) {
-    //             case "INSERT":
-    //               dataAdd = payload.new;
-
-    //               newDate = new Date(dataAdd.created_at);
-    //               hours = String(newDate.getHours()).padStart(2, "0");
-    //               minutes = String(newDate.getMinutes()).padStart(2, "0");
-    //               formattedTime = `${hours}:${minutes}`;
-
-    //               dataAdd.datum = formattedTime;
-
-    //               listSelectedMenu =
-    //                 dataAdd.menu?.length > 1
-    //                   ? dataAdd.menu.split(";")
-    //                   : dataAdd.menu;
-
-    //               dataAdd.menu.length > 1
-    //                 ? (dataAdd.menuSelected = listSelectedMenu.map((item) => {
-    //                     return this.menuData.filter(
-    //                       (menuItem) => item == menuItem.id
-    //                     )[0];
-    //                   }))
-    //                 : (dataAdd.menuSelected = this.menuData.filter(
-    //                     (menuItem) => dataAdd.menu == menuItem.id
-    //                   ));
-    //               this.dataItem.push(dataAdd);
-    //               break;
-
-    //             case "UPDATE":
-    //               indexToUpdate = this.dataItem.findIndex(
-    //                 (row) => row.id === payload.new.id
-    //               );
-    //               if (indexToUpdate !== -1) {
-    //                 const datumSave = this.dataItem[indexToUpdate].datum;
-    //                 this.dataItem[indexToUpdate] = {
-    //                   ...payload.new,
-    //                   datum: datumSave,
-    //                 };
-    //               }
-
-    //               break;
-
-    //             case "DELETE":
-    //               this.dataItem = this.dataItem.filter(
-    //                 (row) => row.id !== payload.old.id
-    //               );
-    //               break;
-    //           }
-    //         }
-    //       )
-    //       .subscribe();
-
-    //     return subscription;
-    //   } catch (err) {
-    //     console.error("Error subscribing to changes: ", err);
-    //   }
-    // },
 
     async subscribeToTableUserSessions() {
       try {

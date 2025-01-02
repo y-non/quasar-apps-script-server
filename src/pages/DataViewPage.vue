@@ -129,7 +129,6 @@ function showAction(grid) {
 
           storeSupabase.updateData.isCustomerOrder = false;
 
-          /* test */
           storeSupabase.updateData.menuSelected =
             storeSupabase.updateData.menuSelected
               .map((item) => {
@@ -161,7 +160,7 @@ function showAction(grid) {
             })
             .filter((item) => item);
 
-          storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
+          // storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
           break;
 
         case "delete":
@@ -217,7 +216,6 @@ const getColor = (status) => {
 };
 
 const onDetect = (decodedString) => {
-  console.log(decodedString);
   handleQRCodeScan(decodedString);
 };
 </script>
@@ -427,7 +425,7 @@ const onDetect = (decodedString) => {
             >
               <span class="text-bold text-grey-7 text-h6">Doanh thu</span>
               <span class="text-blue text-h4">{{
-                dateUtil.formatter.format(item.totalPrice)
+                dateUtil.formatter.format(item.umsatz)
               }}</span>
             </div>
 
@@ -1122,12 +1120,93 @@ const onDetect = (decodedString) => {
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
-
+          <!--
           <div class="float-bottom text-h6" style="right: 5%">
             <span class="text-bold">Tổng cộng:</span>
             {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }}
+          </div> -->
+          <div class="column flex q-pt-lg" style="align-items: end">
+            <div style="width: 100%" class="flex justify-between">
+              <span class="text-grey-8">Giá gốc: </span>
+
+              <span>
+                {{
+                  dateUtil.formatter.format(storeSupabase.updateData.totalPrice)
+                }}
+              </span>
+            </div>
+
+            <div
+              v-if="storeSupabase.updateData.isHaveDiscount"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã giảm giá: </span>
+
+              <span
+                class="text-red-8"
+                v-if="storeSupabase.updateData.discountObject.type === 'none'"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.updateData.discountObject.value
+                  )
+                }}</span
+              >
+
+              <span v-else class="text-red-8"
+                >-{{ storeSupabase.updateData.discountObject.value }}
+                {{ storeSupabase.updateData.discountObject.type }}</span
+              >
+            </div>
+
+            <div
+              v-if="storeSupabase.updateData.isHaveGiftCard"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã quà tặng: </span>
+
+              <span class="text-red-8"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.updateData.giftCardObject.value
+                  )
+                }}</span
+              >
+            </div>
+
+            <div
+              class="float-bottom text-subtitle1 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span class="text-bold q-pr-md">Tổng cộng:</span>
+              <span>
+                <!-- {{
+                  dateUtil.formatter.format(
+                    Math.max(
+                      (storeSupabase.updateData.isHaveDiscount
+                        ? storeSupabase.updateData.discountObject.type ===
+                          "none"
+                          ? storeSupabase.updateData.umsatz -
+                            storeSupabase.updateData.discountObject.value
+                          : storeSupabase.updateData.umsatz -
+                            (storeSupabase.updateData.umsatz / 100) *
+                              storeSupabase.updateData.discountObject.value
+                        : storeSupabase.updateData.umsatz) -
+                        (storeSupabase.updateData.isHaveGiftCard
+                          ? storeSupabase.updateData.giftCardObject.value
+                          : 0),
+                      0
+                    )
+                  )
+                }} -->
+
+                {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }}
+              </span>
+            </div>
           </div>
         </div>
+
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
@@ -1144,7 +1223,6 @@ const onDetect = (decodedString) => {
               bordered
               separator
             >
-              <!-- test -->
               <q-slide-item
                 v-for="(item, index) in storeSupabase.updateData.menuSelected"
                 :key="index"
