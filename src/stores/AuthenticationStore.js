@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { Dialog, Loading, Notify } from "quasar";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
+import { useSupabaseStore } from "./SupabaseStore";
 
 export const useAuthenticationStore = defineStore("authentication", {
   state: () => ({
@@ -18,6 +19,7 @@ export const useAuthenticationStore = defineStore("authentication", {
 
     async signIn(email, password) {
       try {
+        const storeSupabase = useSupabaseStore();
         Loading.show({
           message: "Đang đăng nhập...",
         });
@@ -29,7 +31,7 @@ export const useAuthenticationStore = defineStore("authentication", {
 
         if (error) {
           Notify.create({
-            message: "Tài khoản hoặc mật khẩu không đúng",
+            message: error.message,
             type: "negative",
             position: "top",
             timeout: 1000,
@@ -89,6 +91,8 @@ export const useAuthenticationStore = defineStore("authentication", {
             return;
           }
 
+          await storeSupabase.getUserStatus();
+
           const role = storageUtil.getLocalStorageData("userAuthInfo").role;
           localStorage.setItem("access_token", data.session.access_token);
           localStorage.setItem("refresh_token", data.session.refresh_token);
@@ -97,18 +101,17 @@ export const useAuthenticationStore = defineStore("authentication", {
           storageUtil.setLocalStorageData("isLogin", this.isLogin);
 
           if (role === "admin") {
-            console.log(role === "admin");
             this.router.push("/admin");
+            Loading.hide();
           } else {
             this.router.push("/data");
+            Loading.hide();
           }
 
           setTimeout(() => {
             window.location.reload();
-          }, 100);
+          }, 200);
         }
-
-        Loading.hide();
       } catch (err) {
         Loading.hide();
         console.error("Error when handling signIn(email, password): ", err);

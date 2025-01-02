@@ -52,7 +52,7 @@ function handleGetRouterName(value) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
 

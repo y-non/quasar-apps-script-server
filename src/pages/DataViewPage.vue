@@ -56,7 +56,7 @@ const hasMoreUsers = computed(
 );
 
 const menuVisible = ref(false);
-const sortOrder = ref("asc"); // Default sorting order
+const sortOrder = ref("desc"); // Default sorting order
 
 const sortedUsers = computed(() => {
   return [...storeSupabase.listUserData].sort((a, b) => {
@@ -1012,7 +1012,7 @@ const onDetect = (decodedString) => {
         class="full-width full-height"
       >
         <div
-          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          class="flex justify-between q-pr-md bg-white z-max"
           style="position: sticky; top: 0"
         >
           <q-btn
@@ -1081,6 +1081,7 @@ const onDetect = (decodedString) => {
                             ? '€'
                             : item.discountObject.type
                         }`"
+                        class="q-mr-sm"
                       >
                       </q-badge>
 
@@ -1089,7 +1090,7 @@ const onDetect = (decodedString) => {
                         color="red"
                         outline
                         :label="`-${item.giftCardObject.value}€`"
-                        class="q-mx-md"
+                        class="q-mr-sm"
                       />
 
                       <span class="text-right text-subtitle1">{{
@@ -1174,7 +1175,7 @@ const onDetect = (decodedString) => {
     >
       <q-card class="full-width full-height">
         <div
-          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          class="flex justify-between q-pr-md bg-white z-max"
           style="position: sticky; top: 0"
         >
           <q-btn

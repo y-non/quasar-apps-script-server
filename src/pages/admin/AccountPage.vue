@@ -1,10 +1,19 @@
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useAccountManagementStore } from "src/stores/admin/AccountManagementStore";
 
 import noData from "../../assets/images/nodata.jpg";
+import { dateUtil } from "src/utils/dateUtil";
 
 const storeAccountManagement = useAccountManagementStore();
+const tab = ref("user");
+// Password visibility toggle
+const showPassword = ref(false);
+
+// Methods
+const togglePassword = () => {
+  showPassword.value = !showPassword.value;
+};
 
 onMounted(async () => {
   await storeAccountManagement.getInit();
@@ -60,7 +69,7 @@ const validateDateRangeFrom = (val) => {
       Đang tải <q-spinner-ios size="lg" color="blue" />
     </div>
 
-    <q-list class="q-mt-md" v-else>
+    <q-list v-else>
       <div v-if="storeAccountManagement.listAccount?.length">
         <q-card
           v-for="(item, index) in storeAccountManagement.listAccount"
@@ -71,20 +80,20 @@ const validateDateRangeFrom = (val) => {
         >
           <q-card-section>
             <div class="text-h6 text-bold">{{ item.display_name }}</div>
-            <div class="text-caption text-grey">ID: {{ item.id }}</div>
+            <div class="text-caption text-grey">email: {{ item.email }}</div>
           </q-card-section>
 
           <q-separator />
 
           <q-card-section>
-            <div class="q-mb-sm">
+            <!-- <div class="q-mb-sm">
               <span class="text-bold">Phương thức:</span> {{ item.provider }}
-            </div>
+            </div> -->
             <div class="q-mb-sm">
               <span class="text-bold">Quyền:</span> {{ item.role }}
             </div>
             <div class="q-mb-sm">
-              <span class="text-bold">Trạng thái:</span> {{ item.status.name }}
+              <span class="text-bold">Trạng thái:</span> {{ item.status?.name }}
             </div>
 
             <div class="q-mb-sm">
@@ -92,7 +101,7 @@ const validateDateRangeFrom = (val) => {
             </div>
             <div>
               <span class="text-bold">Ngày tạo:</span>
-              {{ new Date(item.created_at).toDateString("vi-VN") }}
+              {{ dateUtil.formatDate(item.created_at) }}
             </div>
           </q-card-section>
 
@@ -108,8 +117,40 @@ const validateDateRangeFrom = (val) => {
               label="Xóa"
               color="negative"
               flat
-              @click="storeAccountManagement.deleteAccount(item.id)"
+              disabled
+              @click="
+                storeAccountManagement.showDeleteDialog = true;
+                storeAccountManagement.deleteObject = { ...item };
+              "
             /> -->
+
+            <q-dialog v-model="storeAccountManagement.showDeleteDialog">
+              <q-card style="min-width: 400px; max-width: 500px">
+                <q-card-section>
+                  <div class="text-h6">Xác nhận</div>
+                  <div>Bạn có chắc chắn muốn xóa tài khoản này không?</div>
+                </q-card-section>
+
+                <q-card-actions align="right">
+                  <q-btn
+                    flat
+                    label="Xóa"
+                    color="red"
+                    @click="
+                      storeAccountManagement.deleteUser(
+                        storeAccountManagement.deleteObject.id,
+                        storeAccountManagement.deleteObject.user_id
+                      )
+                    "
+                  />
+                  <q-btn
+                    label="Hủy"
+                    color="primary"
+                    @click="storeAccountManagement.showDeleteDialog = false"
+                  />
+                </q-card-actions>
+              </q-card>
+            </q-dialog>
           </q-card-actions>
         </q-card>
       </div>
@@ -129,7 +170,7 @@ const validateDateRangeFrom = (val) => {
       </div>
     </q-list>
 
-    <!-- <q-page-sticky position="bottom-right" :offset="[18, 48]">
+    <q-page-sticky position="bottom-right" :offset="[18, 48]">
       <q-btn
         icon="add"
         color="green-7"
@@ -138,7 +179,7 @@ const validateDateRangeFrom = (val) => {
         :disable="storeAccountManagement.isLoadingMainScreen"
         @click="storeAccountManagement.isShowCreateDialog = true"
       />
-    </q-page-sticky> -->
+    </q-page-sticky>
   </div>
 
   <q-dialog v-model="storeAccountManagement.isShowCreateDialog">
@@ -146,52 +187,164 @@ const validateDateRangeFrom = (val) => {
       <q-card-section>
         <div class="text-h6">Tạo tài khoản mới</div>
       </q-card-section>
+      <q-form
+        @submit="
+          storeAccountManagement.newAccount.role === 'user'
+            ? storeAccountManagement.createAccount(
+                storeAccountManagement.newAccount.email,
+                storeAccountManagement.newAccount.password,
+                storeAccountManagement.newAccount.displayName,
+                storeAccountManagement.newAccount.role,
+                storeAccountManagement.newAccount.site.id,
+                storeAccountManagement.defaultStatusId
+              )
+            : storeAccountManagement.createAccount(
+                storeAccountManagement.newAccount.email,
+                storeAccountManagement.newAccount.password,
+                storeAccountManagement.newAccount.displayName,
+                storeAccountManagement.newAccount.role
+              )
+        "
+        class="q-gutter-md"
+      >
+        <q-card-section>
+          <q-tabs v-model="tab" class="text-teal">
+            <q-tab
+              name="user"
+              icon="eva-person-outline"
+              label="Nhân viên"
+              @click="storeAccountManagement.newAccount.role = 'user'"
+            />
+            <q-tab
+              name="admin"
+              icon="support_agent"
+              label="Quản lý"
+              @click="storeAccountManagement.newAccount.role = 'admin'"
+            />
+          </q-tabs>
 
-      <q-card-section>
-        <!-- Display Name Input -->
-        <q-input
-          v-model="storeAccountManagement.newAccount.display_name"
-          label="Display Name"
-          outlined
-          autofocus
-        />
+          <q-tab-panels v-model="tab" animated>
+            <!-- user add session -->
+            <q-tab-panel name="user">
+              <div>
+                <q-input
+                  v-model="storeAccountManagement.newAccount.email"
+                  label="Email"
+                  :rules="[(val) => !!val || 'Không được để rỗng']"
+                  outlined
+                  @input="
+                    storeAccountManagement.newAccount.email =
+                      $event.toLowerCase()
+                  "
+                  dense
+                >
+                  <template v-slot:append>
+                    <span class="text-subtitle1">@gmail.com</span>
+                  </template>
+                </q-input>
 
-        <!-- Role Input -->
-        <q-input
-          v-model="storeAccountManagement.newAccount.role"
-          label="Role"
-          outlined
-          class="q-mt-md"
-        />
+                <q-input
+                  v-model="storeAccountManagement.newAccount.password"
+                  label="Mật khẩu"
+                  :type="showPassword ? 'text' : 'password'"
+                  :rules="[
+                    (val) => !!val || 'Không được để rỗng',
+                    (val) => val.length > 5 || 'Mật khẩu tối thiểu 6 ký tự',
+                  ]"
+                  outlined
+                  dense
+                >
+                  <template v-slot:append>
+                    <q-icon
+                      :name="showPassword ? 'visibility' : 'visibility_off'"
+                      class="cursor-pointer"
+                      @click="togglePassword"
+                    />
+                  </template>
+                </q-input>
 
-        <!-- Status Select -->
-        <q-select
-          v-model="storeAccountManagement.newAccount.status"
-          :options="['serving', 'inactive']"
-          label="Status"
-          outlined
-          class="q-mt-md"
-        />
+                <q-input
+                  v-model="storeAccountManagement.newAccount.displayName"
+                  label="Tên hiển thị"
+                  :rules="[(val) => !!val || 'Không được để rỗng']"
+                  outlined
+                  dense
+                />
 
-        <!-- Site Select -->
-        <q-select
-          v-model="storeAccountManagement.newAccount.site"
-          :options="siteOptions"
-          label="Site"
-          outlined
-          class="q-mt-md"
-        />
-      </q-card-section>
+                <q-select
+                  v-model="storeAccountManagement.newAccount.site"
+                  :options="storeAccountManagement.listSite"
+                  option-label="name"
+                  option-value="id"
+                  label="Site"
+                  outlined
+                  class="q-mb-md"
+                  dense
+                />
+              </div>
+            </q-tab-panel>
 
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          label="Cancel"
-          color="primary"
-          @click="storeAccountManagement.isShowCreateDialog = false"
-        />
-        <q-btn flat label="Create" color="primary" @click="createAccount" />
-      </q-card-actions>
+            <!-- admin add session -->
+            <q-tab-panel name="admin">
+              <div>
+                <q-input
+                  v-model="storeAccountManagement.newAccount.email"
+                  label="Email"
+                  :rules="[(val) => !!val || 'Không được để rỗng']"
+                  outlined
+                  @input="
+                    storeAccountManagement.newAccount.email =
+                      $event.toLowerCase()
+                  "
+                  dense
+                >
+                  <template v-slot:append>
+                    <span class="text-subtitle1">@gmail.com</span>
+                  </template>
+                </q-input>
+
+                <q-input
+                  v-model="storeAccountManagement.newAccount.password"
+                  label="Mật khẩu"
+                  :type="showPassword ? 'text' : 'password'"
+                  :rules="[
+                    (val) => !!val || 'Không được để rỗng',
+                    (val) => val.length > 5 || 'Mật khẩu tối thiểu 6 ký tự',
+                  ]"
+                  outlined
+                  dense
+                >
+                  <template v-slot:append>
+                    <q-icon
+                      :name="showPassword ? 'visibility' : 'visibility_off'"
+                      class="cursor-pointer"
+                      @click="togglePassword"
+                    />
+                  </template>
+                </q-input>
+
+                <q-input
+                  v-model="storeAccountManagement.newAccount.displayName"
+                  label="Tên hiển thị"
+                  :rules="[(val) => !!val || 'Không được để rỗng']"
+                  outlined
+                  dense
+                />
+              </div>
+            </q-tab-panel>
+          </q-tab-panels>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Trở về" color="primary" v-close-popup />
+          <q-btn
+            type="submit"
+            label="Tạo"
+            color="primary"
+            @click="createAccount"
+          />
+        </q-card-actions>
+      </q-form>
     </q-card>
   </q-dialog>
 
