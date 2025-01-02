@@ -91,7 +91,10 @@ watch(
             aria-label="Menu"
             @click="drawer = !drawer"
           >
-            <span class="q-ml-md">{{ selfUserData.username }} - {{ selfUserData.status_name }}</span>
+            <span class="q-ml-md"
+              >{{ selfUserData.username }} -
+              {{ selfUserData.status_name }}</span
+            >
           </q-btn>
 
           <div v-if="role !== 'admin'" class="flex justify-end">
