@@ -123,9 +123,9 @@ function showAction(grid) {
         case "update":
           storeSupabase.showUpdateDialog = true;
 
-          storeSupabase.updateData = storeSupabase.dataItem.filter(
-            (item) => item.id === grid
-          )[0];
+          storeSupabase.updateData = {
+            ...storeSupabase.dataItem.filter((item) => item.id === grid)[0],
+          };
 
           storeSupabase.updateData.isCustomerOrder = false;
 
@@ -160,7 +160,22 @@ function showAction(grid) {
             })
             .filter((item) => item);
 
-          // storeSupabase.updateData.umsatz = storeSupabase.updateData.totalPrice;
+          //handle highlight discount
+          if (storeSupabase.updateData.isHaveDiscount) {
+            storeSupabase.listDiscountUpdate =
+              storeSupabase.listDiscountUpdate.map((item) => {
+                if (item.id === storeSupabase.updateData.discountObject.id) {
+                  return {
+                    ...item,
+                    isSelected: true,
+                  };
+                }
+                return {
+                  ...item,
+                  isSelected: false,
+                };
+              });
+          }
           break;
 
         case "delete":
@@ -1008,10 +1023,10 @@ const onDetect = (decodedString) => {
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
+          <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
         </div>
         <q-card-section>
-          <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
-          <q-list bordered>
+          <q-list>
             <!-- <q-item
               v-for="(item, index) in storeSupabase.listOrderHistories"
               :key="index"
@@ -1028,7 +1043,7 @@ const onDetect = (decodedString) => {
             <q-card
               v-for="(item, index) in storeSupabase.listOrderHistories"
               :key="index"
-              class="my-card"
+              class="my-card q-mb-lg"
             >
               <q-card-section>
                 <div class="flex justify-between">
@@ -1038,13 +1053,13 @@ const onDetect = (decodedString) => {
                       :class="
                         item.operation.toLowerCase() === 'insert'
                           ? 'text-green'
-                          : ''
+                          : 'text-orange'
                       "
                     >
                       {{
                         item.operation.toLowerCase() === "insert"
                           ? "Tạo mới"
-                          : ""
+                          : "Cập nhập"
                       }}
                     </div>
                     <div class="text-subtitle2 text-grey-6 q-ml-xs">
@@ -1053,20 +1068,49 @@ const onDetect = (decodedString) => {
                       }}
                     </div>
                   </div>
-                  <div>
-                    <span class="text-blue text-h4 text-right">{{
-                      dateUtil.formatter.format(
-                        item.details.menu_items.reduce(
-                          (total, item) => total + item.price,
-                          0
+
+                  <div
+                    class="right-history column flex"
+                    style="align-items: end"
+                  >
+                    <div class="flex justify-end" style="align-items: center">
+                      <q-badge
+                        v-if="item.discountObject.id"
+                        color="primary"
+                        outline
+                        :label="`-${item.discountObject.value}${
+                          item.discountObject.type === 'none'
+                            ? '€'
+                            : item.discountObject.type
+                        }`"
+                      >
+                      </q-badge>
+
+                      <q-badge
+                        v-if="item.giftCardObject.id"
+                        color="red"
+                        outline
+                        :label="`-${item.giftCardObject.value}€`"
+                        class="q-mx-md"
+                      />
+
+                      <span class="text-right text-subtitle1">{{
+                        dateUtil.formatter.format(
+                          item.details.menu_items.reduce(
+                            (total, item) => total + item.price,
+                            0
+                          )
                         )
-                      )
-                    }}</span>
+                      }}</span>
+                    </div>
+
+                    <div class="text-blue text-h5">
+                      = {{ dateUtil.formatter.format(item.umsatz.toFixed(2)) }}
+                    </div>
                   </div>
                 </div>
               </q-card-section>
               <q-card-section>
-                <!-- {{ item.details }} -->
                 <q-item
                   v-for="(step, stepIndex) in item.details.menu_items"
                   :key="stepIndex"
@@ -1181,27 +1225,27 @@ const onDetect = (decodedString) => {
             >
               <span class="text-bold q-pr-md">Tổng cộng:</span>
               <span>
-                <!-- {{
+                {{
                   dateUtil.formatter.format(
                     Math.max(
                       (storeSupabase.updateData.isHaveDiscount
                         ? storeSupabase.updateData.discountObject.type ===
                           "none"
-                          ? storeSupabase.updateData.umsatz -
+                          ? storeSupabase.updateData.totalPrice -
                             storeSupabase.updateData.discountObject.value
-                          : storeSupabase.updateData.umsatz -
-                            (storeSupabase.updateData.umsatz / 100) *
+                          : storeSupabase.updateData.totalPrice -
+                            (storeSupabase.updateData.totalPrice / 100) *
                               storeSupabase.updateData.discountObject.value
-                        : storeSupabase.updateData.umsatz) -
+                        : storeSupabase.updateData.totalPrice) -
                         (storeSupabase.updateData.isHaveGiftCard
                           ? storeSupabase.updateData.giftCardObject.value
                           : 0),
                       0
                     )
                   )
-                }} -->
+                }}
 
-                {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }}
+                <!-- {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }} -->
               </span>
             </div>
           </div>
@@ -1212,6 +1256,21 @@ const onDetect = (decodedString) => {
             class="q-gutter-md q-py-lg flex column"
             @submit="storeSupabase.postUpdateItem(storeSupabase.updateData)"
           >
+            <div class="full-width justify-between flex q-px-md">
+              <q-badge
+                :outline="!item.isSelected"
+                color="primary"
+                v-for="(item, index) in storeSupabase.listDiscountUpdate"
+                :key="index"
+                :label="`-${item.value}${
+                  item.type === 'none' ? '€' : item.type
+                }`"
+                class="q-pa-sm q-px-lg q-mb-sm"
+                style="width: 23%"
+                @click="storeSupabase.handleClickDiscountUpdate(item.id)"
+              />
+            </div>
+
             <span
               v-if="storeSupabase.updateData.menuSelected?.length"
               class="text-subtitle1"
@@ -1464,6 +1523,122 @@ const onDetect = (decodedString) => {
                 </q-item>
               </q-slide-item>
             </q-list> -->
+
+            <div>
+              <span class="text-subtitle1">Gift card</span>
+
+              <q-input
+                v-model="storeSupabase.updateData.giftCard"
+                placeholder="Vui lòng nhập gift card tại đây..."
+                outlined
+                debounce="500"
+                @update:model-value="
+                  storeSupabase.validateGiftCard(
+                    storeSupabase.updateData.giftCard
+                  )
+                "
+              >
+                <template v-slot:append>
+                  <!-- QR Code Icon with click event to show QR Scanner dialog -->
+                  <q-icon
+                    name="qr_code_scanner"
+                    @click="showQRCodeDialog = true"
+                  />
+                </template>
+              </q-input>
+
+              <!-- QR Code Scan Dialog -->
+              <q-dialog v-model="showQRCodeDialog">
+                <q-card style="min-width: 90vw">
+                  <q-card-section>
+                    <div class="text-h6">Scan QR Code</div>
+                  </q-card-section>
+
+                  <q-card-section class="q-pa-md flex flex-center">
+                    <!-- QR Scanner Component, make sure to install and use a QR scanning library -->
+                    <!-- <qrcode-stream @detect="onDetect"></qrcode-stream> -->
+                    <ScanQrComponent
+                      :height="500"
+                      :detect-func="storeScanQr.scanData"
+                    ></ScanQrComponent>
+                  </q-card-section>
+
+                  <q-card-actions align="right">
+                    <q-btn
+                      flat
+                      dense
+                      label="Đóng"
+                      color="grey"
+                      @click="showQRCodeDialog = false"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </q-dialog>
+
+              <q-card
+                v-if="storeSupabase.updateData.isHaveGiftCard"
+                class="my-card"
+              >
+                <q-card-section>
+                  <div class="flex justify-between">
+                    <div class="text-h6">Thẻ quà tặng</div>
+                    <q-icon
+                      name="eva-trash-2-outline"
+                      size="md"
+                      color="red-8"
+                      @click="
+                        Dialog.create({
+                          title: 'Xác nhận',
+                          message:
+                            'Bạn có chắc chắn muốn xoá thẻ quà tặng này?',
+                          ok: true,
+                          cancel: true,
+                        }).onOk(() => {
+                          storeSupabase.updateData.isHaveGiftCard = false;
+                          storeSupabase.updateData.giftCardObject = {};
+                          storeSupabase.updateData.giftCard = '';
+                        })
+                      "
+                    />
+                  </div>
+                  <div class="text-subtitle2">
+                    Giá trị:
+                    <span class="text-primary">{{
+                      storeSupabase.updateData.giftCardObject.value
+                    }}</span>
+                  </div>
+                </q-card-section>
+                <q-card-section>
+                  <div class="full-width text-grey-6 flex justify-between">
+                    <span>
+                      Từ ngày:
+                      {{
+                        new Date(
+                          storeSupabase.updateData.giftCardObject.date_from
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                    <span>
+                      Đến ngày:
+                      {{
+                        new Date(
+                          storeSupabase.updateData.giftCardObject.date_expired
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- checkbox customer order -->
+            <div class="flex justify-end">
+              <q-checkbox
+                left-label
+                v-model="storeSupabase.updateData.isCustomerOrder"
+                label="Khách đặt"
+              />
+            </div>
 
             <!-- notizen -->
             <div

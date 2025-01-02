@@ -11,6 +11,7 @@ export const useSupabaseStore = defineStore("supabase", {
     dataItem: [],
     listUserData: [],
     listDiscount: [],
+    listDiscountUpdate: [],
     userStatusObject: {},
 
     /* reactive */
@@ -60,6 +61,7 @@ export const useSupabaseStore = defineStore("supabase", {
   actions: {
     async getInit() {
       this.listDiscount = await this.getDiscount();
+      this.listDiscountUpdate = this.listDiscount;
       await this.fetchData();
       // await this.subscribeToTable();
       await this.subscribeToTableUserSessions();
@@ -130,7 +132,107 @@ export const useSupabaseStore = defineStore("supabase", {
             error
           );
         } else {
+          //assign data
           this.listOrderHistories = data;
+
+          //handle logic from here
+          //test
+          this.listOrderHistories = await Promise.all(
+            this.listOrderHistories.map(async (item) => {
+              let menuData = [];
+              const action = item.operation.toLowerCase();
+
+              action === "update"
+                ? (menuData = item.details.new_data.menu_items)
+                : (menuData = item.details.menu_items);
+
+              let totalPrice = 0,
+                umsatz = 0;
+
+              menuData.forEach((item) => {
+                totalPrice += item.price;
+              });
+
+              umsatz = totalPrice;
+
+              //handle check gift card
+              let giftCard = 0,
+                discount = 0;
+              //handle check discount
+              if (action === "update") {
+                //update action
+                discount = this.listDiscount.filter((discount) => {
+                  return discount.id == item.details.new_data.discount;
+                })[0];
+
+                if (discount) {
+                  if (discount.type === "none") {
+                    umsatz -= discount.value;
+                  } else {
+                    umsatz -= (umsatz / 100) * discount.value;
+                  }
+                }
+
+                if (item.details.new_data.giftcard?.length > 0) {
+                  giftCard = await this.getGiftCard(
+                    item.details.new_data.giftcard
+                  );
+                }
+
+                if (giftCard) {
+                  umsatz -= giftCard.value;
+                }
+              } else {
+                //add action
+                discount = this.listDiscount.filter((discount) => {
+                  return discount.id == item.details.discount;
+                })[0];
+
+                if (discount) {
+                  if (discount.type === "none") {
+                    umsatz -= discount.value;
+                  } else {
+                    umsatz -= (umsatz / 100) * discount.value;
+                  }
+                }
+
+                if (item.details.giftcard?.length > 0) {
+                  giftCard = await this.getGiftCard(item.details.giftcard);
+                }
+
+                if (giftCard) {
+                  umsatz -= giftCard.value;
+                }
+              }
+
+              //return session
+              if (item.operation.toLowerCase() === "update") {
+                return {
+                  ...item,
+                  details: {
+                    ...item.details.new_data,
+                  },
+
+                  totalPrice: totalPrice,
+                  umsatz: umsatz,
+                  discountObject: discount ? discount : {},
+                  giftCardObject: giftCard ? giftCard : {},
+                  isHaveDiscount: discount ? true : false,
+                  isHaveGiftCard: giftCard ? true : false,
+                };
+              }
+
+              return {
+                ...item,
+                totalPrice: totalPrice,
+                umsatz: umsatz,
+                discountObject: discount ? discount : {},
+                giftCardObject: giftCard ? giftCard : {},
+                isHaveDiscount: discount ? true : false,
+                isHaveGiftCard: giftCard ? true : false,
+              };
+            })
+          );
         }
         this.isLoadingHistory = false;
       } catch (err) {
@@ -510,26 +612,42 @@ export const useSupabaseStore = defineStore("supabase", {
         const menuDataUpdate = inputData.menuSelected.map((item) => {
           return {
             menu_id: item.id,
-            quantity: item.isMultiSelect ? item.selectCount : 1,
-            price: item.isMultiSelect
-              ? item.selectCount * item.price
-              : item.value,
+            quantity: item.isMultiSelect ? item.quantity : 1,
+            price: item.isMultiSelect ? item.quantity * item.value : item.value,
           };
         });
 
         const { id, email } = storageUtil.getLocalStorageData("userData");
 
+        const payload = {
+          param_user_id: id,
+          param_description: inputData.notizen,
+          param_is_customer_order: inputData.isCustomerOrder,
+          param_order_id: inputData.id,
+          param_menu_items: menuDataUpdate,
+          ...(inputData.isHaveDiscount
+            ? { param_discount: inputData.discountObject.id }
+            : { param_discount: "" }),
+
+          ...(inputData.isHaveGiftCard
+            ? { param_giftcard: inputData.giftCardObject.code }
+            : { param_giftcard: "" }),
+        };
+
+        // {
+        //   description: inputData.notizen,
+        //   is_customer_order: inputData.isCustomerOrder,
+        //   menu_items: menuDataUpdate,
+        //   order_id: inputData.id,
+        //   user_id: id,
+        // }
+
         let { data, error } = await supabase.rpc(
           "update_order_with_items_and_log_history",
-          {
-            description: inputData.notizen,
-            is_customer_order: inputData.isCustomerOrder,
-            menu_items: menuDataUpdate,
-            order_id: inputData.id,
-            user_id: id,
-          }
+          payload
         );
-        if (error) console.error(error);
+
+        if (error) console.error(JSON.stringify(error, null, 2));
 
         Loading.hide();
       } catch (error) {
@@ -573,7 +691,6 @@ export const useSupabaseStore = defineStore("supabase", {
     },
 
     /* ADMIN */
-
     async getUserStatus() {
       try {
         const { data: result, error } = await supabase.rpc(
@@ -762,6 +879,36 @@ export const useSupabaseStore = defineStore("supabase", {
               };
             } else {
               this.newData.discountObject = item;
+              return {
+                ...item,
+                isSelected: true,
+              };
+            }
+          }
+          return {
+            ...item,
+            isSelected: false,
+          };
+        });
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    handleClickDiscountUpdate(id) {
+      try {
+        this.updateData.isHaveDiscount = true;
+        this.listDiscountUpdate = this.listDiscountUpdate.map((item) => {
+          if (item.id === id) {
+            if (item.isSelected) {
+              this.updateData.isHaveDiscount = false;
+              this.updateData.discountObject = {};
+              return {
+                ...item,
+                isSelected: false,
+              };
+            } else {
+              this.updateData.discountObject = item;
               return {
                 ...item,
                 isSelected: true,

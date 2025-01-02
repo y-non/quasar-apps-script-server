@@ -92,8 +92,8 @@ watch(
             @click="drawer = !drawer"
           >
             <span class="q-ml-md"
-              >{{ selfUserData.username }} -
-              {{ selfUserData.status_name }}</span
+              >{{ selfUserData?.username }} -
+              {{ selfUserData?.status_name }}</span
             >
           </q-btn>
 
@@ -206,7 +206,7 @@ watch(
             aria-label="Menu"
             @click="drawer = !drawer"
           >
-            <span class="q-ml-md">{{ selfUserData.username }}</span>
+            <!-- <span class="q-ml-md">{{ selfUserData.username }}</span> -->
           </q-btn>
         </div>
       </q-toolbar>
