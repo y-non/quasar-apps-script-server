@@ -1020,7 +1020,7 @@ const onDetect = (decodedString) => {
         class="full-width full-height"
       >
         <div
-          class="flex justify-between q-pr-md bg-white z-max"
+          class="flex justify-between q-pr-md bg-white z-max q-py-lg"
           style="position: sticky; top: 0"
         >
           <q-btn
