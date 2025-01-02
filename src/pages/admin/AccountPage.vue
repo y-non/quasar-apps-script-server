@@ -70,7 +70,10 @@ const validateDateRangeFrom = (val) => {
     </div>
 
     <q-list v-else>
-      <div v-if="storeAccountManagement.listAccount?.length">
+      <div
+        style="margin-bottom: 10em"
+        v-if="storeAccountManagement.listAccount?.length"
+      >
         <q-card
           v-for="(item, index) in storeAccountManagement.listAccount"
           :key="index"
@@ -117,7 +120,6 @@ const validateDateRangeFrom = (val) => {
               label="Xóa"
               color="negative"
               flat
-              disabled
               @click="
                 storeAccountManagement.showDeleteDialog = true;
                 storeAccountManagement.deleteObject = { ...item };

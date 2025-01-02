@@ -305,6 +305,7 @@ export const useSupabaseStore = defineStore("supabase", {
                 giftCardObject: giftCard ? giftCard : {},
                 isHaveDiscount: discount ? true : false,
                 isHaveGiftCard: giftCard ? true : false,
+                is_edit: item.is_edit,
               };
             })
             .filter((item) => item)
@@ -628,6 +629,7 @@ export const useSupabaseStore = defineStore("supabase", {
           param_is_customer_order: inputData.isCustomerOrder,
           param_order_id: inputData.id,
           param_menu_items: menuDataUpdate,
+          param_is_edit: true,
           ...(inputData.isHaveDiscount
             ? { param_discount: inputData.discountObject.id }
             : { param_discount: "" }),

@@ -413,6 +413,7 @@ const onDetect = (decodedString) => {
                     ? '€'
                     : item.discountObject.type
                 }`"
+                class="q-mr-sm"
               >
               </q-badge>
 
@@ -421,7 +422,14 @@ const onDetect = (decodedString) => {
                 color="red"
                 outline
                 :label="`-${item.giftCardObject.value}€`"
-                class="q-ml-sm"
+                class="q-mr-sm"
+              />
+
+              <q-icon
+                v-if="item.is_edit"
+                name="eva-edit-2-outline"
+                size="xs"
+                color="red-7"
               />
 
               <q-icon
