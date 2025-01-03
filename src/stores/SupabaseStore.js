@@ -497,7 +497,17 @@ export const useSupabaseStore = defineStore("supabase", {
               notizen: "",
               menuSelected: [],
               isCustomerOrder: false,
+              isHaveDiscount: false,
+              discountObject: {},
+              isHaveGiftCard: false,
+              giftCardObject: {},
             };
+            this.listDiscount = this.listDiscount.map((item) => {
+              return {
+                ...item,
+                isSelected: false,
+              };
+            });
             this.showAddDialog = false;
           }
 
