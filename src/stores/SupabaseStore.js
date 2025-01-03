@@ -254,11 +254,13 @@ export const useSupabaseStore = defineStore("supabase", {
           inputData
             .map(async (item) => {
               const newDate = new Date(item.created_at);
-              const hours = String(newDate.getHours()).padStart(2, "0");
-              const minutes = String(newDate.getMinutes()).padStart(2, "0");
-              const formattedTime = `${hours}:${minutes} ${newDate.toLocaleDateString(
-                "en-GB"
-              )}`;
+              // const hours = String(newDate.getHours()).padStart(2, "0");
+              // const minutes = String(newDate.getMinutes()).padStart(2, "0");
+              // const formattedTime = `${hours}:${minutes} ${newDate.toLocaleDateString(
+              //   "en-GB"
+              // )}`;
+
+              const formattedTime = dateUtil.formatDate(item.created_at);
 
               const menuData = await this.fetchOrderItem(item.id);
 
