@@ -24,6 +24,7 @@ export const useSupabaseStore = defineStore("supabase", {
     slideItems: [],
     slideItemsUpdate: [],
     isHaveNotSaveDataYet: false,
+    isHaveNotSaveDataAddYet: false,
     isLoadingMenuData: false,
     userStatus: "",
     statusServing: "serving",
@@ -492,22 +493,8 @@ export const useSupabaseStore = defineStore("supabase", {
               message: "Thêm mới thành công!",
               position: "top",
             });
-            this.newData = {
-              umsatz: 0,
-              notizen: "",
-              menuSelected: [],
-              isCustomerOrder: false,
-              isHaveDiscount: false,
-              discountObject: {},
-              isHaveGiftCard: false,
-              giftCardObject: {},
-            };
-            this.listDiscount = this.listDiscount.map((item) => {
-              return {
-                ...item,
-                isSelected: false,
-              };
-            });
+
+            this.resetAddData();
             this.showAddDialog = false;
           }
 
@@ -519,6 +506,39 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
+    resetAddData() {
+      this.newData = {
+        umsatz: 0,
+        notizen: "",
+        menuSelected: [],
+        menuMultipleSelect: [],
+        isCustomerOrder: false,
+        isHaveDiscount: false,
+        discountObject: {},
+        isHaveGiftCard: false,
+        giftCardObject: {},
+      };
+      this.newData.menuMultipleSelect = this.menuData
+        .map((item) => {
+          if (item.isMultiSelect) {
+            return {
+              id: item.id,
+              label: item.label,
+              price: parseFloat(item.value),
+              selectCount: 0,
+              isMultiSelect: true,
+            };
+          }
+        })
+        .filter((item) => item);
+
+      this.listDiscount = this.listDiscount.map((item) => {
+        return {
+          ...item,
+          isSelected: false,
+        };
+      });
+    },
     // async addData() {
     //   try {
     //     const funcAddData = async () => {
@@ -1067,6 +1087,36 @@ export const useSupabaseStore = defineStore("supabase", {
         }
         this.showUpdateDialog = false;
         this.isHaveNotSaveDataYet = false;
+      } catch (err) {
+        console.error(
+          "Error when handling handleClickBackButtonShowAlert(): ",
+          err
+        );
+      }
+    },
+
+    handleClickBackAddButtonShowAlert() {
+      try {
+        this.showAddDialog = false;
+        if (this.isHaveNotSaveDataAddYet) {
+          Dialog.create({
+            title: "Cảnh báo",
+            message:
+              "Mọi thay đổi vẫn chưa được lưu, bạn có chắc muốn tiếp tục?",
+            ok: true,
+            cancel: true,
+          })
+            .onOk(() => {
+              //update data here
+              this.isHaveNotSaveDataAddYet = false;
+              this.resetAddData();
+
+              //test
+            })
+            .onCancel(() => {
+              this.showAddDialog = true;
+            });
+        }
       } catch (err) {
         console.error(
           "Error when handling handleClickBackButtonShowAlert(): ",

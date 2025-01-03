@@ -516,7 +516,7 @@ const onDetect = (decodedString) => {
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeSupabase.showAddDialog = false"
+            @click="storeSupabase.handleClickBackAddButtonShowAlert()"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
@@ -614,7 +614,10 @@ const onDetect = (decodedString) => {
                 }`"
                 class="q-pa-sm q-px-lg q-mb-sm"
                 style="width: 23%"
-                @click="storeSupabase.handleClickDiscount(item.id)"
+                @click="
+                  storeSupabase.handleClickDiscount(item.id);
+                  storeSupabase.isHaveNotSaveDataAddYet = true;
+                "
               />
             </div>
 
@@ -738,7 +741,8 @@ const onDetect = (decodedString) => {
                 storeSupabase.newData.umsatz =
                   storeSupabase.newData.menuSelected
                     .map((item) => item.value)
-                    .reduce((acc, current) => acc + current, 0)
+                    .reduce((acc, current) => acc + current, 0);
+                storeSupabase.isHaveNotSaveDataAddYet = true;
               "
               :disable="storeSupabase.loadingSelect"
               hide-selected
@@ -1297,7 +1301,10 @@ const onDetect = (decodedString) => {
                 }`"
                 class="q-pa-sm q-px-lg q-mb-sm"
                 style="width: 23%"
-                @click="storeSupabase.handleClickDiscountUpdate(item.id)"
+                @click="
+                  storeSupabase.handleClickDiscountUpdate(item.id);
+                  storeSupabase.isHaveNotSaveDataYet = true;
+                "
               />
             </div>
 
