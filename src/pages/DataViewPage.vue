@@ -404,7 +404,7 @@ const onDetect = (decodedString) => {
             </div>
 
             <div class="flex flex-center">
-              <q-badge
+              <!-- <q-badge
                 v-if="item.discountObject.id"
                 color="primary"
                 outline
@@ -423,13 +423,14 @@ const onDetect = (decodedString) => {
                 outline
                 :label="`-${item.giftCardObject.value}€`"
                 class="q-mr-sm"
-              />
+              /> -->
 
               <q-icon
                 v-if="item.is_edit"
                 name="eva-edit-2-outline"
-                size="xs"
-                color="red-7"
+                size="sm"
+                color="grey-5"
+                class="text-bold"
               />
 
               <q-icon
@@ -447,9 +448,83 @@ const onDetect = (decodedString) => {
               style="align-items: center"
             >
               <span class="text-bold text-grey-7 text-h6">Doanh thu</span>
-              <span class="text-blue text-h4">{{
+
+              <!-- Doanh thu value session -->
+              <span v-if="!item.showQList" class="text-blue text-h4">{{
                 dateUtil.formatter.format(item.umsatz)
               }}</span>
+
+              <div v-else class="column flex q-pt-lg" style="align-items: end">
+                <div style="width: 100%" class="flex justify-between">
+                  <span class="text-grey-8">Giá gốc: </span>
+
+                  <span>
+                    {{ dateUtil.formatter.format(item.totalPrice) }}
+                  </span>
+                </div>
+
+                <div
+                  v-if="item.isHaveDiscount"
+                  class="float-bottom text-subtitle2 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span>Mã giảm giá: </span>
+
+                  <span
+                    class="text-red-8"
+                    v-if="item.discountObject.type === 'none'"
+                    >-{{
+                      dateUtil.formatter.format(item.discountObject.value)
+                    }}</span
+                  >
+
+                  <span v-else class="text-red-8"
+                    >-{{ item.discountObject.value }}
+                    {{ item.discountObject.type }}</span
+                  >
+                </div>
+
+                <div
+                  v-if="item.isHaveGiftCard"
+                  class="float-bottom text-subtitle2 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span>Mã quà tặng: </span>
+
+                  <span class="text-red-8"
+                    >-{{
+                      dateUtil.formatter.format(item.giftCardObject.value)
+                    }}</span
+                  >
+                </div>
+
+                <div
+                  class="float-bottom text-subtitle1 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span class="text-bold q-pr-md">Tổng cộng:</span>
+                  <span class="text-blue text-bold">
+                    {{
+                      dateUtil.formatter.format(
+                        Math.max(
+                          (item.isHaveDiscount
+                            ? item.discountObject.type === "none"
+                              ? item.totalPrice - item.discountObject.value
+                              : item.totalPrice -
+                                (item.totalPrice / 100) *
+                                  item.discountObject.value
+                            : item.totalPrice) -
+                            // Trừ gift card
+                            (item.isHaveGiftCard
+                              ? item.giftCardObject.value
+                              : 0),
+                          0 // Ensure the value is at least 0
+                        )
+                      )
+                    }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <q-list v-if="item.showQList" class="q-mb-md" bordered separator>
