@@ -11,6 +11,7 @@ export const useSupabaseStore = defineStore("supabase", {
     dataItem: [],
     listUserData: [],
     listDiscount: [],
+    listStatus: [],
     listDiscountUpdate: [],
     userStatusObject: {},
 
@@ -72,6 +73,7 @@ export const useSupabaseStore = defineStore("supabase", {
       try {
         //hàm này lên đầu để user không cần phải đợi load user data vẫn có thể thực hiện action khi app vừa render
         await this.fetchMenuData();
+        await this.getListStatus();
         await this.getUserStatus();
         this.isLoadingMainScreen = true;
         this.loadingSelect = false;
@@ -743,27 +745,69 @@ export const useSupabaseStore = defineStore("supabase", {
       }
     },
 
-    async updateUserStatus(status, orderCount) {
+    async getListStatus() {
       try {
-        const dataUpdate = {
-          ...(status.length ? { status } : {}),
-          ...(orderCount ? { orderCount } : {}),
-        };
+        const statusLocal = JSON.parse(localStorage.getItem("listStatus"));
 
-        if (Object.keys(dataUpdate).length === 0) {
-          throw new Error("No valid fields provided to update.");
+        if (!statusLocal) {
+          let { data: listStatus, error } = await supabase
+            .from("status")
+            .select("*");
+
+          if (error) {
+            console.error("Caught error when fetching data: ", error);
+          } else {
+            storageUtil.setLocalStorageData("listStatus", listStatus);
+            this.listStatus = listStatus;
+          }
+        } else {
+          this.listStatus = statusLocal;
         }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async updateUserStatus(statusName) {
+      try {
         const userData = storageUtil.getLocalStorageData("userData");
 
-        const { data: result, error } = await supabase
-          .from("user_status")
-          .update(dataUpdate)
-          .eq("user_id", userData.id);
+        const status = this.listStatus.filter(
+          (item) => item.name === statusName
+        )[0].id;
+
+        const payload = {
+          status,
+        };
+
+        const { data, error } = await supabase
+          .from("users")
+          .update(payload)
+          .eq("user_id", userData.id)
+          .select();
 
         if (error) {
           alert("Update user status failed.");
         } else {
-          this.userStatus = status;
+          Notify.create({
+            type: "positive",
+            message: "Cập nhật trạng thái thành công!",
+            position: "top",
+            timeout: 2000,
+          });
+
+          const localSelfData = storageUtil.getLocalStorageData("selfAppInfo");
+
+          const objectSelfData = { ...localSelfData };
+
+          objectSelfData.status_name = statusName;
+          storageUtil.setLocalStorageData("selfAppInfo", objectSelfData);
+
+          this.userStatus = statusName;
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 200);
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);

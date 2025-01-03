@@ -21,6 +21,7 @@ const togglePassword = () => {
 
 onMounted(async () => {
   await storeSupabase.fetchMenuData();
+  await storeSupabase.getListStatus();
 });
 </script>
 
@@ -44,7 +45,9 @@ onMounted(async () => {
           outlined
           @input="storeAuthentication.username = $event.toLowerCase()"
         >
-          <template v-slot:append> <span class="text-subtitle1">@gmail.com</span> </template>
+          <template v-slot:append>
+            <span class="text-subtitle1">@gmail.com</span>
+          </template>
         </q-input>
 
         <q-input

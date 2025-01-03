@@ -166,7 +166,6 @@ export const useAdminStore = defineStore("admin", {
           });
 
           const result = await supabase.from("orders").delete().eq("id", rowId);
-          console.log(result);
 
           if (result.status === 204) {
             Notify.create({

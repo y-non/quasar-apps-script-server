@@ -99,35 +99,35 @@ watch(
 
           <div v-if="role !== 'admin'" class="flex justify-end">
             <div v-if="isShowLogoutButton">
-              <!-- <div class="active">
+              <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
-                  storeSupabase.userStatus
+                  selfUserData?.status_name
                 }}</span>
 
                 <q-spinner-hearts
                   v-if="
-                    storeSupabase.userStatus === storeSupabase.statusServing
+                    selfUserData?.status_name === storeSupabase.statusServing
                   "
                   :color="'grey-3'"
                   size="md"
                 />
                 <q-spinner-hourglass
                   v-if="
-                    storeSupabase.userStatus === storeSupabase.statusWaiting
+                    selfUserData?.status_name === storeSupabase.statusWaiting
                   "
                   :color="'grey-3'"
                   size="xs"
                 />
                 <q-icon
                   v-if="
-                    storeSupabase.userStatus !== storeSupabase.statusServing &&
-                    storeSupabase.userStatus !== storeSupabase.statusWaiting
+                    selfUserData?.status_name !== storeSupabase.statusServing &&
+                    selfUserData?.status_name !== storeSupabase.statusWaiting
                   "
                   :name="'eva-wifi-off-outline'"
                   :color="'red'"
                   size="xs"
                 />
-              </div> -->
+              </div>
               <q-menu auto-close>
                 <q-list style="min-width: 150px">
                   <q-item clickable>
