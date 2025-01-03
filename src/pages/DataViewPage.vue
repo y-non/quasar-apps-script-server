@@ -821,7 +821,6 @@ const onDetect = (decodedString) => {
               "
               :disable="storeSupabase.loadingSelect"
               hide-selected
-              behavior="menu"
               style="position: relative"
             >
               <template v-slot:before-options>
@@ -938,8 +937,33 @@ const onDetect = (decodedString) => {
                 </q-item>
               </template>
             </q-select>
+            <!-- <div
+              class="flex flex-center"
+              v-if="!storeSupabase.updateData.isShowGiftCard"
+            >
+              <q-btn
+                color="primary"
+                icon="add"
+                label="Nhập giftcard"
+                @click="
+                  storeSupabase.updateData.isShowGiftCard =
+                    !storeSupabase.updateData.isShowGiftCard
+                "
+              />
+            </div> -->
 
-            <div>
+            <div
+              v-if="!storeSupabase.updateData.isShowGiftCard"
+              @click="
+                storeSupabase.updateData.isShowGiftCard =
+                  !storeSupabase.updateData.isShowGiftCard
+              "
+              class="flex flex-center text-blue"
+            >
+              <q-icon name="add" size="sm" rounded />Thêm giftcard
+            </div>
+
+            <div v-else>
               <span class="text-subtitle1">Gift card</span>
 
               <q-input
@@ -1154,7 +1178,80 @@ const onDetect = (decodedString) => {
                     </div>
                   </div>
 
-                  <div
+                  <div class="column flex q-pt-lg" style="align-items: end">
+                    <div style="width: 100%" class="flex justify-between">
+                      <span class="text-grey-8">Giá gốc: </span>
+
+                      <span>
+                        {{ dateUtil.formatter.format(item.totalPrice) }}
+                      </span>
+                    </div>
+
+                    <div
+                      v-if="item.isHaveDiscount"
+                      class="float-bottom text-subtitle2 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span>Mã giảm giá: </span>
+
+                      <span
+                        class="text-red-8"
+                        v-if="item.discountObject.type === 'none'"
+                        >-{{
+                          dateUtil.formatter.format(item.discountObject.value)
+                        }}</span
+                      >
+
+                      <span v-else class="text-red-8"
+                        >-{{ item.discountObject.value }}
+                        {{ item.discountObject.type }}</span
+                      >
+                    </div>
+
+                    <div
+                      v-if="item.isHaveGiftCard"
+                      class="float-bottom text-subtitle2 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span>Mã quà tặng: </span>
+
+                      <span class="text-red-8"
+                        >-{{
+                          dateUtil.formatter.format(item.giftCardObject.value)
+                        }}</span
+                      >
+                    </div>
+
+                    <div
+                      class="float-bottom text-subtitle1 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span class="text-bold q-pr-md">Tổng cộng:</span>
+                      <span class="text-blue text-bold">
+                        {{
+                          dateUtil.formatter.format(
+                            Math.max(
+                              (item.isHaveDiscount
+                                ? item.discountObject.type === "none"
+                                  ? item.totalPrice - item.discountObject.value
+                                  : item.totalPrice -
+                                    (item.totalPrice / 100) *
+                                      item.discountObject.value
+                                : item.totalPrice) -
+                                // Trừ gift card
+                                (item.isHaveGiftCard
+                                  ? item.giftCardObject.value
+                                  : 0),
+                              0 // Ensure the value is at least 0
+                            )
+                          )
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                  <!-- test -->
+
+                  <!-- <div
                     class="right-history column flex"
                     style="align-items: end"
                   >
@@ -1193,34 +1290,36 @@ const onDetect = (decodedString) => {
                     <div class="text-blue text-h5">
                       = {{ dateUtil.formatter.format(item.umsatz.toFixed(2)) }}
                     </div>
-                  </div>
+                  </div> -->
                 </div>
               </q-card-section>
               <q-card-section>
-                <q-item
-                  v-for="(step, stepIndex) in item.details.menu_items"
-                  :key="stepIndex"
-                  clickable
-                  v-ripple
-                  class="flex justify-between"
-                >
-                  <q-item-section>
-                    <div class="flex justify-between">
-                      <span style="width: 80%">
-                        {{
-                          storeSupabase.menuData.filter(
-                            (menuItem) => menuItem.id === step.menu_id
-                          )[0].label
-                        }}
-                      </span>
+                <q-list class="q-mb-md" bordered separator>
+                  <q-item
+                    v-for="(step, stepIndex) in item.details.menu_items"
+                    :key="stepIndex"
+                    clickable
+                    v-ripple
+                    class="flex justify-between"
+                  >
+                    <q-item-section>
+                      <div class="flex justify-between">
+                        <span style="width: 80%">
+                          {{
+                            storeSupabase.menuData.filter(
+                              (menuItem) => menuItem.id === step.menu_id
+                            )[0].label
+                          }}
+                        </span>
 
-                      <span
-                        >{{ step.quantity }} x
-                        {{ step.price / step.quantity }}</span
-                      >
-                    </div>
-                  </q-item-section>
-                </q-item>
+                        <span
+                          >{{ step.quantity }} x
+                          {{ step.price / step.quantity }}</span
+                        >
+                      </div>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
               </q-card-section>
 
               <!-- khách đặt -->
@@ -1484,7 +1583,6 @@ const onDetect = (decodedString) => {
               use-input
               @filter="filterFn"
               input-debounce="300"
-              behavior="menu"
               @update:model-value="
                 storeSupabase.updateData.umsatz =
                   storeSupabase.updateData.menuSelected

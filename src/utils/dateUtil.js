@@ -16,9 +16,11 @@ function parseDateString(dateString) {
 
 function formatDate(date) {
   const newDate = new Date(date);
-  // const hours = String(newDate.getHours()).padStart(2, "0");
-  // const minutes = String(newDate.getMinutes()).padStart(2, "0");
-  const formattedTime = `${newDate.toLocaleDateString("de-DE")}`;
+  const hours = String(newDate.getHours()).padStart(2, "0");
+  const minutes = String(newDate.getMinutes()).padStart(2, "0");
+  const formattedTime = `${hours}:${minutes} ${newDate.toLocaleDateString(
+    "de-DE"
+  )}`;
 
   return formattedTime;
 }
