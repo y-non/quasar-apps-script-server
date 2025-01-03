@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, onBeforeMount, watch } from "vue";
 import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
@@ -13,7 +13,7 @@ const storeSupabase = useSupabaseStore();
 
 const drawer = ref(false);
 const isShowLogoutButton = ref(false);
-const selfUserData = storageUtil.getLocalStorageData("selfAppInfo");
+const userStatus = ref("");
 const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 const role = ref("");
 const routerName = ref("");
@@ -66,6 +66,19 @@ onMounted(async () => {
   }
 });
 
+onBeforeMount(() => {});
+
+watch(
+  () => storeSupabase.listUserData,
+  (val) => {
+    const selfUserData = val.filter(
+      (item) =>
+        item.userid === storageUtil.getLocalStorageData("selfAppInfo").userid
+    )[0];
+    userStatus.value = selfUserData;
+  }
+);
+
 watch(
   () => router.currentRoute.value.fullPath,
   (val) => {
@@ -92,8 +105,8 @@ watch(
             @click="drawer = !drawer"
           >
             <span class="q-ml-md"
-              >{{ selfUserData?.username }} -
-              {{ selfUserData?.status_name }}</span
+              >{{ userStatus?.username }} -
+              {{ userStatus?.status_name }}</span
             >
           </q-btn>
 
@@ -101,27 +114,27 @@ watch(
             <div v-if="isShowLogoutButton">
               <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
-                  selfUserData?.status_name
+                  userStatus?.status_name
                 }}</span>
 
                 <q-spinner-hearts
                   v-if="
-                    selfUserData?.status_name === storeSupabase.statusServing
+                    userStatus?.status_name === storeSupabase.statusServing
                   "
                   :color="'grey-3'"
                   size="md"
                 />
                 <q-spinner-hourglass
                   v-if="
-                    selfUserData?.status_name === storeSupabase.statusWaiting
+                    userStatus?.status_name === storeSupabase.statusWaiting
                   "
                   :color="'grey-3'"
                   size="xs"
                 />
                 <q-icon
                   v-if="
-                    selfUserData?.status_name !== storeSupabase.statusServing &&
-                    selfUserData?.status_name !== storeSupabase.statusWaiting
+                    userStatus?.status_name !== storeSupabase.statusServing &&
+                    userStatus?.status_name !== storeSupabase.statusWaiting
                   "
                   :name="'eva-wifi-off-outline'"
                   :color="'red'"
@@ -129,15 +142,26 @@ watch(
                 />
               </div>
               <q-menu auto-close>
-                <q-list style="min-width: 150px">
-                  <q-item clickable>
+                <q-list auto-close style="min-width: 150px">
+                  <q-item
+                    v-close-popup
+                    clickable
+                    :class="
+                      userStatus?.status_name === storeSupabase.statusServing
+                        ? 'bg-grey-3'
+                        : ''
+                    "
+                  >
                     <q-item-section>
                       <div
                         class="active"
                         @click="
-                          storeSupabase.updateUserStatus(
-                            storeSupabase.statusServing
-                          )
+                          userStatus?.status_name !==
+                          storeSupabase.statusServing
+                            ? storeSupabase.updateUserStatus(
+                                storeSupabase.statusServing
+                              )
+                            : []
                         "
                       >
                         <q-spinner-hearts color="green" />
@@ -148,14 +172,25 @@ watch(
                     </q-item-section>
                   </q-item>
                   <q-separator />
-                  <q-item clickable>
+                  <q-item
+                    v-close-popup
+                    :class="
+                      userStatus?.status_name === storeSupabase.statusWaiting
+                        ? 'bg-grey-3'
+                        : ''
+                    "
+                    clickable
+                  >
                     <q-item-section>
                       <div
                         class="active"
                         @click="
-                          storeSupabase.updateUserStatus(
-                            storeSupabase.statusWaiting
-                          )
+                          userStatus?.status_name !==
+                          storeSupabase.statusWaiting
+                            ? storeSupabase.updateUserStatus(
+                                storeSupabase.statusWaiting
+                              )
+                            : []
                         "
                       >
                         <q-spinner-hourglass color="yellow" size="xs" />
@@ -167,14 +202,24 @@ watch(
                   </q-item>
 
                   <q-separator />
-                  <q-item clickable>
+                  <q-item
+                    v-close-popup
+                    :class="
+                      userStatus?.status_name === storeSupabase.statusOff
+                        ? 'bg-grey-3'
+                        : ''
+                    "
+                    clickable
+                  >
                     <q-item-section>
                       <div
                         class="active"
                         @click="
-                          storeSupabase.updateUserStatus(
-                            storeSupabase.statusOff
-                          )
+                          userStatus?.status_name !== storeSupabase.statusOff
+                            ? storeSupabase.updateUserStatus(
+                                storeSupabase.statusOff
+                              )
+                            : []
                         "
                       >
                         <q-icon
@@ -206,7 +251,7 @@ watch(
             aria-label="Menu"
             @click="drawer = !drawer"
           >
-            <!-- <span class="q-ml-md">{{ selfUserData.username }}</span> -->
+            <!-- <span class="q-ml-md">{{ userStatus.username }}</span> -->
           </q-btn>
         </div>
       </q-toolbar>

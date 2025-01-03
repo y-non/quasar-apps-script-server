@@ -12,6 +12,7 @@ export const useSupabaseStore = defineStore("supabase", {
     listUserData: [],
     listDiscount: [],
     listStatus: [],
+    selfUserStatus: {},
     listDiscountUpdate: [],
     userStatusObject: {},
 
@@ -139,7 +140,6 @@ export const useSupabaseStore = defineStore("supabase", {
           this.listOrderHistories = data;
 
           //handle logic from here
-          //test
           this.listOrderHistories = await Promise.all(
             this.listOrderHistories.map(async (item) => {
               let menuData = [];
@@ -767,6 +767,8 @@ export const useSupabaseStore = defineStore("supabase", {
               (item) => item.userid === userData.user_id
             )[0];
 
+            this.selfUserStatus = { ...selfUserStatus };
+
             storageUtil.setLocalStorageData("selfAppInfo", selfUserStatus);
           } else {
             console.error("Data user not found");
@@ -828,18 +830,22 @@ export const useSupabaseStore = defineStore("supabase", {
             timeout: 2000,
           });
 
-          const localSelfData = storageUtil.getLocalStorageData("selfAppInfo");
+          // const localSelfData = storageUtil.getLocalStorageData("selfAppInfo");
 
-          const objectSelfData = { ...localSelfData };
+          // const objectSelfData = { ...localSelfData };
 
-          objectSelfData.status_name = statusName;
-          storageUtil.setLocalStorageData("selfAppInfo", objectSelfData);
+          // objectSelfData.status_name = statusName;
+          // storageUtil.setLocalStorageData("selfAppInfo", objectSelfData);
 
-          this.userStatus = statusName;
+          // this.userStatus = statusName;
 
-          setTimeout(() => {
-            window.location.reload();
-          }, 200);
+          //second way to handle update user status
+          this.getUserStatus();
+          //test
+
+          // setTimeout(() => {
+          //   window.location.reload();
+          // }, 200);
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);
