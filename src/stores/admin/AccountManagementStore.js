@@ -250,6 +250,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
           role: inputData.role.id,
           site: inputData.site.id,
           status: inputData.status.id,
+          disable: inputData.disable,
         };
 
         if (inputData.status.name === "off") {

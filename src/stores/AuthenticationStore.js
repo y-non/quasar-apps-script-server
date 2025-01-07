@@ -73,19 +73,26 @@ export const useAuthenticationStore = defineStore("authentication", {
           const isExcluded =
             currentDateString <= dayoffFrom || currentDateString >= dayoffTo;
 
+          //check if account already disable
+          if (userAuthData.disable) {
+            Loading.hide();
+            Dialog.create({
+              title: "Thông báo",
+              message: "Tài khoản đã bị vô hiệu hóa, không thể đăng nhập!",
+              ok: true,
+              persistent: "",
+            });
+
+            return;
+          }
+
           if (isExcluded) {
             Loading.hide();
             Dialog.create({
               title: "Thông báo",
               message: "Nhân viên đang nghỉ phép, không thể đăng nhập!",
               ok: true,
-              cancel: false,
               persistent: "",
-            }).onOk(() => {
-              // this.router.push("/");
-              // setTimeout(() => {
-              //   window.location.reload();
-              // }, 300);
             });
 
             return;
@@ -145,7 +152,6 @@ export const useAuthenticationStore = defineStore("authentication", {
 
     async getUserAccountData(id) {
       try {
-        console.log(id);
         let { data: users, error } = await supabase
           .from("users")
           .select("*")

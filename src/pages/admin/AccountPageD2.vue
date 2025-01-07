@@ -4,6 +4,7 @@ import { useAccountManagementStore } from "src/stores/admin/AccountManagementSto
 
 import noData from "../../assets/images/nodata.jpg";
 import { dateUtil } from "src/utils/dateUtil";
+import { Dialog } from "quasar";
 
 const storeAccountManagement = useAccountManagementStore();
 const tab = ref("user");
@@ -112,13 +113,23 @@ const validateDateRangeFrom = (val) => {
             >
               <q-card-section>
                 <div class="full-width flex justify-between">
-                  <div class="text-h6 text-bold">{{ item.display_name }}</div>
+                  <div class="flex" style="align-items: center">
+                    <div class="text-h6 text-bold">{{ item.display_name }}</div>
+                  </div>
 
-                  <q-icon
-                    name="eva-more-vertical-outline"
-                    size="sm"
-                    @click="storeAccountManagement.editAccount(item)"
-                  />
+                  <div>
+                    <q-icon
+                      v-if="item.disable"
+                      name="lock_open"
+                      size="sm"
+                      class="q-mr-sm"
+                    />
+                    <q-icon
+                      name="eva-more-vertical-outline"
+                      size="sm"
+                      @click="storeAccountManagement.editAccount(item)"
+                    />
+                  </div>
                 </div>
                 <div>
                   <div class="text-caption text-grey">
@@ -233,12 +244,15 @@ const validateDateRangeFrom = (val) => {
       v-model="storeAccountManagement.isShowCreateDialog"
     >
       <q-card style="height: 100vh; width: 100vw">
-        <q-card-section class="flex" style="align-items: center">
+        <q-card-section
+          @click="storeAccountManagement.isShowCreateDialog = false"
+          class="flex"
+          style="align-items: center"
+        >
           <q-icon
             name="eva-arrow-ios-back-outline"
             size="sm"
             class="t-default"
-            @click="storeAccountManagement.isShowCreateDialog = false"
           />
           <div class="text-h6 t-default">Thêm tài khoản</div>
         </q-card-section>
@@ -412,6 +426,13 @@ const validateDateRangeFrom = (val) => {
 
           <q-card-actions align="center">
             <q-btn
+              label="Trở về"
+              class="t-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
+              flat
+              style="padding: 0.7em 2em"
+              @click="storeAccountManagement.isShowCreateDialog = false"
+            />
+            <q-btn
               type="submit"
               label="Thêm tài khoản"
               icon="eva-plus-circle-outline"
@@ -433,12 +454,15 @@ const validateDateRangeFrom = (val) => {
       transition-hide="slide-right"
     >
       <q-card style="min-width: 90vw">
-        <q-card-section class="flex" style="align-items: center">
+        <q-card-section
+          @click="storeAccountManagement.isShowEditDialog = false"
+          class="flex"
+          style="align-items: center"
+        >
           <q-icon
             name="eva-arrow-ios-back-outline"
             size="sm"
             class="t-default"
-            @click="storeAccountManagement.isShowEditDialog = false"
           />
           <div class="text-h6 text-bold t-default">Cập nhật tài khoản</div>
         </q-card-section>
@@ -567,9 +591,7 @@ const validateDateRangeFrom = (val) => {
               <!-- Creation Date (readonly) -->
 
               <div class="form-group">
-                <label class="t-default text-subtitle2" for=""
-                  >Ngày tạo</label
-                >
+                <label class="t-default text-subtitle2" for="">Ngày tạo</label>
                 <q-input
                   :placeholder="`${new Date(
                     storeAccountManagement.selectedAccount.created_at
@@ -579,20 +601,30 @@ const validateDateRangeFrom = (val) => {
                   class="q-mb-md"
                 />
               </div>
+
+              <q-checkbox
+                right-label
+                v-model="storeAccountManagement.selectedAccount.disable"
+                label="Vô hiệu hóa tài khoản"
+              />
             </q-card-section>
 
             <q-card-actions align="center">
-              <!-- <q-btn
-                flat
-                label="Hủy"
-                color="negative"
-                @click="storeAccountManagement.isShowEditDialog = false"
-              /> -->
               <q-btn
-                label="Cập nhật"
-                class="t-default bg-default q-my-md q-py-sm text-capitalize text-bold"
-                type="submit"
+                label="Trở về"
+                class="t-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
+                flat
                 style="padding: 0.7em 2em"
+                @click="storeAccountManagement.isShowEditDialog = false"
+              />
+              <q-btn
+                class="t-default bg-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
+                label="Cập nhật"
+                color="grey-7"
+                type="submit"
+                glossy
+                unelevated
+                style="padding: 0.7em 2em; border-radius: 8px"
               />
             </q-card-actions>
           </div>
