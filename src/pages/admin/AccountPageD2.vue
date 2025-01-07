@@ -86,7 +86,7 @@ const validateDateRangeFrom = (val) => {
               class="t-default bg-default"
               rounded
             >
-            <!-- :label="storeAccountManagement.selectSite.name" -->
+              <!-- :label="storeAccountManagement.selectSite.name" -->
               <q-list>
                 <q-item
                   v-for="(site, index) in storeAccountManagement.listSelectSite"
@@ -107,7 +107,7 @@ const validateDateRangeFrom = (val) => {
               class="t-default bg-default q-ml-md"
               rounded
             >
-            <!-- :label="storeAccountManagement.selectRole.label" -->
+              <!-- :label="storeAccountManagement.selectRole.label" -->
               <q-list>
                 <q-item
                   v-for="(role, index) in storeAccountManagement.listRoleSelect"
@@ -157,7 +157,9 @@ const validateDateRangeFrom = (val) => {
                       size="sm"
                       class="q-mr-sm"
                     />
+
                     <q-icon
+                      v-if="item.role === 'user'"
                       name="eva-more-vertical-outline"
                       size="sm"
                       @click="storeAccountManagement.editAccount(item)"
@@ -183,7 +185,7 @@ const validateDateRangeFrom = (val) => {
                   <span class="text-bold"
                     ><q-icon name="eva-pin-outline" size="sm" />&nbsp;</span
                   >
-                  {{ item.site?.name }}
+                  {{ item.site?.name ? item.site?.name : "none" }}
                 </div>
               </q-card-section>
 
@@ -567,7 +569,7 @@ const validateDateRangeFrom = (val) => {
 
               <div
                 v-if="
-                  storeAccountManagement.selectedAccount.status.name ===
+                  storeAccountManagement.selectedAccount.status?.name ===
                     'off' &&
                   storeAccountManagement.selectedAccount.isChangeStatus
                 "
