@@ -229,10 +229,8 @@ const validateDateRangeFrom = (val) => {
     <q-dialog
       transition-show="slide-left"
       transition-hide="slide-right"
-      style="height: 100vh; width: 100vw"
+      :maximized="storeAccountManagement.isShowCreateDialog"
       v-model="storeAccountManagement.isShowCreateDialog"
-      full-height
-      full-width
     >
       <q-card style="height: 100vh; width: 100vw">
         <q-card-section class="flex" style="align-items: center">
@@ -430,11 +428,9 @@ const validateDateRangeFrom = (val) => {
     <q-dialog
       class="t-default"
       v-model="storeAccountManagement.isShowEditDialog"
+      :maximized="storeAccountManagement.isShowEditDialog"
       transition-show="slide-left"
       transition-hide="slide-right"
-      style="height: 100vh; width: 100vw"
-      full-height
-      full-width
     >
       <q-card style="min-width: 90vw">
         <q-card-section class="flex" style="align-items: center">
@@ -446,7 +442,6 @@ const validateDateRangeFrom = (val) => {
           />
           <div class="text-h6 text-bold t-default">Cập nhật tài khoản</div>
         </q-card-section>
-
         <q-form
           @submit="
             storeAccountManagement.postUpdateAccount(
@@ -458,14 +453,18 @@ const validateDateRangeFrom = (val) => {
           <div>
             <q-card-section>
               <!-- Display Name -->
-              <q-input
-                v-model="storeAccountManagement.selectedAccount.display_name"
-                label="Tên"
-                outlined
-                dense
-                class="q-mb-md"
-                placeholder="Enter account's display name"
-              />
+
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for=""
+                  >Tên hiển thị</label
+                >
+                <q-input
+                  v-model="storeAccountManagement.selectedAccount.display_name"
+                  filled
+                  class="q-mb-md t-default"
+                  placeholder="Enter account's display name"
+                />
+              </div>
 
               <!-- Role -->
               <!-- <q-input
@@ -477,33 +476,37 @@ const validateDateRangeFrom = (val) => {
           placeholder="Vui lòng chọn phân quyền"
         /> -->
 
-              <q-select
-                v-model="storeAccountManagement.selectedAccount.role"
-                :options="storeAccountManagement.listRole"
-                option-label="label"
-                option-value="id"
-                label="Phân quyền"
-                outlined
-                dense
-                class="q-mb-md"
-                placeholder="Vui lòng chọn phân quyền"
-              />
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for="">Quyền</label>
+                <q-select
+                  v-model="storeAccountManagement.selectedAccount.role"
+                  :options="storeAccountManagement.listRole"
+                  option-label="label"
+                  option-value="id"
+                  filled
+                  class="q-mb-md t-default"
+                  placeholder="Vui lòng chọn phân quyền"
+                />
+              </div>
 
               <!-- Status -->
-              <q-select
-                v-model="storeAccountManagement.selectedAccount.status"
-                :options="storeAccountManagement.listStatus"
-                option-label="name"
-                option-value="id"
-                label="Trạng thái"
-                outlined
-                dense
-                class="q-mb-md"
-                placeholder="Vui lòng chọn trạng thái"
-                @update:model-value="
-                  storeAccountManagement.selectedAccount.isChangeStatus = true
-                "
-              />
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for=""
+                  >Trạng thái</label
+                >
+                <q-select
+                  v-model="storeAccountManagement.selectedAccount.status"
+                  :options="storeAccountManagement.listStatus"
+                  option-label="name"
+                  option-value="id"
+                  filled
+                  class="q-mb-md"
+                  placeholder="Vui lòng chọn trạng thái"
+                  @update:model-value="
+                    storeAccountManagement.selectedAccount.isChangeStatus = true
+                  "
+                />
+              </div>
 
               <div
                 v-if="
@@ -512,55 +515,70 @@ const validateDateRangeFrom = (val) => {
                   storeAccountManagement.selectedAccount.isChangeStatus
                 "
               >
-                <q-input
-                  v-model="storeAccountManagement.selectedAccount.dayoff_from"
-                  label="Ngày bắt đầu nghỉ"
-                  dense
-                  outlined
-                  type="date"
-                  :rules="[validateDateRangeFrom]"
-                />
+                <div class="form-group">
+                  <label class="t-default text-subtitle2" for=""
+                    >Ngày bắt đầu nghỉ</label
+                  >
+                  <q-input
+                    v-model="storeAccountManagement.selectedAccount.dayoff_from"
+                    filled
+                    type="date"
+                    :rules="[validateDateRangeFrom]"
+                  />
+                </div>
 
-                <q-input
-                  v-model="storeAccountManagement.selectedAccount.dayoff_to"
-                  label="Nghỉ đến ngày"
-                  dense
-                  outlined
-                  type="date"
-                  :rules="[validateDateRange]"
+                <div class="form-group">
+                  <label class="t-default text-subtitle2" for=""
+                    >Nghỉ đến ngày</label
+                  >
+                  <q-input
+                    v-model="storeAccountManagement.selectedAccount.dayoff_to"
+                    filled
+                    type="date"
+                    :rules="[validateDateRange]"
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for="">Site</label>
+                <q-select
+                  v-model="storeAccountManagement.selectedAccount.site"
+                  :options="storeAccountManagement.listSite"
+                  option-label="name"
+                  option-value="id"
+                  class="q-mb-md"
+                  filled
                 />
               </div>
 
-              <q-select
-                v-model="storeAccountManagement.selectedAccount.site"
-                :options="storeAccountManagement.listSite"
-                option-label="name"
-                option-value="id"
-                label="Site"
-                outlined
-                class="q-mb-md"
-                dense
-              />
-
-              <q-input
-                v-model="storeAccountManagement.selectedAccount.provider"
-                label="Phương thức"
-                outlined
-                dense
-                class="q-mb-md"
-                readonly
-              />
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for=""
+                  >Phương thức</label
+                >
+                <q-input
+                  v-model="storeAccountManagement.selectedAccount.provider"
+                  filled
+                  class="q-mb-md"
+                  readonly
+                />
+              </div>
 
               <!-- Creation Date (readonly) -->
-              <q-input
-                :placeholder="`${new Date(
-                  storeAccountManagement.selectedAccount.created_at
-                ).toLocaleDateString('vi-VN')}`"
-                outlined
-                dense
-                readonly
-                class="q-mb-md"
-              />
+
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for=""
+                  >Ngày tạo</label
+                >
+                <q-input
+                  :placeholder="`${new Date(
+                    storeAccountManagement.selectedAccount.created_at
+                  ).toLocaleDateString('vi-VN')}`"
+                  filled
+                  readonly
+                  class="q-mb-md"
+                />
+              </div>
             </q-card-section>
 
             <q-card-actions align="center">

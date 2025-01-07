@@ -11,6 +11,7 @@ export const useSupabaseStore = defineStore("supabase", {
     dataItem: [],
     listUserData: [],
     listDiscount: [],
+    listSite: [],
     listStatus: [],
     selfUserStatus: {},
     listDiscountUpdate: [],
@@ -63,6 +64,7 @@ export const useSupabaseStore = defineStore("supabase", {
   }),
   actions: {
     async getInit() {
+      this.listSite = await this.fetchSiteData();
       this.listDiscount = await this.getDiscount();
       this.listDiscountUpdate = this.listDiscount;
       await this.fetchData();
@@ -119,6 +121,20 @@ export const useSupabaseStore = defineStore("supabase", {
         return data;
       } catch (err) {
         console.error("Error fetching data:", err);
+      }
+    },
+
+    async fetchSiteData() {
+      try {
+        const { data, error } = await supabase.from("site").select("*");
+
+        if (error) {
+          console.error("Error when fetching site data: ", error);
+        } else {
+          return data;
+        }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
       }
     },
 
@@ -462,6 +478,7 @@ export const useSupabaseStore = defineStore("supabase", {
           //   })
           //   .filter((item) => item);
           const menuItems = [...listMenuSelect];
+          const userData = storageUtil.getLocalStorageData("userAuthInfo");
 
           const { id, email } = storageUtil.getLocalStorageData("userData");
 
@@ -470,6 +487,7 @@ export const useSupabaseStore = defineStore("supabase", {
             description: newData.notizen,
             is_customer_order: newData.isCustomerOrder,
             menu_items: menuItems,
+            site: userData.site,
             ...(newData.isHaveDiscount
               ? { discount: newData.discountObject.id }
               : { discount: "" }),
@@ -480,7 +498,7 @@ export const useSupabaseStore = defineStore("supabase", {
           };
 
           let { data, error } = await supabase.rpc(
-            "create_order_with_items_and_log_historyv2",
+            "create_order_with_items_and_log_history",
             payload
           );
 
@@ -841,7 +859,6 @@ export const useSupabaseStore = defineStore("supabase", {
 
           //second way to handle update user status
           this.getUserStatus();
-          //test
 
           // setTimeout(() => {
           //   window.location.reload();
@@ -1116,8 +1133,6 @@ export const useSupabaseStore = defineStore("supabase", {
               //update data here
               this.isHaveNotSaveDataAddYet = false;
               this.resetAddData();
-
-              //test
             })
             .onCancel(() => {
               this.showAddDialog = true;
