@@ -270,7 +270,7 @@ watch(
             <router-link :to="item.path">
               <q-item clickable v-ripple>
                 <q-item-section avatar>
-                  <q-icon class="text-primary" :name="item.icon" />
+                  <q-icon class="t-default" :name="item.icon" />
                 </q-item-section>
 
                 <q-item-section class="text-grey-9">
@@ -297,7 +297,7 @@ watch(
 
           <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
-              <q-icon class="text-red-8 text-bold" name="logout" />
+              <q-icon class="text-red-10 text-bold" name="logout" />
             </q-item-section>
 
             <q-item-section> Đăng xuất </q-item-section>
@@ -323,7 +323,7 @@ watch(
 
           <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
-              <q-icon class="text-red-8 text-bold text-bold" name="logout" />
+              <q-icon class="text-red-10 text-bold text-bold" name="logout" />
             </q-item-section>
 
             <q-item-section> Đăng xuất </q-item-section>
