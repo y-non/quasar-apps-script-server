@@ -9,6 +9,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
     isShowCreateDialog: false,
 
     listAccount: [],
+    listAccountOriginal: [],
     listSite: [],
     listStatus: [],
     listRole: [
@@ -21,6 +22,21 @@ export const useAccountManagementStore = defineStore("accountManagement", {
         label: "Admin",
       },
     ],
+    listRoleSelect: [
+      {
+        id: "all",
+        label: "Tất cả quyền",
+      },
+      {
+        id: "user",
+        label: "User",
+      },
+      {
+        id: "admin",
+        label: "Admin",
+      },
+    ],
+    selectRole: {},
     selectedAccount: {},
     newAccount: {
       role: "user",
@@ -28,10 +44,23 @@ export const useAccountManagementStore = defineStore("accountManagement", {
     defaultStatusId: "",
     showDeleteDialog: false,
     deleteObject: {},
+    selectSite: {},
+    listSelectSite: [],
   }),
   actions: {
     async getInit() {
       this.listSite = await this.getListSite();
+      this.listAccount = await this.getListAccount();
+      this.listAccountOriginal = this.listAccount;
+
+      this.listSelectSite = [
+        { name: "Tất cả site", id: "all" },
+        ...this.listSite,
+      ];
+
+      this.selectRole = this.listRoleSelect[0];
+
+      this.selectSite = this.listSelectSite[0];
       this.listStatus = await this.getListStatus();
 
       this.defaultStatusId = this.listStatus.find(
@@ -51,8 +80,8 @@ export const useAccountManagementStore = defineStore("accountManagement", {
         if (error) {
           console.error("Caught error when fetching data: ", error);
         } else {
-          return users.filter((item) => item.role !== "admin");
-          // return users;
+          // return users.filter((item) => item.role !== "admin");
+          return users;
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);
@@ -292,6 +321,34 @@ export const useAccountManagementStore = defineStore("accountManagement", {
         this.selectedAccount.role = this.listRole.find(
           (item) => item.id === this.selectedAccount.role
         );
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    onChangeSite(siteData) {
+      try {
+        if (siteData?.id === "all") {
+          this.listAccount = this.listAccountOriginal;
+        } else {
+          this.listAccount = this.listAccountOriginal.filter(
+            (item) => item?.site?.id === siteData?.id
+          );
+        }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    onChangeRole(roleData) {
+      try {
+        if (roleData?.id === "all") {
+          this.listAccount = this.listAccountOriginal;
+        } else {
+          this.listAccount = this.listAccountOriginal.filter(
+            (item) => item?.role === roleData?.id
+          );
+        }
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }

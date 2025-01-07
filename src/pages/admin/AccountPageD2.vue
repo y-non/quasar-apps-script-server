@@ -18,9 +18,6 @@ const togglePassword = () => {
 
 onMounted(async () => {
   await storeAccountManagement.getInit();
-
-  storeAccountManagement.listAccount =
-    await storeAccountManagement.getListAccount();
 });
 
 const validateDateRange = (val) => {
@@ -77,18 +74,54 @@ const validateDateRangeFrom = (val) => {
           v-if="storeAccountManagement.listAccount?.length"
         >
           <div class="q-py-md q-px-md">
-            <q-btn
+            <!-- <q-btn
               class="t-default bg-default"
               label="Tất cả các shop"
               rounded
               flat
-            />
-            <q-btn
-              class="t-default bg-default q-ml-md"
-              label="Tất cả quyền"
+            /> -->
+
+            <q-btn-dropdown
+              label="Chọn Site"
+              class="t-default bg-default"
               rounded
-              flat
-            />
+            >
+            <!-- :label="storeAccountManagement.selectSite.name" -->
+              <q-list>
+                <q-item
+                  v-for="(site, index) in storeAccountManagement.listSelectSite"
+                  :key="index"
+                  clickable
+                  v-close-popup
+                  @click="storeAccountManagement.onChangeSite(site)"
+                >
+                  <q-item-section>
+                    <q-item-label>{{ site.name }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+
+            <q-btn-dropdown
+              label="Chọn quyền"
+              class="t-default bg-default q-ml-md"
+              rounded
+            >
+            <!-- :label="storeAccountManagement.selectRole.label" -->
+              <q-list>
+                <q-item
+                  v-for="(role, index) in storeAccountManagement.listRoleSelect"
+                  :key="index"
+                  clickable
+                  v-close-popup
+                  @click="storeAccountManagement.onChangeRole(role)"
+                >
+                  <q-item-section>
+                    <q-item-label>{{ role.label }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
           </div>
 
           <div class="add-session q-px-md">
