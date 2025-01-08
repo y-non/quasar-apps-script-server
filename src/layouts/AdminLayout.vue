@@ -25,6 +25,12 @@ const listRouter = [
   },
 
   {
+    path: "/admin/site",
+    name: "Quản lý site",
+    icon: "eva-home-outline",
+  },
+
+  {
     path: "/admin/order",
     name: "Quản lý đơn hàng",
     icon: "eva-file-text-outline",
@@ -105,8 +111,7 @@ watch(
             @click="drawer = !drawer"
           >
             <span class="q-ml-md"
-              >{{ userStatus?.username }} -
-              {{ userStatus?.status_name }}</span
+              >{{ userStatus?.username }} - {{ userStatus?.status_name }}</span
             >
           </q-btn>
 
@@ -118,16 +123,12 @@ watch(
                 }}</span>
 
                 <q-spinner-hearts
-                  v-if="
-                    userStatus?.status_name === storeSupabase.statusServing
-                  "
+                  v-if="userStatus?.status_name === storeSupabase.statusServing"
                   :color="'grey-3'"
                   size="md"
                 />
                 <q-spinner-hourglass
-                  v-if="
-                    userStatus?.status_name === storeSupabase.statusWaiting
-                  "
+                  v-if="userStatus?.status_name === storeSupabase.statusWaiting"
                   :color="'grey-3'"
                   size="xs"
                 />
