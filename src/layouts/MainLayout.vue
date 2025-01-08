@@ -20,6 +20,11 @@ const routerName = ref("");
 const listRouter = [
   {
     path: "/admin",
+    name: "Báo cáo",
+    icon: "eva-pie-chart-outline",
+  },
+  {
+    path: "/admin/account",
     name: "Quản lý tài khoản",
     icon: "eva-people-outline",
   },
@@ -105,8 +110,7 @@ watch(
             @click="drawer = !drawer"
           >
             <span class="q-ml-md"
-              >{{ userStatus?.username }} -
-              {{ userStatus?.status_name }}</span
+              >{{ userStatus?.username }} - {{ userStatus?.status_name }}</span
             >
           </q-btn>
 
@@ -118,16 +122,12 @@ watch(
                 }}</span>
 
                 <q-spinner-hearts
-                  v-if="
-                    userStatus?.status_name === storeSupabase.statusServing
-                  "
+                  v-if="userStatus?.status_name === storeSupabase.statusServing"
                   :color="'grey-3'"
                   size="md"
                 />
                 <q-spinner-hourglass
-                  v-if="
-                    userStatus?.status_name === storeSupabase.statusWaiting
-                  "
+                  v-if="userStatus?.status_name === storeSupabase.statusWaiting"
                   :color="'grey-3'"
                   size="xs"
                 />

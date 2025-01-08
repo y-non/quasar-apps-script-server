@@ -20,6 +20,11 @@ const routerName = ref("");
 const listRouter = [
   {
     path: "/admin",
+    name: "Báo cáo",
+    icon: "eva-pie-chart-outline",
+  },
+  {
+    path: "/admin/account",
     name: "Quản lý tài khoản",
     icon: "eva-people-outline",
   },

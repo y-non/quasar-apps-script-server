@@ -10,11 +10,14 @@ export const useSiteManagement = defineStore("site", {
     updateSite: {},
     isShowCreateDialog: false,
     isShowEditDialog: false,
+    isLoadingMainScreen: false,
   }),
   actions: {
     async getInit() {
+      this.isLoadingMainScreen = true;
       this.listSite = await this.getAllSite();
       this.listSiteOriginal = this.listSite;
+      this.isLoadingMainScreen = false;
     },
 
     async getAllSite() {

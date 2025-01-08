@@ -35,7 +35,15 @@ onMounted(async () => {
       </q-icon>
     </div>
 
-    <div class="wrapper-content q-px-md q-py-sm">
+    <div
+      v-if="storeSite.isLoadingMainScreen"
+      style="height: 30vh"
+      class="full-width flex column flex-center"
+    >
+      Đang tải <q-spinner-ios size="lg" color="blue" />
+    </div>
+
+    <div v-else class="wrapper-content q-px-md q-py-sm">
       <div class="wrapper-content__title">
         <span class="text-h5 t-default text-bold">Danh sách các site</span>
       </div>

@@ -5,6 +5,7 @@ import DiscountPage from "src/pages/admin/DiscountPage.vue";
 import OrderPageVue from "src/pages/admin/OrderPage.vue";
 import GiftCardPageVue from "src/pages/admin/GiftCardPage.vue";
 import SiteManagementVue from "src/pages/admin/SiteManagement.vue";
+import ReportPageVue from "src/pages/admin/ReportPage.vue";
 
 const routes = [
   {
@@ -21,7 +22,8 @@ const routes = [
     component: () => import("layouts/AdminLayout.vue"),
 
     children: [
-      { path: "", component: AccountPage, name: "AccountPageD2" },
+      { path: "", component: ReportPageVue, name: "ReportPage" },
+      { path: "account", component: AccountPage, name: "AccountPage" },
       { path: "site", component: SiteManagementVue, name: "SitePage" },
       { path: "discount", component: DiscountPage, name: "DiscountPage" },
       { path: "order", component: OrderPageVue, name: "OrderPage" },
