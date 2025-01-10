@@ -109,7 +109,7 @@ function showAction(grid) {
             })
             .filter((item) => item);
 
-          storeAdmin.updateData.umsatz = storeAdmin.updateData.totalPrice;
+          // storeAdmin.updateData.umsatz = storeAdmin.updateData.totalPrice;
           break;
 
         case "delete":
@@ -217,7 +217,7 @@ const filterFn = (val, update) => {
             </div>
 
             <div class="flex flex-center">
-              <q-badge
+              <!-- <q-badge
                 v-if="item.discountObject?.id"
                 color="primary"
                 outline
@@ -226,8 +226,15 @@ const filterFn = (val, update) => {
                     ? '€'
                     : item.discountObject.type
                 }`"
-              />
+              /> -->
 
+              <q-icon
+                v-if="item.is_edit"
+                name="eva-edit-2-outline"
+                size="sm"
+                color="grey-5"
+                class="text-bold"
+              />
               <q-icon
                 name="more_vert"
                 size="sm"
@@ -243,9 +250,84 @@ const filterFn = (val, update) => {
               style="align-items: center"
             >
               <span class="text-bold text-grey-7 text-h6">Doanh thu</span>
-              <span class="text-blue text-h4">{{
+              <!-- <span class="text-blue text-h4">{{
+                dateUtil.formatter.format(item.totalPrice)
+              }}</span> -->
+              <span v-if="!item.showQList" class="text-blue text-h4">{{
                 dateUtil.formatter.format(item.totalPrice)
               }}</span>
+
+              <div v-else class="column flex q-pt-lg" style="align-items: end">
+                <div style="width: 100%" class="flex justify-between">
+                  <span class="text-grey-8">Giá gốc: </span>
+
+                  <span>
+                    {{ dateUtil.formatter.format(item.totalPrice) }}
+                  </span>
+                </div>
+
+                <div
+                  v-if="item.isHaveDiscount"
+                  class="float-bottom text-subtitle2 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span>Mã giảm giá: </span>
+
+                  <span
+                    class="text-red-8"
+                    v-if="item.discountObject.type === 'none'"
+                    >-{{
+                      dateUtil.formatter.format(item.discountObject.value)
+                    }}</span
+                  >
+
+                  <span v-else class="text-red-8"
+                    >-{{ item.discountObject.value }}
+                    {{ item.discountObject.type }}</span
+                  >
+                </div>
+
+                <div
+                  v-if="item.isHaveGiftCard"
+                  class="float-bottom text-subtitle2 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span>Mã quà tặng: </span>
+
+                  <span class="text-red-8"
+                    >-{{
+                      dateUtil.formatter.format(item.giftCardObject.value)
+                    }}</span
+                  >
+                </div>
+
+                <div
+                  class="float-bottom text-subtitle1 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span class="text-bold q-pr-md">Tổng cộng:</span>
+                  <span class="text-blue text-bold">
+                    {{
+                      dateUtil.formatter.format(
+                        Math.max(
+                          (item.isHaveDiscount
+                            ? item.discountObject.type === "none"
+                              ? item.totalPrice - item.discountObject.value
+                              : item.totalPrice -
+                                (item.totalPrice / 100) *
+                                  item.discountObject.value
+                            : item.totalPrice) -
+                            // Trừ gift card
+                            (item.isHaveGiftCard
+                              ? item.giftCardObject.value
+                              : 0),
+                          0 // Ensure the value is at least 0
+                        )
+                      )
+                    }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <q-list v-if="item.showQList" class="q-mb-md" bordered separator>
@@ -317,6 +399,8 @@ const filterFn = (val, update) => {
     </q-page-sticky>
 
     <q-dialog
+      transition-show="slide-left"
+      transition-hide="slide-right"
       :maximized="storeAdmin.showHistoryDialog"
       v-model="storeAdmin.showHistoryDialog"
     >
@@ -325,7 +409,7 @@ const filterFn = (val, update) => {
         class="full-width full-height"
       >
         <div
-          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          class="flex justify-between q-pr-md bg-white z-max q-py-lg"
           style="position: sticky; top: 0"
         >
           <q-btn
@@ -336,14 +420,27 @@ const filterFn = (val, update) => {
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
+          <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
         </div>
         <q-card-section>
-          <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
-          <q-list bordered>
+          <q-list>
+            <!-- <q-item
+              v-for="(item, index) in storeAdmin.listOrderHistories"
+              :key="index"
+              clickable
+              v-ripple
+              class="column"
+            >
+              <q-item-section avatar>
+                {{ item.operation }}
+              </q-item-section>
+              <q-item-section>{{ item }}</q-item-section>
+            </q-item> -->
+
             <q-card
               v-for="(item, index) in storeAdmin.listOrderHistories"
               :key="index"
-              class="my-card"
+              class="my-card q-mb-lg"
             >
               <q-card-section>
                 <div class="flex justify-between">
@@ -359,27 +456,15 @@ const filterFn = (val, update) => {
                       {{
                         item.operation.toLowerCase() === "insert"
                           ? "Tạo mới"
-                          : "Cập nhật"
+                          : "Cập nhập"
                       }}
                     </div>
                     <div class="text-subtitle2 text-grey-6 q-ml-xs">
-                      {{
-                        new Date(item.created_at).toLocaleDateString("vi-VN")
-                      }}
+                      {{ item.dateFormat }}
                     </div>
                   </div>
-                  <!-- <div>
-                    <span class="text-blue text-h4 text-right">{{
-                      dateUtil.formatter.format(
-                        item.details.menu_items.reduce(
-                          (total, item) => total + item.price,
-                          0
-                        )
-                      )
-                    }}</span>
-                  </div> -->
 
-                  <div class="column flex" style="align-items: end">
+                  <div class="column flex q-pt-lg" style="align-items: end">
                     <div style="width: 100%" class="flex justify-between">
                       <span class="text-grey-8">Giá gốc: </span>
 
@@ -428,7 +513,7 @@ const filterFn = (val, update) => {
                       style="right: 5%; width: 100%"
                     >
                       <span class="text-bold q-pr-md">Tổng cộng:</span>
-                      <span>
+                      <span class="text-blue text-bold">
                         {{
                           dateUtil.formatter.format(
                             Math.max(
@@ -450,33 +535,99 @@ const filterFn = (val, update) => {
                       </span>
                     </div>
                   </div>
+                  <!-- test -->
+
+                  <!-- <div
+                    class="right-history column flex"
+                    style="align-items: end"
+                  >
+                    <div class="flex justify-end" style="align-items: center">
+                      <q-badge
+                        v-if="item.discountObject.id"
+                        color="primary"
+                        outline
+                        :label="`-${item.discountObject.value}${
+                          item.discountObject.type === 'none'
+                            ? '€'
+                            : item.discountObject.type
+                        }`"
+                        class="q-mr-sm"
+                      >
+                      </q-badge>
+
+                      <q-badge
+                        v-if="item.giftCardObject.id"
+                        color="red"
+                        outline
+                        :label="`-${item.giftCardObject.value}€`"
+                        class="q-mr-sm"
+                      />
+
+                      <span class="text-right text-subtitle1">{{
+                        dateUtil.formatter.format(
+                          item.details.menu_items.reduce(
+                            (total, item) => total + item.price,
+                            0
+                          )
+                        )
+                      }}</span>
+                    </div>
+
+                    <div class="text-blue text-h5">
+                      = {{ dateUtil.formatter.format(item.umsatz.toFixed(2)) }}
+                    </div>
+                  </div> -->
                 </div>
               </q-card-section>
               <q-card-section>
-                <!-- {{ item.details }} -->
-                <q-item
-                  v-for="(step, stepIndex) in item.details.menu_items"
-                  :key="stepIndex"
-                  clickable
-                  v-ripple
-                  class="flex justify-between q-px-none"
-                >
-                  <div style="width: 80%">
-                    {{
-                      storeAdmin.menuData.filter(
-                        (menuItem) => menuItem.id === step.menu_id
-                      )[0].label
-                    }}
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-primary">{{ step.quantity }} x</span>
-                    <span>{{ step.price / step.quantity }}</span>
-                  </div>
-                </q-item>
+                <q-list class="q-mb-md" bordered separator>
+                  <q-item
+                    v-for="(step, stepIndex) in item.details.menu_items"
+                    :key="stepIndex"
+                    clickable
+                    v-ripple
+                    class="flex justify-between"
+                  >
+                    <q-item-section>
+                      <div class="flex justify-between">
+                        <span style="width: 80%">
+                          {{
+                            storeAdmin.menuData.filter(
+                              (menuItem) => menuItem.id === step.menu_id
+                            )[0].label
+                          }}
+                        </span>
+
+                        <span
+                          >{{ step.quantity }} x
+                          {{ step.price / step.quantity }}</span
+                        >
+                      </div>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
               </q-card-section>
 
+              <!-- khách đặt -->
+              <div
+                class="flex full-width justify-end q-px-lg"
+                style="align-items: center"
+                v-if="item.details.is_customer_order"
+              >
+                <span class="text-blue text-bold">
+                  Khách đặt
+                  <q-icon
+                    name="eva-checkmark-circle-outline"
+                    size="sm"
+                    color="primary"
+                  />
+                </span>
+              </div>
+
               <q-card-section>
-                Mô tả: {{ item.details.description }}
+                <span class="q-px-md"
+                  >Mô tả: {{ item.details.description }}</span
+                >
               </q-card-section>
             </q-card>
           </q-list>

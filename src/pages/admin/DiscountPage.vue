@@ -167,10 +167,20 @@ function showAction(item) {
     </q-page-sticky>
   </div>
 
-  <q-dialog v-model="storeDiscount.showAddDialog">
+  <q-dialog
+    transition-show="slide-left"
+    transition-hide="slide-right"
+    :maximized="storeDiscount.showAddDialog"
+    v-model="storeDiscount.showAddDialog"
+  >
     <q-card style="min-width: 400px; max-width: 500px">
-      <q-card-section>
-        <div class="text-h6">Thêm mã giảm giá</div>
+      <q-card-section
+        @click="storeDiscount.showAddDialog = false"
+        class="flex"
+        style="align-items: center"
+      >
+        <q-icon name="eva-arrow-ios-back-outline" size="sm" class="t-default" />
+        <div class="text-h6 t-default">Thêm mã giảm giá</div>
       </q-card-section>
 
       <q-form
@@ -201,24 +211,42 @@ function showAction(item) {
             />
           </q-card-section>
 
-          <q-card-actions align="right">
+          <q-card-actions align="center">
             <q-btn
+              label="Trở về"
+              class="t-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
               flat
-              label="Hủy"
-              color="primary"
+              style="padding: 0.7em 2em"
               @click="storeDiscount.showAddDialog = false"
             />
-            <q-btn label="Thêm" type="submit" color="primary" />
+            <q-btn
+              type="submit"
+              label="Thêm tài khoản"
+              icon="eva-plus-circle-outline"
+              flat
+              class="t-default bg-default"
+              style="border-radius: 8px; padding: 0.7em"
+            />
           </q-card-actions>
         </div>
       </q-form>
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="storeDiscount.showEditDialog">
+  <q-dialog
+    transition-show="slide-left"
+    transition-hide="slide-right"
+    :maximized="storeDiscount.showEditDialog"
+    v-model="storeDiscount.showEditDialog"
+  >
     <q-card style="min-width: 400px; max-width: 500px">
-      <q-card-section>
-        <div class="text-h6">Edit Discount</div>
+      <q-card-section
+        @click="storeDiscount.showAddDialog = false"
+        class="flex"
+        style="align-items: center"
+      >
+        <q-icon name="eva-arrow-ios-back-outline" size="sm" class="t-default" />
+        <div class="text-h6 t-default">Sửa mã giảm giá</div>
       </q-card-section>
 
       <q-form
@@ -249,14 +277,21 @@ function showAction(item) {
             />
           </q-card-section>
 
-          <q-card-actions align="right">
+          <q-card-actions align="center">
             <q-btn
+              label="Trở về"
+              class="t-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
               flat
-              label="Hủy"
-              color="primary"
+              style="padding: 0.7em 2em"
               @click="storeDiscount.showEditDialog = false"
             />
-            <q-btn type="submit" label="Lưu" color="primary" />
+            <q-btn
+              type="submit"
+              label="Cập nhật"
+              flat
+              class="t-default bg-default"
+              style="border-radius: 8px; padding: 0.7em"
+            />
           </q-card-actions>
         </div>
       </q-form>

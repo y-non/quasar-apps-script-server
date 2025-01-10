@@ -244,10 +244,24 @@ const copyCode = (code) => {
     </q-page-sticky>
 
     <!-- Dialogs for Create/Update -->
-    <q-dialog v-model="storeGiftCard.showDialog">
+    <q-dialog
+      transition-show="slide-left"
+      transition-hide="slide-right"
+      :maximized="storeGiftCard.showDialog"
+      v-model="storeGiftCard.showDialog"
+    >
       <q-card style="min-width: 90vw">
-        <q-card-section>
-          <div class="text-h6">
+        <q-card-section
+          @click="storeGiftCard.showDialog = false"
+          class="flex"
+          style="align-items: center"
+        >
+          <q-icon
+            name="eva-arrow-ios-back-outline"
+            size="sm"
+            class="t-default"
+          />
+          <div class="text-h6 t-default">
             {{
               storeGiftCard.isEditing
                 ? "Chỉnh sửa thẻ quà tặng"
@@ -268,8 +282,7 @@ const copyCode = (code) => {
               <q-input
                 v-model="storeGiftCard.currentGiftCard.code"
                 label="Mã"
-                dense
-                outlined
+                filled
                 :disable="storeGiftCard.isEditing"
                 :rules="[(val) => !!val || 'Không được để trống']"
               >
@@ -277,7 +290,6 @@ const copyCode = (code) => {
                   <div>
                     <q-btn
                       flat
-                      dense
                       label="Tạo mã"
                       color="blue"
                       @click="
@@ -293,8 +305,7 @@ const copyCode = (code) => {
               <q-input
                 v-model="storeGiftCard.currentGiftCard.date_from"
                 label="Ngày bắt đầu"
-                dense
-                outlined
+                filled
                 type="date"
                 :rules="[(val) => !!val || 'Không được để trống']"
               />
@@ -302,29 +313,53 @@ const copyCode = (code) => {
               <q-input
                 v-model="storeGiftCard.currentGiftCard.date_expired"
                 label="Ngày hết hạn"
-                dense
-                outlined
+                filled
                 type="date"
                 :rules="[validateDateRange]"
               />
               <q-input
                 v-model="storeGiftCard.currentGiftCard.value"
                 label="Giá trị"
-                dense
-                outlined
+                filled
                 type="number"
                 :rules="[(val) => !!val || 'Không được để trống']"
               />
             </q-card-section>
-            <q-card-actions align="right">
+            <!-- <q-card-actions align="right">
               <q-btn
                 flat
-                dense
                 label="Hủy"
                 color="grey"
                 @click="storeGiftCard.showDialog = false"
               />
-              <q-btn type="submit" dense label="Lưu" color="green" />
+              <q-btn type="submit" label="Lưu" color="green" />
+            </q-card-actions> -->
+
+            <q-card-actions align="center">
+              <q-btn
+                label="Trở về"
+                class="t-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
+                flat
+                style="padding: 0.7em 2em"
+                @click="storeGiftCard.showDialog = false"
+              />
+              <q-btn
+                v-if="storeGiftCard.isEditing"
+                type="submit"
+                label="Cập nhật"
+                flat
+                class="t-default bg-default"
+                style="border-radius: 8px; padding: 0.7em"
+              />
+              <q-btn
+                v-else
+                type="submit"
+                label="Thêm mới"
+                icon="eva-plus-circle-outline"
+                flat
+                class="t-default bg-default"
+                style="border-radius: 8px; padding: 0.7em"
+              />
             </q-card-actions>
           </div>
         </q-form>
@@ -343,17 +378,11 @@ const copyCode = (code) => {
         <q-card-actions align="right">
           <q-btn
             flat
-            dense
             label="Đóng"
             color="grey"
             @click="showQRCodeDialog = false"
           />
-          <q-btn
-            dense
-            label="Tải xuống"
-            color="green"
-            @click="downloadQRCode"
-          />
+          <q-btn label="Tải xuống" color="green" @click="downloadQRCode" />
         </q-card-actions>
       </q-card>
     </q-dialog>

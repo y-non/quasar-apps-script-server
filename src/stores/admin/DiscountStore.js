@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { useUtilsStore } from "../UtilsStore";
-import { Notify } from "quasar";
+import { Loading, Notify } from "quasar";
 import { supabase } from "src/utils/superbase";
 
 export const useDiscountStore = defineStore("discount", {
@@ -17,6 +17,7 @@ export const useDiscountStore = defineStore("discount", {
   actions: {
     async postCreateDiscount(dataInsert) {
       try {
+        Loading.show();
         const storeUtils = useUtilsStore();
 
         const payload = {
@@ -43,17 +44,21 @@ export const useDiscountStore = defineStore("discount", {
           this.listDiscount = await storeUtils.getDiscount();
           this.isLoadingMainScreen = false;
         }
+        Loading.hide();
       } catch (err) {
+        Loading.hide();
         console.error("Internal Server Error: ", err);
       }
     },
 
     async postUpdateDiscount(dataUpdate) {
       try {
+        Loading.show();
         const storeUtils = useUtilsStore();
 
         const payload = {
-          ...dataUpdate,
+          value: +dataUpdate.value,
+          description: dataUpdate.description,
           type: dataUpdate.type === "%" ? "%" : "none",
         };
 
@@ -77,13 +82,16 @@ export const useDiscountStore = defineStore("discount", {
           this.listDiscount = await storeUtils.getDiscount();
           this.isLoadingMainScreen = false;
         }
+        Loading.hide();
       } catch (err) {
+        Loading.hide();
         console.error("Internal Server Error: ", err);
       }
     },
 
     async deleteDiscount(dataUpdate) {
       try {
+        Loading.show();
         const storeUtils = useUtilsStore();
 
         const { data, error } = await supabase
@@ -105,7 +113,9 @@ export const useDiscountStore = defineStore("discount", {
           this.listDiscount = await storeUtils.getDiscount();
           this.isLoadingMainScreen = false;
         }
+        Loading.hide();
       } catch (err) {
+        Loading.hide();
         console.error("Internal Server Error: ", err);
       }
     },

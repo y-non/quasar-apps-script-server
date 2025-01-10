@@ -270,13 +270,6 @@ export const useSupabaseStore = defineStore("supabase", {
         data = await Promise.all(
           inputData
             .map(async (item) => {
-              const newDate = new Date(item.created_at);
-              // const hours = String(newDate.getHours()).padStart(2, "0");
-              // const minutes = String(newDate.getMinutes()).padStart(2, "0");
-              // const formattedTime = `${hours}:${minutes} ${newDate.toLocaleDateString(
-              //   "en-GB"
-              // )}`;
-
               const formattedTime = dateUtil.formatDate(item.created_at);
 
               const menuData = await this.fetchOrderItem(item.id);
@@ -336,20 +329,6 @@ export const useSupabaseStore = defineStore("supabase", {
 
         /* handle menu item in main page */
         data.forEach((_, index) => {
-          // const listSelectedMenu =
-          //   data[index].menu?.length > 1
-          //     ? data[index].menu.split(";")
-          //     : data[index].menu;
-          // data[index].menu.length > 1
-          //   ? (data[index].menuSelected = listSelectedMenu.map((item) => {
-          //       return this.menuData.filter(
-          //         (menuItem) => item == menuItem.id
-          //       )[0];
-          //     }))
-          //   : (data[index].menuSelected = this.menuData.filter(
-          //       (menuItem) => data[index].menu == menuItem.id
-          //     ));
-
           if (data[index].menu.length > 1) {
             data[index].menuSelected = data[index].menu.map((item) => {
               return {

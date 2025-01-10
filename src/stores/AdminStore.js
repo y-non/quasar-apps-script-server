@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { supabase } from "src/utils/superbase";
 import { useUtilsStore } from "./UtilsStore";
 import { Dialog, Loading, Notify } from "quasar";
+import { dateUtil } from "src/utils/dateUtil";
 
 export const useAdminStore = defineStore("admin", {
   state: () => ({
@@ -46,20 +47,6 @@ export const useAdminStore = defineStore("admin", {
       }
     },
 
-    /* fetch data session */
-    // async getDiscount() {
-    //   try {
-    //     this.isLoadingMainScreen = true;
-    //     let { data: discounts, error } = await supabase
-    //       .from("discounts")
-    //       .select();
-    //     this.isLoadingMainScreen = false;
-    //     return discounts;
-    //   } catch (err) {
-    //     console.error("Internal Server Error: ", err);
-    //   }
-    // },
-
     async getListGiftCard() {
       try {
         let { data, error } = await supabase.from("giftcards").select();
@@ -89,46 +76,106 @@ export const useAdminStore = defineStore("admin", {
             error
           );
         } else {
+          //assign data
+          this.listOrderHistories = data;
+
+          //handle logic from here
           this.listOrderHistories = await Promise.all(
-            data.map(async (historyItem) => {
-              let totalPrice = 0;
-              historyItem.details.menu_items.forEach((item) => {
-                totalPrice += item.price * item.quantity;
+            this.listOrderHistories.map(async (item) => {
+              let menuData = [];
+              const action = item.operation.toLowerCase();
+
+              action === "update"
+                ? (menuData = item.details.new_data.menu_items)
+                : (menuData = item.details.menu_items);
+
+              let totalPrice = 0,
+                umsatz = 0;
+
+              menuData.forEach((item) => {
+                totalPrice += item.price;
               });
 
-              //handle check discount
-              let discount = this.listDiscount.filter(
-                (discount) => discount.id == historyItem.details.discount
-              )[0];
-
-              // if (discount) {
-              //   if (discount.type === "none") {
-              //     totalPrice -= discount.value;
-              //   } else {
-              //     totalPrice -= (totalPrice / 100) * discount.value;
-              //   }
-              // }
+              umsatz = totalPrice;
 
               //handle check gift card
-              let giftCard = 0;
+              let giftCard = 0,
+                discount = 0;
+              //handle check discount
+              if (action === "update") {
+                //update action
+                discount = this.listDiscount.filter((discount) => {
+                  return discount.id == item.details.new_data.discount;
+                })[0];
 
-              if (historyItem.giftcard?.length > 0) {
-                giftCard = this.listGiftCard.filter(
-                  (giftCard) => giftCard.id == historyItem.details.giftcard
-                )[0];
+                if (discount) {
+                  if (discount.type === "none") {
+                    umsatz -= discount.value;
+                  } else {
+                    umsatz -= (umsatz / 100) * discount.value;
+                  }
+                }
+
+                if (item.details.new_data.giftcard?.length > 0) {
+                  giftCard = await this.getGiftCard(
+                    item.details.new_data.giftcard
+                  );
+                }
+
+                if (giftCard) {
+                  umsatz -= giftCard.value;
+                }
+              } else {
+                //add action
+                discount = this.listDiscount.filter((discount) => {
+                  return discount.id == item.details.discount;
+                })[0];
+
+                if (discount) {
+                  if (discount.type === "none") {
+                    umsatz -= discount.value;
+                  } else {
+                    umsatz -= (umsatz / 100) * discount.value;
+                  }
+                }
+
+                if (item.details.giftcard?.length > 0) {
+                  giftCard = await this.getGiftCard(item.details.giftcard);
+                }
+
+                if (giftCard) {
+                  umsatz -= giftCard.value;
+                }
               }
 
-              // if (giftCard) {
-              //   totalPrice -= giftCard.value;
-              // }
+              let dateFormat = dateUtil.formatDate(item.created_at);
+              //return session
+              if (item.operation.toLowerCase() === "update") {
+                return {
+                  ...item,
+                  details: {
+                    ...item.details.new_data,
+                  },
+
+                  totalPrice: totalPrice,
+                  umsatz: umsatz,
+                  discountObject: discount ? discount : {},
+                  giftCardObject: giftCard ? giftCard : {},
+                  isHaveDiscount: discount ? true : false,
+                  isHaveGiftCard: giftCard ? true : false,
+                  dateFormat,
+                };
+              }
 
               return {
-                ...historyItem,
+                ...item,
                 totalPrice: totalPrice,
+                umsatz: umsatz,
                 discountObject: discount ? discount : {},
                 giftCardObject: giftCard ? giftCard : {},
                 isHaveDiscount: discount ? true : false,
                 isHaveGiftCard: giftCard ? true : false,
+                dateFormat,
               };
             })
           );
@@ -172,6 +219,7 @@ export const useAdminStore = defineStore("admin", {
               type: "positive",
               message: "Xóa thành công!",
               position: "top",
+              timeout: 2000,
             });
             Loading.hide();
 
@@ -193,10 +241,7 @@ export const useAdminStore = defineStore("admin", {
         data = await Promise.all(
           inputData
             .map(async (item) => {
-              const newDate = new Date(item.created_at);
-              const hours = String(newDate.getHours()).padStart(2, "0");
-              const minutes = String(newDate.getMinutes()).padStart(2, "0");
-              const formattedTime = `${hours}:${minutes}`;
+              const formattedTime = dateUtil.formatDate(item.created_at);
 
               const menuData = await this.fetchOrderItem(item.id);
 
@@ -235,15 +280,16 @@ export const useAdminStore = defineStore("admin", {
                 id: item.id,
                 notizen: item.description,
                 menu: menuData,
-                datum: `${formattedTime} ${newDate.toLocaleDateString(
-                  "de-DE"
-                )}`,
+                datum: formattedTime,
                 isHandled: true,
                 totalPrice: totalPrice,
                 discountObject: discount ? discount : {},
                 giftCardObject: giftCard ? giftCard : {},
                 created_at: item.created_at,
                 users: item.users,
+                isHaveDiscount: discount ? true : false,
+                isHaveGiftCard: giftCard ? true : false,
+                is_edit: item.is_edit,
               };
             })
             .filter((item) => item)
@@ -252,20 +298,6 @@ export const useAdminStore = defineStore("admin", {
         await Promise.all(data);
         /* handle menu item in main page */
         data.forEach((_, index) => {
-          // const listSelectedMenu =
-          //   data[index].menu?.length > 1
-          //     ? data[index].menu.split(";")
-          //     : data[index].menu;
-          // data[index].menu.length > 1
-          //   ? (data[index].menuSelected = listSelectedMenu.map((item) => {
-          //       return this.menuData.filter(
-          //         (menuItem) => item == menuItem.id
-          //       )[0];
-          //     }))
-          //   : (data[index].menuSelected = this.menuData.filter(
-          //       (menuItem) => data[index].menu == menuItem.id
-          //     ));
-
           if (data[index].menu.length > 1) {
             data[index].menuSelected = data[index].menu.map((item) => {
               return {
@@ -277,22 +309,6 @@ export const useAdminStore = defineStore("admin", {
             });
           }
         });
-
-        //phần này handle add mấy cái multi select cho các biến để tiện xử lý về sau
-        // this.newData.menuMultipleSelect = this.menuData
-        //   .map((item) => {
-        //     if (item.isMultiSelect) {
-        //       return {
-        //         id: item.id,
-        //         label: item.label,
-        //         price: parseFloat(item.value),
-        //         selectCount: 0,
-        //         isMultiSelect: true,
-        //       };
-        //     }
-        //   })
-        //   .filter((item) => item);
-
         if (!data.length) {
           data = [];
         }
@@ -305,17 +321,48 @@ export const useAdminStore = defineStore("admin", {
 
     clickSelectDateRangeOrder(data) {
       try {
-        const fromDate = new Date(data.from);
-        const toDate = new Date(data.to);
+        if (data) {
+          Loading.show();
+          if (data.from) {
+            const fromDate = new Date(data.from);
+            const toDate = new Date(data.to);
 
-        this.listOrder = this.listOrderOriginal.filter((item) => {
-          const dateItem = new Date(item.created_at);
+            fromDate.setHours(0, 0, 0, 0);
+            toDate.setHours(23, 59, 59, 99);
 
-          if (dateItem >= fromDate && dateItem <= toDate) {
-            return item;
+            this.listOrder = this.listOrderOriginal.filter((item) => {
+              const dateItem = new Date(item.created_at);
+
+              if (dateItem >= fromDate && dateItem <= toDate) {
+                return item;
+              }
+            });
+          } else {
+            const fromDate = new Date(data);
+            const toDate = new Date(data);
+
+            fromDate.setHours(0, 0, 0, 0);
+            toDate.setHours(23, 59, 59, 99);
+
+            this.listOrder = this.listOrderOriginal.filter((item) => {
+              const dateItem = new Date(item.created_at);
+
+              if (dateItem >= fromDate && dateItem <= toDate) {
+                return item;
+              }
+            });
           }
-        });
+
+          Notify.create({
+            type: "positive",
+            message: "Tìm kiếm thành công!",
+            position: "top",
+            timeout: 2000,
+          });
+          Loading.hide();
+        }
       } catch (err) {
+        Loading.hide();
         console.error("Internal Server Error: ", err);
       }
     },

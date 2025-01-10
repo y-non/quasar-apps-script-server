@@ -171,6 +171,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
             dayoff_from: dayoffFrom, // Optional: Day off start date
             dayoff_to: dayoffTo, // Optional: Day off end date
             provider: "email",
+            disable: false,
           },
         ]);
 
@@ -274,6 +275,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
 
     async postUpdateAccount(inputData) {
       try {
+        Loading.show();
         let payload = {
           display_name: inputData.display_name,
           role: inputData.role.id,
@@ -307,7 +309,9 @@ export const useAccountManagementStore = defineStore("accountManagement", {
           this.isShowEditDialog = false;
           this.listAccount = await this.getListAccount();
         }
+        Loading.hide();
       } catch (err) {
+        Loading.hide();
         console.error("Internal Server Error: ", err);
       }
     },
