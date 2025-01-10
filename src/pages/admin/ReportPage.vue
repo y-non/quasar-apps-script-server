@@ -21,7 +21,7 @@ const createPerUserChart = (listUser, listValue) => {
         labels: listUser || [],
         datasets: [
           {
-            label: "Doanh thu ($)",
+            label: "Doanh thu theo người dùng ($)",
             data: listValue || [],
             backgroundColor: [
               "#42A5F5",
@@ -47,6 +47,10 @@ const createPerUserChart = (listUser, listValue) => {
             display: true,
             position: "top",
           },
+          // title: {
+          //   display: true,
+          //   text: "Doanh thu",
+          // },
         },
       },
     });
@@ -67,23 +71,25 @@ const createPerSiteChart = (listSite, listValue) => {
 
     // Create Revenue Per Site Chart
     charts.revenuePerSite = new Chart(revenuePerSiteCanvas, {
-      type: "pie",
+      type: "bar",
       data: {
         labels: listSite || [],
         datasets: [
           {
+            label: "Doanh thu theo site ($)",
             data: listValue || [],
             backgroundColor: [
               "#FF6384",
               "#36A2EB",
               "#FFCE56",
               "#FF728E",
-              "#FF8198",
-              "#FF90A1",
+              "#26C6DA",
+              "#FFA726",
               "#FFA0AA",
-              "#FFAFB3",
-              "#FFBFBB",
+              "#D7F166",
+              "#5DAEFF",
             ],
+            borderRadius: 4,
           },
         ],
       },
@@ -92,7 +98,7 @@ const createPerSiteChart = (listSite, listValue) => {
         plugins: {
           legend: {
             display: true,
-            position: "right",
+            position: "top",
           },
         },
       },
@@ -108,7 +114,6 @@ watch(
   async (val) => {
     if (val) {
       storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
-      console.log(storeReport.listUser);
       await storeReport.handleShowDataUser();
 
       createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
