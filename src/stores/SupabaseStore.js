@@ -482,6 +482,15 @@ export const useSupabaseStore = defineStore("supabase", {
 
           const { id, email } = storageUtil.getLocalStorageData("userData");
 
+          const totalPrice =
+            (newData.isHaveDiscount
+              ? newData.discountObject.type === "none"
+                ? newData.umsatz - newData.discountObject.value
+                : newData.umsatz -
+                  (newData.umsatz / 100) * newData.discountObject.value
+              : newData.umsatz) -
+            (newData.isHaveGiftCard ? newData.giftCardObject.value : 0);
+
           const payload = {
             user_id: id,
             description: newData.notizen,
@@ -495,6 +504,7 @@ export const useSupabaseStore = defineStore("supabase", {
             ...(newData.isHaveGiftCard
               ? { giftcard: newData.giftCardObject.code }
               : { giftcard: "" }),
+            total_price: +totalPrice,
           };
 
           let { data, error } = await supabase.rpc(
@@ -675,6 +685,15 @@ export const useSupabaseStore = defineStore("supabase", {
 
         const { id, email } = storageUtil.getLocalStorageData("userData");
 
+        const totalPrice =
+          (inputData.isHaveDiscount
+            ? inputData.discountObject.type === "none"
+              ? inputData.totalPrice - inputData.discountObject.value
+              : inputData.totalPrice -
+                (inputData.totalPrice / 100) * inputData.discountObject.value
+            : inputData.totalPrice) -
+          (inputData.isHaveGiftCard ? inputData.giftCardObject.value : 0);
+
         const payload = {
           param_user_id: id,
           param_description: inputData.notizen,
@@ -689,6 +708,7 @@ export const useSupabaseStore = defineStore("supabase", {
           ...(inputData.isHaveGiftCard
             ? { param_giftcard: inputData.giftCardObject.code }
             : { param_giftcard: "" }),
+          param_total_price: totalPrice,
         };
 
         // {

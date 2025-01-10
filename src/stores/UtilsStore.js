@@ -57,6 +57,34 @@ export const useUtilsStore = defineStore("utils", {
       }
     },
 
+    async fetchSiteData() {
+      try {
+        const siteLocal = JSON.parse(localStorage.getItem("siteData"));
+
+        let siteData = [];
+
+        if (!siteLocal) {
+          let { data: result, error } = await supabase.from("site").select("*");
+
+          if (result) {
+            siteData = result || [];
+
+            if (siteData.length) {
+              storageUtil.setLocalStorageData("siteData", siteData);
+
+              return siteData;
+            }
+          } else {
+            console.error("Error when fetching menu data: ", error);
+          }
+        } else {
+          return siteLocal;
+        }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
     async getDiscount() {
       try {
         let { data: discounts, error } = await supabase.rpc(

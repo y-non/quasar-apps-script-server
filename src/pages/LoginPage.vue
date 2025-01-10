@@ -4,10 +4,12 @@ import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useUtilsStore } from "src/stores/UtilsStore";
 
 const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
+const storeUtils = useUtilsStore();
 const router = useRouter();
 const isShowLogin = ref(true);
 
@@ -22,6 +24,7 @@ const togglePassword = () => {
 onMounted(async () => {
   await storeSupabase.fetchMenuData();
   await storeSupabase.getListStatus();
+  await storeUtils.fetchSiteData();
 });
 </script>
 

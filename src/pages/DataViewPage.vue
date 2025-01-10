@@ -661,11 +661,10 @@ const onDetect = (decodedString) => {
                             (storeSupabase.newData.umsatz / 100) *
                               storeSupabase.newData.discountObject.value
                         : storeSupabase.newData.umsatz) -
-                        // Trừ gift card
                         (storeSupabase.newData.isHaveGiftCard
                           ? storeSupabase.newData.giftCardObject.value
                           : 0),
-                      0 // Ensure the value is at least 0
+                      0
                     )
                   )
                 }}

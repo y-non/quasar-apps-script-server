@@ -105,23 +105,52 @@ const createPerSiteChart = (listSite, listValue) => {
 // Watch for data changes and update the charts
 watch(
   () => storeReport.siteSelected, // Replace with the actual reactive variable for updates
-  (val) => {
+  async (val) => {
     if (val) {
-      createPerUserChart(
-        ["User A", "User B", "User C", "User D"],
-        [1200, 950, 700, 1300]
-      );
+      storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
+      console.log(storeReport.listUser);
+      await storeReport.handleShowDataUser();
+
+      createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+    }
+  }
+);
+
+watch(
+  () => storeReport.objectCallWatchAction,
+  async (val) => {
+    if (val) {
+      if (storeReport.isGetToday) {
+        const today = val;
+        storeReport.listOrder = await storeReport.getOrderList(today, today);
+
+        await storeReport.handleShowDataSite();
+        await storeReport.handleShowDataUser();
+      } else {
+        const fromDate = val.from;
+        const toDate = val.to;
+        storeReport.listOrder = await storeReport.getOrderList(
+          fromDate,
+          toDate
+        );
+
+        await storeReport.handleShowDataSite();
+        await storeReport.handleShowDataUser();
+      }
+
+      createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+      createPerSiteChart(storeReport.listSiteName, storeReport.listSiteValue);
     }
   }
 );
 
 onMounted(async () => {
+  storeReport.isLoadingMainScreen = true;
   await storeReport.getInit();
-  createPerUserChart(
-    ["User A", "User B", "User C", "User D"],
-    [1200, 950, 700, 1300]
-  );
-  createPerSiteChart(storeReport.listSiteName, [4000, 3000, 2000]);
+  createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+
+  createPerSiteChart(storeReport.listSiteName, storeReport.listSiteValue);
+  storeReport.isLoadingMainScreen = false;
 });
 </script>
 
@@ -136,71 +165,81 @@ onMounted(async () => {
       </q-card-section>
     </q-card>
 
-    <div class="flex justify-end q-pb-md" style="align-items: center">
-      <q-btn icon="eva-calendar-outline" round>
-        <q-popup-proxy
-          @before-show="updateProxy"
-          cover
-          transition-show="scale"
-          transition-hide="scale"
-        >
-          <q-date v-model="storeReport.dateRange" range today-btn>
-            <div class="row items-center justify-end q-gutter-sm">
-              <q-btn label="Cancel" color="primary" flat v-close-popup />
-              <q-btn
-                label="OK"
-                color="primary"
-                flat
-                @click="storeReport.getReport(storeReport.dateRange)"
-                v-close-popup
-              />
-            </div>
-          </q-date>
-        </q-popup-proxy>
-      </q-btn>
+    <div
+      v-if="storeReport.isLoadingMainScreen"
+      style="height: 30vh"
+      class="full-width flex column flex-center"
+    >
+      Đang tải <q-spinner-ios size="lg" color="blue" />
     </div>
 
-    <q-card flat bordered class="q-mb-md">
-      <q-card-section class="flex justify-between">
-        <div>
-          <div class="text-h6">Doanh thu theo người dùng</div>
-          <q-badge :label="storeReport.siteSelected.name" />
-        </div>
-
-        <q-icon name="store" size="md" class="t-default">
-          <q-menu>
-            <q-list style="min-width: 100px">
-              <div v-for="(item, index) in storeReport.listSite" :key="index">
-                <q-item
-                  :class="
-                    storeReport.siteSelected.name === item.name
-                      ? 'bg-default'
-                      : ''
-                  "
-                  clickable
-                  @click="storeReport.siteSelected = { ...item }"
-                >
-                  <q-item-section>{{ item.name }}</q-item-section>
-                </q-item>
-                <q-separator />
+    <div v-show="!storeReport.isLoadingMainScreen">
+      <div class="flex justify-end q-pb-md" style="align-items: center">
+        <q-btn icon="eva-calendar-outline" round>
+          <q-popup-proxy
+            @before-show="updateProxy"
+            cover
+            transition-show="scale"
+            transition-hide="scale"
+          >
+            <q-date v-model="storeReport.dateRange" range today-btn>
+              <div class="row items-center justify-end q-gutter-sm">
+                <q-btn label="Cancel" color="primary" flat v-close-popup />
+                <q-btn
+                  label="OK"
+                  color="primary"
+                  flat
+                  @click="storeReport.getReport(storeReport.dateRange)"
+                  v-close-popup
+                />
               </div>
-            </q-list>
-          </q-menu>
-        </q-icon>
-      </q-card-section>
-      <q-card-section>
-        <canvas id="revenuePerUser"></canvas>
-      </q-card-section>
-    </q-card>
+            </q-date>
+          </q-popup-proxy>
+        </q-btn>
+      </div>
 
-    <q-card flat bordered>
-      <q-card-section>
-        <div class="text-h6">Doanh thu theo site</div>
-      </q-card-section>
-      <q-card-section>
-        <canvas id="revenuePerSite"></canvas>
-      </q-card-section>
-    </q-card>
+      <q-card flat bordered class="q-mb-md">
+        <q-card-section class="flex justify-between">
+          <div>
+            <div class="text-h6">Doanh thu theo người dùng</div>
+            <q-badge :label="storeReport.siteSelected.name" />
+          </div>
+
+          <q-icon name="store" size="md" class="t-default">
+            <q-menu>
+              <q-list style="min-width: 100px">
+                <div v-for="(item, index) in storeReport.listSite" :key="index">
+                  <q-item
+                    :class="
+                      storeReport.siteSelected.name === item.name
+                        ? 'bg-default'
+                        : ''
+                    "
+                    clickable
+                    @click="storeReport.siteSelected = { ...item }"
+                  >
+                    <q-item-section>{{ item.name }}</q-item-section>
+                  </q-item>
+                  <q-separator />
+                </div>
+              </q-list>
+            </q-menu>
+          </q-icon>
+        </q-card-section>
+        <q-card-section>
+          <canvas id="revenuePerUser"></canvas>
+        </q-card-section>
+      </q-card>
+
+      <q-card flat bordered>
+        <q-card-section>
+          <div class="text-h6">Doanh thu theo site</div>
+        </q-card-section>
+        <q-card-section>
+          <canvas id="revenuePerSite"></canvas>
+        </q-card-section>
+      </q-card>
+    </div>
   </q-page>
 </template>
 
