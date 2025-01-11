@@ -133,7 +133,27 @@ const copyCode = (code) => {
       Đang tải... <q-spinner-ios size="lg" color="blue" />
     </div>
 
-    <div v-else>
+    <div v-else style="position: relative;">
+      <div style="position: sticky; top: 8%; z-index: 1; background-color: #ffffff; margin: 0 1em;">
+        <q-input
+          v-model="text"
+          type="text"
+          label="Nhập hoặc scan giftcard để tìm kiếm"
+          style="border-radius: 12px"
+          class="q-py-sm"
+          rounded
+          standout
+        >
+          <template v-slot:append>
+            <q-icon
+              name="qr_code_scanner"
+              @click="text = ''"
+              class="cursor-pointer"
+            />
+          </template>
+        </q-input>
+      </div>
+      <!--
       <div class="flex full-width justify-end">
         <q-select
           outlined
@@ -146,7 +166,7 @@ const copyCode = (code) => {
           style="min-width: 40vw"
           @update:model-value="applySort"
         />
-      </div>
+      </div> -->
 
       <q-list class="q-my-md" style="padding-bottom: 5em">
         <q-card
