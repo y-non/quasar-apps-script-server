@@ -9,10 +9,13 @@ export const useGiftCardStore = defineStore("giftCard", {
     isEditing: false,
     isLoadingMainScreen: false,
     currentGiftCard: {},
+    filter: "",
+    filterType: "all",
   }),
   actions: {
     async getInit() {
       this.listGiftCards = await this.loadGiftCards();
+      console.log(this.listGiftCards);
       this.listGiftCardsOriginal = this.listGiftCards;
     },
     async loadGiftCards() {

@@ -25,8 +25,18 @@ function formatDate(date) {
   return formattedTime;
 }
 
+function formatDateOnly(date) {
+  const newDate = new Date(date);
+  // const hours = String(newDate.getHours()).padStart(2, "0");
+  // const minutes = String(newDate.getMinutes()).padStart(2, "0");
+  const formattedTime = `${newDate.toLocaleDateString("de-DE")}`;
+
+  return formattedTime;
+}
+
 export const dateUtil = {
   formatter,
   parseDateString,
   formatDate,
+  formatDateOnly,
 };

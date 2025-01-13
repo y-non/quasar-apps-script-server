@@ -1,14 +1,20 @@
 <script setup>
-import { onMounted, computed, ref } from "vue";
+import { onMounted, computed, ref, watch } from "vue";
 import { useGiftCardStore } from "src/stores/admin/GiftCardStore";
+import { useScanQrStore } from "src/stores/ScanQrStore";
+
 import { Notify, Dialog, copyToClipboard } from "quasar";
 
 import QRCodeVue from "src/components/QRCodeVue.vue";
+import ScanQrComponent from "../../components/ScanQrComponent.vue";
 
 /* Utils import */
 import { generateCode } from "src/utils/generateCode";
+import { dateUtil } from "src/utils/dateUtil";
 
 const storeGiftCard = useGiftCardStore();
+const storeScanQr = useScanQrStore();
+
 const sortOption = ref("all");
 const showQRCodeDialog = ref(false);
 const qrCodeData = ref("");
@@ -121,6 +127,54 @@ const copyCode = (code) => {
     });
   });
 };
+
+watch(
+  () => storeGiftCard.filterType,
+  (val) => {
+    if (val) {
+      switch (val) {
+        case "all":
+          storeGiftCard.listGiftCards = storeGiftCard.listGiftCardsOriginal;
+          break;
+
+        case "unused":
+          storeGiftCard.listGiftCards =
+            storeGiftCard.listGiftCardsOriginal.filter((item) => !item.isused);
+          break;
+
+        case "used":
+          storeGiftCard.listGiftCards =
+            storeGiftCard.listGiftCardsOriginal.filter((item) => item.isused);
+          break;
+
+        default:
+          storeGiftCard.listGiftCards = storeGiftCard.listGiftCardsOriginal;
+          break;
+      }
+    }
+  }
+);
+
+watch(
+  () => storeGiftCard.filter,
+  (val) => {
+    if (val) {
+      if (isNaN(val)) {
+        storeGiftCard.listGiftCards =
+          storeGiftCard.listGiftCardsOriginal.filter((item) =>
+            item.code.toLowerCase().includes(val.toLowerCase())
+          );
+      } else {
+        storeGiftCard.listGiftCards =
+          storeGiftCard.listGiftCardsOriginal.filter((item) =>
+            item.value.toString().includes(val)
+          );
+      }
+    } else {
+      storeGiftCard.listGiftCards = storeGiftCard.listGiftCardsOriginal;
+    }
+  }
+);
 </script>
 
 <template>
@@ -133,25 +187,60 @@ const copyCode = (code) => {
       Đang tải... <q-spinner-ios size="lg" color="blue" />
     </div>
 
-    <div v-else style="position: relative;">
-      <div style="position: sticky; top: 8%; z-index: 1; background-color: #ffffff; margin: 0 1em;">
+    <div v-else style="position: relative">
+      <div
+        style="position: sticky; top: 7%; z-index: 1; background-color: #ffffff"
+      >
         <q-input
-          v-model="text"
+          v-model="storeGiftCard.filter"
           type="text"
-          label="Nhập hoặc scan giftcard để tìm kiếm"
+          placeholder="Nhập hoặc scan giftcard để tìm kiếm"
           style="border-radius: 12px"
           class="q-py-sm"
           rounded
-          standout
+          outlined
+          bg-color="grey-2"
         >
           <template v-slot:append>
             <q-icon
               name="qr_code_scanner"
-              @click="text = ''"
               class="cursor-pointer"
+              @click="showQRCodeDialog = true"
             />
           </template>
         </q-input>
+
+        <div class="flex flex-start q-py-sm q-gutter-sm">
+          <q-btn
+            class="text-bold bg-default t-default"
+            label="Tất cả"
+            :class="
+              storeGiftCard.filterType === 'all' ? 'bg-grey text-white' : ''
+            "
+            rounded
+            @click="storeGiftCard.filterType = 'all'"
+          />
+
+          <q-btn
+            class="bg-default t-default text-bold"
+            label="Chưa sử dụng"
+            :class="
+              storeGiftCard.filterType === 'unused' ? 'bg-grey text-white' : ''
+            "
+            rounded
+            @click="storeGiftCard.filterType = 'unused'"
+          />
+
+          <q-btn
+            class="bg-default t-default text-bold"
+            label="Đã sử dụng"
+            :class="
+              storeGiftCard.filterType === 'used' ? 'bg-grey text-white' : ''
+            "
+            rounded
+            @click="storeGiftCard.filterType = 'used'"
+          />
+        </div>
       </div>
       <!--
       <div class="flex full-width justify-end">
@@ -169,14 +258,23 @@ const copyCode = (code) => {
       </div> -->
 
       <q-list class="q-my-md" style="padding-bottom: 5em">
+        <div class="header flex justify-between q-pa-sm">
+          <span class="t-default text-subtitle1 text-bold"
+            >Danh sách Gift card</span
+          >
+
+          <span class="t-default"
+            >SL: {{ storeGiftCard.listGiftCards.length }}</span
+          >
+        </div>
         <q-card
           v-for="(giftCard, index) in storeGiftCard.listGiftCards"
           :key="index"
           flat
           bordered
-          class="my-card q-mb-md"
+          class="my-card q-mb-md bg-default"
         >
-          <q-card-section class="q-pa-md">
+          <!-- <q-card-section class="q-pa-md">
             <div class="row justify-between items-center">
               <div class="col">
                 <div class="text-h6">{{ giftCard.code }}</div>
@@ -207,13 +305,6 @@ const copyCode = (code) => {
                 </div>
               </div>
 
-              <!-- <q-btn
-                flat
-                dense
-                icon="qr_code"
-                color="blue"
-                @click="openQRCodeDialog(giftCard.code)"
-              /> -->
               <q-btn
                 flat
                 dense
@@ -221,17 +312,98 @@ const copyCode = (code) => {
                 color="blue"
                 @click="copyCode(giftCard.code)"
               />
+            </div>
+          </q-card-section> -->
+
+          <q-card-section class="q-pa-none q-pr-md">
+            <div class="row justify-between">
+              <div style="width: 30%">
+                <div class="flex flex-center full-width q-py-md">
+                  <QRCodeVue :value="giftCard.code" size="80" />
+
+                  <!-- <q-btn
+                    icon="download"
+                    color="primary"
+                    dense
+                    flat
+                    @click="downloadQRCode(index)"
+                    class="q-ml-md"
+                  /> -->
+                </div>
+              </div>
+
+              <div class="col q-pa-sm">
+                <div class="flex" style="align-items: center">
+                  <q-icon
+                    v-if="!giftCard.isused"
+                    name="eva-checkmark-circle-outline"
+                    size="xs"
+                    color="green-4"
+                    class="q-mr-xs"
+                  />
+                  <q-icon
+                    v-else
+                    name="eva-close-circle-outline"
+                    size="xs"
+                    color="red-4"
+                    class="q-mr-xs"
+                  />
+
+                  <div
+                    class="text-subtitle1 t-default"
+                    style="font-size: 1.2em"
+                  >
+                    {{ giftCard.code }}
+                  </div>
+                  <q-btn
+                    flat
+                    dense
+                    icon="content_copy"
+                    color="grey"
+                    size="sm"
+                    class="q-ml-xs"
+                    @click="copyCode(giftCard.code)"
+                  />
+                </div>
+
+                <div
+                  class="text-bold t-default flex"
+                  style="align-items: center"
+                >
+                  <span class="text-h5">EUR: {{ giftCard.value }}</span>
+                </div>
+                <div class="q-py-md text-grey-6">
+                  {{ dateUtil.formatDateOnly(giftCard.date_from) }} •
+                  {{ dateUtil.formatDateOnly(giftCard.date_expired) }}
+                </div>
+                <!-- <div
+                  class="text-body2"
+                  :class="giftCard.isused ? 'text-red' : 'text-green'"
+                >
+                  {{ giftCard.isused ? "Đã sử dụng" : "Chưa sử dụng" }}
+                </div> -->
+              </div>
+
+              <div class="q-py-md">
+                <q-icon
+                  name="eva-edit-outline"
+                  size="sm"
+                  color="grey-7"
+                  @click="openUpdateDialog(giftCard)"
+                />
+              </div>
 
               <!-- <q-btn
                 flat
                 dense
-                icon="share"
+                icon="content_copy"
                 color="blue"
                 @click="copyCode(giftCard.code)"
               /> -->
             </div>
           </q-card-section>
-          <q-card-actions align="right">
+
+          <!-- <q-card-actions align="right">
             <q-btn
               v-if="!giftCard.isused"
               flat
@@ -248,7 +420,7 @@ const copyCode = (code) => {
               color="red"
               @click="confirmDelete(giftCard.id)"
             />
-          </q-card-actions>
+          </q-card-actions> -->
         </q-card>
       </q-list>
     </div>
@@ -386,23 +558,30 @@ const copyCode = (code) => {
       </q-card>
     </q-dialog>
 
-    <!-- QR Code Dialog -->
+    <!-- QR Code Scan Dialog -->
     <q-dialog v-model="showQRCodeDialog">
       <q-card style="min-width: 90vw">
         <q-card-section>
-          <div class="text-h6">QR Code</div>
+          <div class="text-h6">Scan QR Code</div>
         </q-card-section>
+
         <q-card-section class="q-pa-md flex flex-center">
-          <QRCodeVue :value="qrCodeData" size="300" />
+          <!-- QR Scanner Component, make sure to install and use a QR scanning library -->
+          <!-- <qrcode-stream @detect="onDetect"></qrcode-stream> -->
+          <ScanQrComponent
+            :height="500"
+            :detect-func="storeScanQr.scanData"
+          ></ScanQrComponent>
         </q-card-section>
+
         <q-card-actions align="right">
           <q-btn
             flat
+            dense
             label="Đóng"
             color="grey"
             @click="showQRCodeDialog = false"
           />
-          <q-btn label="Tải xuống" color="green" @click="downloadQRCode" />
         </q-card-actions>
       </q-card>
     </q-dialog>
