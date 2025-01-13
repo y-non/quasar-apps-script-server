@@ -68,7 +68,7 @@ onMounted(async () => {
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
 
   if (isLogin && role.value === "admin") {
-    router.push("/admin");
+    router.push(router.currentRoute.value.fullPath);
     handleGetRouterName(router.currentRoute.value.fullPath);
   } else if (isLogin && role.value !== "admin") {
     router.push("/data");
