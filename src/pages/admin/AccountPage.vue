@@ -94,6 +94,11 @@ const validateDateRangeFrom = (val) => {
                   clickable
                   v-close-popup
                   @click="storeAccountManagement.onChangeSite(site)"
+                  :class="
+                    storeAccountManagement.selectSite.id === site.id
+                      ? 'bg-default'
+                      : ''
+                  "
                 >
                   <q-item-section>
                     <q-item-label>{{ site.name }}</q-item-label>
@@ -115,6 +120,11 @@ const validateDateRangeFrom = (val) => {
                   clickable
                   v-close-popup
                   @click="storeAccountManagement.onChangeRole(role)"
+                  :class="
+                    storeAccountManagement.selectRole.id === role.id
+                      ? 'bg-default'
+                      : ''
+                  "
                 >
                   <q-item-section>
                     <q-item-label>{{ role.label }}</q-item-label>
@@ -166,26 +176,34 @@ const validateDateRangeFrom = (val) => {
                     />
                   </div>
                 </div>
-                <div>
-                  <div class="text-caption text-grey">
-                    {{ item.email }}
-                    •
+                <div class="text-subtitle1">
+                  <div class="text-grey flex column">
+                    <span class="text-subtitle1"> {{ item.email }}</span>
 
-                    <span>Quyền:</span> {{ item.role }}
+                    <div class="text-subtitle2">
+                      <span>Quyền:</span> {{ item.role }}
 
-                    •
-
-                    <span>Trạng thái: {{ item.status?.name }}</span>
+                      <span v-if="item.status?.name">
+                        <span class="q-px-xs">•</span>
+                        Trạng thái: {{ item.status?.name }}</span
+                      >
+                    </div>
                   </div>
                 </div>
               </q-card-section>
 
-              <q-card-section>
+              <q-card-section class="q-pt-none">
                 <div class="q-mb-sm">
-                  <span class="text-bold"
-                    ><q-icon name="eva-pin-outline" size="sm" />&nbsp;</span
+                  <span class="text-bold text-subtitle1"
+                    ><q-icon
+                      name="eva-pin-outline"
+                      size="sm"
+                      class="bg-default"
+                    />&nbsp;</span
                   >
-                  {{ item.site?.name ? item.site?.name : "none" }}
+                  <span class="text-subtitle2 text-bold">
+                    {{ item.site?.name ? item.site?.name : "none" }}
+                  </span>
                 </div>
               </q-card-section>
 
@@ -657,6 +675,7 @@ const validateDateRangeFrom = (val) => {
                 color="grey-7"
                 type="submit"
                 glossy
+                icon-right="update"
                 unelevated
                 style="padding: 0.7em 2em; border-radius: 8px"
               />

@@ -332,6 +332,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
 
     onChangeSite(siteData) {
       try {
+        this.selectSite = siteData;
         if (siteData?.id === "all") {
           this.listAccount = this.listAccountOriginal;
         } else {
@@ -346,6 +347,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
 
     onChangeRole(roleData) {
       try {
+        this.selectRole = roleData;
         if (roleData?.id === "all") {
           this.listAccount = this.listAccountOriginal;
         } else {

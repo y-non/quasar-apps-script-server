@@ -59,7 +59,7 @@ onMounted(async () => {
             <div class="flex justify-between" style="align-items: center">
               <div class="flex" style="align-items: center">
                 <q-icon name="store" size="md" color="grey-6" />
-                <div class="text-h6 q-px-md t-default text-uppercase">
+                <div class="text-h6 q-px-md t-default text-uppercase text-bold">
                   {{ item.name }}
                 </div>
               </div>
@@ -79,7 +79,7 @@ onMounted(async () => {
             </div>
           </q-card-section>
           <q-card-section>
-            <span class="t-default">{{ item.description }}</span>
+            <span class="text-grey-6">{{ item.description }}</span>
           </q-card-section>
         </q-card>
       </div>
@@ -201,6 +201,14 @@ onMounted(async () => {
               @click="storeSite.isShowEditDialog = false"
             />
             <q-btn
+              type="submit"
+              label="Cập nhật"
+              flat
+              class="t-default bg-default"
+              icon-right="update"
+              style="border-radius: 8px; padding: 0.7em"
+            />
+            <!-- <q-btn
               class="t-default bg-default q-my-md q-py-sm text-capitalize text-bold q-mx-md"
               label="Cập nhật"
               color="grey-7"
@@ -208,7 +216,7 @@ onMounted(async () => {
               glossy
               unelevated
               style="padding: 0.7em 2em; border-radius: 8px"
-            />
+            /> -->
           </q-card-actions>
         </div>
       </q-form>

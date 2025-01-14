@@ -70,14 +70,18 @@ function showAction(item) {
       Đang tải <q-spinner-ios size="lg" color="blue" />
     </div>
 
-    <q-list class="q-mt-md" v-else>
+    <q-list class="q-mt-lg" v-else>
       <div v-if="storeDiscount.listDiscount?.length">
+        <span class="text-h6 t-default text-bold q-pa-sm q-mb-md"
+          >Danh sách lựa chọn giảm giá</span
+        >
         <q-card
           v-for="(item, index) in storeDiscount.listDiscount"
           :key="index"
           flat
           bordered
-          class="my-card q-mb-md"
+          class="my-card q-mb-md q-ma-sm bg-default"
+          style="border-radius: 8px"
         >
           <q-card-section
             class="flex flex justify-between q-py-md"
@@ -102,6 +106,8 @@ function showAction(item) {
                 "
               /> -->
 
+
+
               <q-icon
                 v-if="!item.isused"
                 name="more_vert"
@@ -109,6 +115,8 @@ function showAction(item) {
                 :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
                 @click="!storeDiscount.loadingSelect ? showAction(item) : []"
               />
+
+              <!-- <span v-else class="text-red-9">Đã dùng</span> -->
             </div>
           </q-card-section>
           <q-card-section>
@@ -118,10 +126,12 @@ function showAction(item) {
               style="align-items: center"
             >
               <span class="text-bold text-grey-7 text-h6">Giá trị</span>
-              <span v-if="item.type === 'none'" class="text-blue text-h4">{{
-                dateUtil.formatter.format(item.value)
-              }}</span>
-              <span v-else class="text-blue text-h4"
+              <span
+                v-if="item.type === 'none'"
+                class="t-default text-h4"
+                >{{ dateUtil.formatter.format(item.value) }}</span
+              >
+              <span v-else class="t-default text-h4"
                 >{{ item.value }} {{ item.type }}</span
               >
             </div>
@@ -129,12 +139,12 @@ function showAction(item) {
             <div class="flex justify-between">
               <span class="text-grey-6">{{ item.description }}</span>
 
-              <div
+              <!-- <div
                 class="text-body2"
                 :class="item.isused ? 'text-red' : 'text-green'"
               >
                 {{ item.isused ? "Đã sử dụng" : "Chưa sử dụng" }}
-              </div>
+              </div> -->
             </div>
           </q-card-section>
         </q-card>
@@ -193,20 +203,20 @@ function showAction(item) {
               v-model="storeDiscount.newDiscount.value"
               type="number"
               label="Giá trị"
-              outlined
+              filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
             <q-select
               v-model="storeDiscount.newDiscount.type"
               :options="['€', '%']"
               label="Loại giảm giá"
-              outlined
+              filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
             <q-input
               v-model="storeDiscount.newDiscount.description"
               label="Mô tả"
-              outlined
+              filled
               class="q-mb-md"
             />
           </q-card-section>
@@ -259,20 +269,20 @@ function showAction(item) {
               v-model="storeDiscount.editDiscount.value"
               type="number"
               label="Giá trị"
-              outlined
+              filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
             <q-select
               v-model="storeDiscount.editDiscount.type"
               :options="['none', '%']"
               label="Loại giảm giá"
-              outlined
+              filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
             <q-input
               v-model="storeDiscount.editDiscount.description"
               label="Mô tả"
-              outlined
+              filled
               class="q-mb-md"
             />
           </q-card-section>
@@ -290,6 +300,7 @@ function showAction(item) {
               label="Cập nhật"
               flat
               class="t-default bg-default"
+              icon-right="update"
               style="border-radius: 8px; padding: 0.7em"
             />
           </q-card-actions>

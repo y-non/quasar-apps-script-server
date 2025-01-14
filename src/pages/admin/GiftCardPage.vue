@@ -540,6 +540,7 @@ watch(
                 type="submit"
                 label="Cập nhật"
                 flat
+                icon-right="update"
                 class="t-default bg-default"
                 style="border-radius: 8px; padding: 0.7em"
               />
