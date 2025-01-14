@@ -3,8 +3,7 @@ import { onMounted, ref } from "vue";
 import { useAccountManagementStore } from "src/stores/admin/AccountManagementStore";
 
 import noData from "../../assets/images/nodata.jpg";
-import { dateUtil } from "src/utils/dateUtil";
-import { Dialog } from "quasar";
+import { watch } from "vue";
 
 const storeAccountManagement = useAccountManagementStore();
 const tab = ref("user");
@@ -55,6 +54,24 @@ const validateDateRangeFrom = (val) => {
 
   return true;
 };
+
+watch(
+  () => storeAccountManagement.filter,
+  (val) => {
+    if (val) {
+      storeAccountManagement.listAccount =
+        storeAccountManagement.filterUserAccount(
+          storeAccountManagement.listAccount,
+          val
+        );
+    } else {
+      storeAccountManagement.onChangeFilter(
+        storeAccountManagement.selectSite,
+        storeAccountManagement.selectRole
+      );
+    }
+  }
+);
 </script>
 
 <template>
@@ -69,10 +86,7 @@ const validateDateRangeFrom = (val) => {
       </div>
 
       <q-list v-else>
-        <div
-          style="margin-bottom: 10em"
-          v-if="storeAccountManagement.listAccount?.length"
-        >
+        <div style="margin-bottom: 10em">
           <div class="q-py-md q-px-md">
             <!-- <q-btn
               class="t-default bg-default"
@@ -80,6 +94,19 @@ const validateDateRangeFrom = (val) => {
               rounded
               flat
             /> -->
+
+            <q-input
+              v-model="storeAccountManagement.filter"
+              type="text"
+              placeholder="Nhập để tìm kiếm người dùng tại đây..."
+              style="border-radius: 12px"
+              class="q-mb-md"
+              rounded
+              outlined
+              bg-color="grey-1"
+              clearable
+            >
+            </q-input>
 
             <q-btn-dropdown
               label="Chọn Site"
@@ -93,7 +120,12 @@ const validateDateRangeFrom = (val) => {
                   :key="index"
                   clickable
                   v-close-popup
-                  @click="storeAccountManagement.onChangeSite(site)"
+                  @click="
+                    storeAccountManagement.onChangeFilter(
+                      site,
+                      storeAccountManagement.selectRole
+                    )
+                  "
                   :class="
                     storeAccountManagement.selectSite.id === site.id
                       ? 'bg-default'
@@ -119,7 +151,12 @@ const validateDateRangeFrom = (val) => {
                   :key="index"
                   clickable
                   v-close-popup
-                  @click="storeAccountManagement.onChangeRole(role)"
+                  @click="
+                    storeAccountManagement.onChangeFilter(
+                      storeAccountManagement.selectSite,
+                      role
+                    )
+                  "
                   :class="
                     storeAccountManagement.selectRole.id === role.id
                       ? 'bg-default'
@@ -138,76 +175,80 @@ const validateDateRangeFrom = (val) => {
             <div class="title-header t-default text-bold text-h6">
               Danh sách tài khoản
             </div>
+            <div class="flex justify-between" style="align-items: center">
+              <q-btn
+                class="t-default bg-default q-my-md q-py-sm text-capitalize text-bold"
+                icon="eva-plus-circle-outline"
+                label="Thêm tài khoản"
+                @click="storeAccountManagement.isShowCreateDialog = true"
+                flat
+              />
+              <span>SL: {{ storeAccountManagement.listAccount?.length }}</span>
+            </div>
+            <div v-if="storeAccountManagement.listAccount?.length">
+              <q-card
+                v-for="(item, index) in storeAccountManagement.listAccount"
+                :key="index"
+                flat
+                bordered
+                class="my-card q-mb-md t-default bg-default"
+              >
+                <q-card-section>
+                  <div class="full-width flex justify-between">
+                    <div class="flex" style="align-items: center">
+                      <div class="text-h6 text-bold">
+                        {{ item.display_name }}
+                      </div>
+                    </div>
 
-            <q-btn
-              class="t-default bg-default q-my-md q-py-sm text-capitalize text-bold"
-              icon="eva-plus-circle-outline"
-              label="Thêm tài khoản"
-              @click="storeAccountManagement.isShowCreateDialog = true"
-              flat
-            />
+                    <div>
+                      <q-icon
+                        v-if="item.disable"
+                        name="lock_open"
+                        size="sm"
+                        class="q-mr-sm"
+                      />
 
-            <q-card
-              v-for="(item, index) in storeAccountManagement.listAccount"
-              :key="index"
-              flat
-              bordered
-              class="my-card q-mb-md t-default bg-default"
-            >
-              <q-card-section>
-                <div class="full-width flex justify-between">
-                  <div class="flex" style="align-items: center">
-                    <div class="text-h6 text-bold">{{ item.display_name }}</div>
-                  </div>
-
-                  <div>
-                    <q-icon
-                      v-if="item.disable"
-                      name="lock_open"
-                      size="sm"
-                      class="q-mr-sm"
-                    />
-
-                    <q-icon
-                      v-if="item.role === 'user'"
-                      name="eva-more-vertical-outline"
-                      size="sm"
-                      @click="storeAccountManagement.editAccount(item)"
-                    />
-                  </div>
-                </div>
-                <div class="text-subtitle1">
-                  <div class="text-grey flex column">
-                    <span class="text-subtitle1"> {{ item.email }}</span>
-
-                    <div class="text-subtitle2">
-                      <span>Quyền:</span> {{ item.role }}
-
-                      <span v-if="item.status?.name">
-                        <span class="q-px-xs">•</span>
-                        Trạng thái: {{ item.status?.name }}</span
-                      >
+                      <q-icon
+                        v-if="item.role === 'user'"
+                        name="eva-more-vertical-outline"
+                        size="sm"
+                        @click="storeAccountManagement.editAccount(item)"
+                      />
                     </div>
                   </div>
-                </div>
-              </q-card-section>
+                  <div class="text-subtitle1">
+                    <div class="text-grey flex column">
+                      <span class="text-subtitle1"> {{ item.email }}</span>
 
-              <q-card-section class="q-pt-none">
-                <div class="q-mb-sm">
-                  <span class="text-bold text-subtitle1"
-                    ><q-icon
-                      name="eva-pin-outline"
-                      size="sm"
-                      class="bg-default"
-                    />&nbsp;</span
-                  >
-                  <span class="text-subtitle2 text-bold">
-                    {{ item.site?.name ? item.site?.name : "none" }}
-                  </span>
-                </div>
-              </q-card-section>
+                      <div class="text-subtitle2">
+                        <span>Quyền:</span> {{ item.role }}
 
-              <!-- <q-card-actions align="right">
+                        <span v-if="item.status?.name">
+                          <span class="q-px-xs">•</span>
+                          Trạng thái: {{ item.status?.name }}</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </q-card-section>
+
+                <q-card-section class="q-pt-none">
+                  <div class="q-mb-sm">
+                    <span class="text-bold text-subtitle1"
+                      ><q-icon
+                        name="eva-pin-outline"
+                        size="sm"
+                        class="bg-default"
+                      />&nbsp;</span
+                    >
+                    <span class="text-subtitle2 text-bold">
+                      {{ item.site?.name ? item.site?.name : "none" }}
+                    </span>
+                  </div>
+                </q-card-section>
+
+                <!-- <q-card-actions align="right">
               <q-btn
                 label="Sửa"
                 color="primary"
@@ -242,7 +283,24 @@ const validateDateRangeFrom = (val) => {
                 </q-card>
               </q-dialog>
             </q-card-actions> -->
-            </q-card>
+              </q-card>
+            </div>
+
+            <div
+              class="flex flex-center column full-height"
+              style="margin-top: 200px"
+              v-else
+            >
+              <q-img
+                :src="noData"
+                spinner-color="primary"
+                spinner-size="82px"
+                width="250px"
+              />
+              <span class="text-h5 text-grey-7 text-bold"
+                >Không có dữ liệu</span
+              >
+            </div>
 
             <q-dialog v-model="storeAccountManagement.showDeleteDialog">
               <q-card style="min-width: 400px; max-width: 500px">
@@ -272,20 +330,6 @@ const validateDateRangeFrom = (val) => {
               </q-card>
             </q-dialog>
           </div>
-        </div>
-
-        <div
-          class="flex flex-center column full-height"
-          style="margin-top: 200px"
-          v-else
-        >
-          <q-img
-            :src="noData"
-            spinner-color="primary"
-            spinner-size="82px"
-            width="250px"
-          />
-          <span class="text-h5 text-grey-7 text-bold">Không có dữ liệu</span>
         </div>
       </q-list>
     </div>

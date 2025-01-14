@@ -46,6 +46,7 @@ export const useAccountManagementStore = defineStore("accountManagement", {
     deleteObject: {},
     selectSite: {},
     listSelectSite: [],
+    filter: "",
   }),
   actions: {
     async getInit() {
@@ -330,31 +331,53 @@ export const useAccountManagementStore = defineStore("accountManagement", {
       }
     },
 
-    onChangeSite(siteData) {
+    onChangeFilter(siteSelected, roleSelected) {
       try {
-        this.selectSite = siteData;
-        if (siteData?.id === "all") {
-          this.listAccount = this.listAccountOriginal;
-        } else {
-          this.listAccount = this.listAccountOriginal.filter(
-            (item) => item?.site?.id === siteData?.id
-          );
+        let listData = this.listAccountOriginal;
+
+        if (siteSelected?.id) {
+          this.selectSite = siteSelected;
+          if (siteSelected.id === "all") {
+            listData = this.listAccountOriginal;
+          } else {
+            listData = this.listAccountOriginal.filter(
+              (item) => item?.site?.id === siteSelected.id
+            );
+          }
         }
+
+        if (roleSelected?.id) {
+          this.selectRole = roleSelected;
+          if (roleSelected.id === "all") {
+            //do somethings
+          } else {
+            listData = listData.filter(
+              (item) => item?.role === roleSelected?.id
+            );
+          }
+        }
+
+        this.listAccount = listData;
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
     },
 
-    onChangeRole(roleData) {
+    filterUserAccount(listData, filterSearch) {
       try {
-        this.selectRole = roleData;
-        if (roleData?.id === "all") {
-          this.listAccount = this.listAccountOriginal;
-        } else {
-          this.listAccount = this.listAccountOriginal.filter(
-            (item) => item?.role === roleData?.id
-          );
-        }
+        listData = listData.filter(
+          (item) =>
+            item.display_name
+              .toLowerCase()
+              .trim()
+              .includes(filterSearch.toLowerCase().trim()) ||
+            item.email
+              .toLowerCase()
+              .trim()
+              .includes(filterSearch.toLowerCase().trim())
+        );
+
+        return listData;
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
