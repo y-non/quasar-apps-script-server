@@ -370,7 +370,7 @@ watch(
                   class="text-bold t-default flex"
                   style="align-items: center"
                 >
-                  <span class="text-h5">EUR: {{ giftCard.value }}</span>
+                  <span class="text-h5">EUR {{ giftCard.value }}</span>
                 </div>
                 <div class="q-py-md text-grey-6">
                   {{ dateUtil.formatDateOnly(giftCard.date_from) }} •
