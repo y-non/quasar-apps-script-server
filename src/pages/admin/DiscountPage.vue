@@ -106,8 +106,6 @@ function showAction(item) {
                 "
               /> -->
 
-
-
               <q-icon
                 v-if="!item.isused"
                 name="more_vert"
@@ -126,11 +124,9 @@ function showAction(item) {
               style="align-items: center"
             >
               <span class="text-bold text-grey-7 text-h6">Giá trị</span>
-              <span
-                v-if="item.type === 'none'"
-                class="t-default text-h4"
-                >{{ dateUtil.formatter.format(item.value) }}</span
-              >
+              <span v-if="item.type === 'none'" class="t-default text-h4">{{
+                dateUtil.formatter.format(item.value)
+              }}</span>
               <span v-else class="t-default text-h4"
                 >{{ item.value }} {{ item.type }}</span
               >
@@ -231,7 +227,7 @@ function showAction(item) {
             />
             <q-btn
               type="submit"
-              label="Thêm tài khoản"
+              label="Thêm mã giảm giá"
               icon="eva-plus-circle-outline"
               flat
               class="t-default bg-default"
@@ -251,7 +247,7 @@ function showAction(item) {
   >
     <q-card style="min-width: 400px; max-width: 500px">
       <q-card-section
-        @click="storeDiscount.showAddDialog = false"
+        @click="storeDiscount.showEditDialog = false"
         class="flex"
         style="align-items: center"
       >

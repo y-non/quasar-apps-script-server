@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { useUtilsStore } from "../UtilsStore";
-import { Loading, Notify } from "quasar";
+import { Dialog, Loading, Notify } from "quasar";
 import { supabase } from "src/utils/superbase";
 
 export const useDiscountStore = defineStore("discount", {
@@ -18,6 +18,62 @@ export const useDiscountStore = defineStore("discount", {
     async postCreateDiscount(dataInsert) {
       try {
         Loading.show();
+        function checkValidationBeforeInsert(listData, objectDataType) {
+          //first of all check whether if the amount of the discount already over the limit restriction
+          if (listData.length > 3) {
+            Dialog.create({
+              title: "Thông báo",
+              message: "Chỉ cho phép tạo tối đa 4 mã giảm giá!",
+              ok: true,
+              cancel: false,
+            });
+            return false;
+          }
+
+          //secondly go check each type of discount, rule is the amount of each type just only 2
+          let countOfPercent = 0,
+            countOfNone = 0;
+          listData.forEach((item) => {
+            if (item.type === "%") {
+              countOfPercent++;
+            } else {
+              countOfNone++;
+            }
+          });
+
+          if (objectDataType === "%" && countOfPercent > 1) {
+            Dialog.create({
+              title: "Thông báo",
+              message: "Mã giảm giá với loại % số lượng cho phép tối đa là 2!",
+              ok: true,
+              cancel: false,
+            });
+            return false;
+          }
+
+          if (objectDataType === "none" && countOfNone > 1) {
+            Dialog.create({
+              title: "Thông báo",
+              message:
+                "Mã giảm giá thông thường số lượng cho phép tối đa là 2!",
+              ok: true,
+              cancel: false,
+            });
+            return false;
+          }
+
+          return true;
+        }
+        const checkValidate = checkValidationBeforeInsert(
+          this.listDiscount,
+          dataInsert.type
+        );
+
+        if (!checkValidate) {
+          Loading.hide();
+          return;
+        }
+
         const storeUtils = useUtilsStore();
 
         const payload = {
@@ -43,6 +99,7 @@ export const useDiscountStore = defineStore("discount", {
           this.isLoadingMainScreen = true;
           this.listDiscount = await storeUtils.getDiscount();
           this.isLoadingMainScreen = false;
+          this.newDiscount = {};
         }
         Loading.hide();
       } catch (err) {
@@ -112,6 +169,7 @@ export const useDiscountStore = defineStore("discount", {
           this.isLoadingMainScreen = true;
           this.listDiscount = await storeUtils.getDiscount();
           this.isLoadingMainScreen = false;
+          this.newDiscount = {};
         }
         Loading.hide();
       } catch (err) {
