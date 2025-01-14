@@ -15,7 +15,6 @@ export const useGiftCardStore = defineStore("giftCard", {
   actions: {
     async getInit() {
       this.listGiftCards = await this.loadGiftCards();
-      console.log(this.listGiftCards);
       this.listGiftCardsOriginal = this.listGiftCards;
     },
     async loadGiftCards() {

@@ -107,14 +107,15 @@ export const useAuthenticationStore = defineStore("authentication", {
           this.isLogin = true;
           storageUtil.setLocalStorageData("isLogin", this.isLogin);
 
-          if (role === "admin") {
+          if (role === "superadmin") {
             this.router.push("/admin");
-            Loading.hide();
+          } else if (role === "admin") {
+            this.router.push("/admin/account");
           } else {
             this.router.push("/data");
-            Loading.hide();
           }
 
+          Loading.hide();
           setTimeout(() => {
             window.location.reload();
           }, 200);

@@ -34,7 +34,6 @@ export const useReportStore = defineStore("report", {
 
       const newDate = new Date();
       this.listOrder = await this.getOrderList(newDate, newDate);
-      console.log(this.listOrder);
       await this.handleShowDataSite();
       // await this.handleShowDataUser();
     },

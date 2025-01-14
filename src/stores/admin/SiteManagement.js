@@ -107,7 +107,6 @@ export const useSiteManagement = defineStore("site", {
     /* FUNCTIONAL */
     filterDateLatest() {
       try {
-        console.log(this.listSite);
         this.listSite = this.listSiteOriginal.sort((a, b) => {
           return new Date(a.created_at) - new Date(b.created_at);
         });

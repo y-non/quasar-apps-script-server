@@ -61,7 +61,7 @@ onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
 
-  if (isLogin && role.value === "admin") {
+  if ((isLogin && role.value === "admin") || role.value === "superadmin") {
     router.push("/admin");
     handleGetRouterName(router.currentRoute.value.fullPath);
   } else if (isLogin && role.value !== "admin") {

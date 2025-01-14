@@ -67,9 +67,12 @@ onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
 
-  if (isLogin && role.value === "admin") {
+  if ((isLogin && role.value === "admin") || role.value === "superadmin") {
     router.push(router.currentRoute.value.fullPath);
     handleGetRouterName(router.currentRoute.value.fullPath);
+    if (role.value === "admin") {
+      listRouter.shift();
+    }
   } else if (isLogin && role.value !== "admin") {
     router.push("/data");
   } else {
@@ -107,7 +110,7 @@ watch(
           style="align-items: center"
         >
           <q-btn
-            v-if="isLogin && role !== 'admin'"
+            v-if="isLogin && role !== 'admin' && role !== 'superadmin'"
             flat
             dense
             round
@@ -120,7 +123,10 @@ watch(
             >
           </q-btn>
 
-          <div v-if="role !== 'admin'" class="flex justify-end">
+          <div
+            v-if="role !== 'admin' && role !== 'superadmin'"
+            class="flex justify-end"
+          >
             <div v-if="isShowLogoutButton">
               <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
@@ -249,7 +255,7 @@ watch(
           </div>
 
           <q-btn
-            v-if="isLogin && role === 'admin'"
+            v-if="(isLogin && role === 'admin') || role === 'superadmin'"
             flat
             dense
             round
@@ -264,13 +270,16 @@ watch(
       </q-toolbar>
     </q-header>
     <q-drawer
-      :side="role === 'admin' ? 'right' : 'left'"
+      :side="role === 'admin' || role === 'superadmin' ? 'right' : 'left'"
       v-if="isLogin"
       v-model="drawer"
       :width="200"
       :breakpoint="500"
     >
-      <q-scroll-area v-if="role === 'admin'" class="fit">
+      <q-scroll-area
+        v-if="role === 'admin' || role === 'superadmin'"
+        class="fit"
+      >
         <q-list padding class="menu-list">
           <div v-for="(item, index) in listRouter" :key="index">
             <router-link :to="item.path">
