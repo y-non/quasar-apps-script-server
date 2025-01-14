@@ -494,6 +494,34 @@ watch(
                 </template>
               </q-input>
 
+              <div class="q-py-sm q-gutter-md">
+                <q-badge
+                  class="bg-default t-default q-py-sm q-px-md text-bold"
+                  label="10"
+                  style="border-radius: 8px"
+                  @click="storeGiftCard.currentGiftCard.value = 10"
+                />
+                <q-badge
+                  class="bg-default t-default q-py-sm q-px-md text-bold"
+                  label="20"
+                  style="border-radius: 8px"
+                  @click="storeGiftCard.currentGiftCard.value = 20"
+                />
+                <q-badge
+                  class="bg-default t-default q-py-sm q-px-md text-bold"
+                  label="50"
+                  style="border-radius: 8px"
+                  @click="storeGiftCard.currentGiftCard.value = 50"
+                />
+              </div>
+              <q-input
+                v-model="storeGiftCard.currentGiftCard.value"
+                label="Giá trị"
+                filled
+                type="number"
+                :rules="[(val) => !!val || 'Không được để trống']"
+              />
+
               <q-input
                 v-model="storeGiftCard.currentGiftCard.date_from"
                 label="Ngày bắt đầu"
@@ -509,13 +537,29 @@ watch(
                 type="date"
                 :rules="[validateDateRange]"
               />
-              <q-input
-                v-model="storeGiftCard.currentGiftCard.value"
-                label="Giá trị"
-                filled
-                type="number"
-                :rules="[(val) => !!val || 'Không được để trống']"
-              />
+
+              <!-- <q-input filled v-model="date" mask="date" :rules="['date']">
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy
+                      cover
+                      transition-show="scale"
+                      transition-hide="scale"
+                    >
+                      <q-date v-model="date">
+                        <div class="row items-center justify-end">
+                          <q-btn
+                            v-close-popup
+                            label="Close"
+                            color="primary"
+                            flat
+                          />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input> -->
             </q-card-section>
             <!-- <q-card-actions align="right">
               <q-btn
