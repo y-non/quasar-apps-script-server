@@ -186,6 +186,7 @@ const filterFn = (val, update) => {
         </q-btn> -->
       </div>
       <div v-if="storeAdmin.listOrder?.length">
+        <span class="text-h6 t-default q-py-sm text-bold">Danh sách đơn hàng</span>
         <q-card
           v-for="(item, index) in storeAdmin.listOrder"
           :key="index"
@@ -200,19 +201,19 @@ const filterFn = (val, update) => {
             <div>
               <div class="text-subtitle2 text-grey">{{ item.datum }}</div>
               <div
-                class="text-subtitle2 text-grey flex"
+                class="flex text-subtitle2 text-grey flex"
                 style="align-items: center"
               >
-                <q-icon name="eva-person-outline" size="xs" />:
-                {{ item.users.display_name }}
+                <q-icon name="eva-person-outline" size="xs" />
+                <span class="q-ml-sm">{{ item.users.display_name }}</span>
               </div>
 
               <div
-                class="text-subtitle2 text-grey flex"
+                class="flex text-subtitle2 text-grey flex"
                 style="align-items: center"
               >
-                <q-icon name="eva-home-outline" size="xs" />: Site
-                <!-- {{ item.users }} -->
+                <q-icon name="eva-home-outline" size="xs" />
+                <span class="q-ml-sm text-capitalize"> {{ item.siteName }}</span>
               </div>
             </div>
 

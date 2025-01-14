@@ -3,6 +3,7 @@ import { supabase } from "src/utils/superbase";
 import { useUtilsStore } from "./UtilsStore";
 import { Dialog, Loading, Notify } from "quasar";
 import { dateUtil } from "src/utils/dateUtil";
+import { storageUtil } from "src/utils/storageUtil";
 
 export const useAdminStore = defineStore("admin", {
   state: () => ({
@@ -276,6 +277,12 @@ export const useAdminStore = defineStore("admin", {
                 totalPrice -= giftCard.value;
               }
 
+              //handle show site name
+              const listSiteData = storageUtil.getLocalStorageData("siteData");
+              const siteName = listSiteData.filter(
+                (site) => site.id === item.site
+              )[0].name;
+
               return {
                 id: item.id,
                 notizen: item.description,
@@ -287,6 +294,7 @@ export const useAdminStore = defineStore("admin", {
                 giftCardObject: giftCard ? giftCard : {},
                 created_at: item.created_at,
                 users: item.users,
+                siteName,
                 isHaveDiscount: discount ? true : false,
                 isHaveGiftCard: giftCard ? true : false,
                 is_edit: item.is_edit,
