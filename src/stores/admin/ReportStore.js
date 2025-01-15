@@ -16,7 +16,7 @@ export const useReportStore = defineStore("report", {
     listUser: [],
     isLoadingMainScreen: false,
     objectCallWatchAction: {},
-    isGetToday: false,
+    isGetToday: true,
     isNotHaveDataSite: false,
 
     /* Handle chart from here */
@@ -25,9 +25,17 @@ export const useReportStore = defineStore("report", {
 
     listUserName: [],
     listUserValue: [],
+
+    listMonth: [],
+    listYear: [],
+
+    tab: "chart",
+    selectMonth: {},
+    selectYear: {},
   }),
   actions: {
     async getInit() {
+      this.handleGetListMonthAndYear();
       this.listSite = storageUtil.getLocalStorageData("siteData");
       this.siteSelected = this.listSite[0];
       // this.listUser = await this.getListUsersBaseOnSite(this.siteSelected.id);
@@ -241,6 +249,33 @@ export const useReportStore = defineStore("report", {
         } else {
           this.objectCallWatchAction = date;
           this.isGetToday = true;
+        }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    handleGetListMonthAndYear() {
+      try {
+        const currentDate = new Date();
+        this.listMonth = [];
+        this.listYear = [];
+
+        for (let i = 1; i <= 12; ++i) {
+          this.listMonth.push({
+            value: i,
+            label: `Tháng ${i}`,
+          });
+        }
+
+        let countYear = currentDate.getFullYear();
+        while (countYear >= 1990) {
+          this.listYear.push({
+            value: countYear,
+            label: `Năm ${countYear}`,
+          });
+
+          countYear--;
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);

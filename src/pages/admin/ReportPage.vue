@@ -2,6 +2,7 @@
 import { useReportStore } from "src/stores/admin/ReportStore";
 import { onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
+import { dateUtil } from "src/utils/dateUtil";
 
 const storeReport = useReportStore();
 let charts = {};
@@ -108,15 +109,45 @@ const createPerSiteChart = (listSite, listValue) => {
   }
 };
 
+async function createReportChart(val) {
+  if (storeReport.isGetToday) {
+    const today = val;
+    storeReport.listOrder = await storeReport.getOrderList(today, today);
+
+    await storeReport.handleShowDataSite();
+    await storeReport.handleShowDataUser();
+  } else {
+    const fromDate = val.from;
+    const toDate = val.to;
+    storeReport.listOrder = await storeReport.getOrderList(fromDate, toDate);
+
+    await storeReport.handleShowDataSite();
+    await storeReport.handleShowDataUser();
+  }
+
+  createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+  createPerSiteChart(storeReport.listSiteName, storeReport.listSiteValue);
+}
+
+async function initChart(val) {
+  console.log(val);
+  storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
+  await storeReport.handleShowDataUser();
+
+  createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+}
+
 // Watch for data changes and update the charts
 watch(
   () => storeReport.siteSelected, // Replace with the actual reactive variable for updates
   async (val) => {
     if (val) {
-      storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
-      await storeReport.handleShowDataUser();
+      // storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
+      // await storeReport.handleShowDataUser();
 
-      createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+      // createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+
+      initChart(val);
     }
   }
 );
@@ -125,26 +156,7 @@ watch(
   () => storeReport.objectCallWatchAction,
   async (val) => {
     if (val) {
-      if (storeReport.isGetToday) {
-        const today = val;
-        storeReport.listOrder = await storeReport.getOrderList(today, today);
-
-        await storeReport.handleShowDataSite();
-        await storeReport.handleShowDataUser();
-      } else {
-        const fromDate = val.from;
-        const toDate = val.to;
-        storeReport.listOrder = await storeReport.getOrderList(
-          fromDate,
-          toDate
-        );
-
-        await storeReport.handleShowDataSite();
-        await storeReport.handleShowDataUser();
-      }
-
-      createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
-      createPerSiteChart(storeReport.listSiteName, storeReport.listSiteValue);
+      createReportChart(val);
     }
   }
 );
@@ -161,90 +173,174 @@ onMounted(async () => {
 
 <template>
   <q-page class="q-pa-md">
-    <q-card flat bordered class="q-mb-md">
-      <q-card-section>
-        <div class="text-h6 text-primary">Tổng kết doanh thu</div>
-        <div class="text-subtitle2 text-grey-7">
-          Tổng quan về doanh thu trên mỗi người dùng và site
+    <q-tabs v-model="storeReport.tab" class="text-teal">
+      <q-tab name="chart" icon="eva-pie-chart-outline" label="Theo biểu đồ" />
+      <q-tab name="number" icon="format_list_numbered" label="Theo số liệu" />
+    </q-tabs>
+
+    <q-tab-panels v-model="storeReport.tab" animated>
+      <q-tab-panel
+        name="chart"
+        @click="
+          () => {
+            initChart(storeReport.siteSelected);
+            createReportChart(storeReport.objectCallWatchAction);
+          }
+        "
+      >
+        <q-card flat bordered class="q-mb-md">
+          <q-card-section>
+            <div class="text-h6 text-primary">Tổng kết doanh thu</div>
+            <div class="text-subtitle2 text-grey-7">
+              Tổng quan về doanh thu trên mỗi người dùng và site
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <div
+          v-if="storeReport.isLoadingMainScreen"
+          style="height: 30vh"
+          class="full-width flex column flex-center"
+        >
+          Đang tải <q-spinner-ios size="lg" color="blue" />
         </div>
-      </q-card-section>
-    </q-card>
 
-    <div
-      v-if="storeReport.isLoadingMainScreen"
-      style="height: 30vh"
-      class="full-width flex column flex-center"
-    >
-      Đang tải <q-spinner-ios size="lg" color="blue" />
-    </div>
+        <div v-show="!storeReport.isLoadingMainScreen">
+          <div class="flex justify-end q-pb-md" style="align-items: center">
+            <q-badge
+              v-if="storeReport.isGetToday"
+              color="primary"
+              text-color="{2:black}"
+              :label="
+                dateUtil.formatDateOnly(
+                  storeReport.objectCallWatchAction?.length
+                    ? storeReport.objectCallWatchAction
+                    : new Date()
+                )
+              "
+              outline
+              class="q-pa-xs"
+            />
 
-    <div v-show="!storeReport.isLoadingMainScreen">
-      <div class="flex justify-end q-pb-md" style="align-items: center">
-        <q-btn icon="eva-calendar-outline" round>
-          <q-popup-proxy
-            @before-show="updateProxy"
-            cover
-            transition-show="scale"
-            transition-hide="scale"
-          >
-            <q-date v-model="storeReport.dateRange" range today-btn>
-              <div class="row items-center justify-end q-gutter-sm">
-                <q-btn label="Cancel" color="primary" flat v-close-popup />
-                <q-btn
-                  label="OK"
-                  color="primary"
-                  flat
-                  @click="storeReport.getReport(storeReport.dateRange)"
-                  v-close-popup
-                />
-              </div>
-            </q-date>
-          </q-popup-proxy>
-        </q-btn>
-      </div>
+            <div v-else>
+              <q-badge
+                color="primary"
+                text-color="{2:black}"
+                :label="
+                  dateUtil.formatDateOnly(
+                    storeReport.objectCallWatchAction.from
+                  )
+                "
+                outline
+                class="q-pa-xs"
+              />
+              <span class="t-default q-mx-sm">-</span>
+              <q-badge
+                color="primary"
+                text-color="{2:black}"
+                :label="
+                  dateUtil.formatDateOnly(storeReport.objectCallWatchAction.to)
+                "
+                outline
+                class="q-pa-xs"
+              />
+              <!-- {{ dateUtil.formatDateOnly(storeReport.objectCallWatchAction.to) }} -->
+            </div>
 
-      <q-card flat bordered class="q-mb-md">
-        <q-card-section class="flex justify-between">
-          <div>
-            <div class="text-h6">Doanh thu theo người dùng</div>
-            <q-badge :label="storeReport.siteSelected.name" />
+            <!-- <q-btn icon="eva-calendar-outline" round color="primary">
+              <q-popup-proxy
+                @before-show="updateProxy"
+                cover
+                transition-show="scale"
+                transition-hide="scale"
+              >
+                <q-date v-model="storeReport.dateRange" range today-btn>
+                  <div class="row items-center justify-end q-gutter-sm">
+                    <q-btn label="Cancel" color="primary" flat v-close-popup />
+                    <q-btn
+                      label="OK"
+                      color="primary"
+                      flat
+                      @click="storeReport.getReport(storeReport.dateRange)"
+                      v-close-popup
+                    />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-btn> -->
           </div>
 
-          <q-icon name="store" size="md" class="t-default">
-            <q-menu>
-              <q-list style="min-width: 100px">
-                <div v-for="(item, index) in storeReport.listSite" :key="index">
-                  <q-item
-                    :class="
-                      storeReport.siteSelected.name === item.name
-                        ? 'bg-default'
-                        : ''
-                    "
-                    clickable
-                    @click="storeReport.siteSelected = { ...item }"
-                  >
-                    <q-item-section>{{ item.name }}</q-item-section>
-                  </q-item>
-                  <q-separator />
-                </div>
-              </q-list>
-            </q-menu>
-          </q-icon>
-        </q-card-section>
-        <q-card-section>
-          <canvas id="revenuePerUser"></canvas>
-        </q-card-section>
-      </q-card>
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section class="flex justify-between">
+              <div>
+                <div class="text-h6">Doanh thu theo người dùng</div>
+                <q-badge :label="storeReport.siteSelected.name" />
+              </div>
 
-      <q-card flat bordered>
-        <q-card-section>
-          <div class="text-h6">Doanh thu theo site</div>
-        </q-card-section>
-        <q-card-section>
-          <canvas id="revenuePerSite"></canvas>
-        </q-card-section>
-      </q-card>
-    </div>
+              <q-icon name="store" size="md" class="t-default">
+                <q-menu>
+                  <q-list style="min-width: 100px">
+                    <div
+                      v-for="(item, index) in storeReport.listSite"
+                      :key="index"
+                    >
+                      <q-item
+                        :class="
+                          storeReport.siteSelected.name === item.name
+                            ? 'bg-default'
+                            : ''
+                        "
+                        clickable
+                        @click="storeReport.siteSelected = { ...item }"
+                      >
+                        <q-item-section>{{ item.name }}</q-item-section>
+                      </q-item>
+                      <q-separator />
+                    </div>
+                  </q-list>
+                </q-menu>
+              </q-icon>
+            </q-card-section>
+            <q-card-section>
+              <canvas id="revenuePerUser"></canvas>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered>
+            <q-card-section>
+              <div class="text-h6">Doanh thu theo site</div>
+            </q-card-section>
+            <q-card-section>
+              <canvas id="revenuePerSite"></canvas>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-tab-panel>
+    </q-tab-panels>
+
+    <q-page-sticky position="bottom-right" :offset="[18, 48]">
+      <q-btn class="q-pa-sm" icon="eva-calendar-outline" round color="primary">
+        <q-popup-proxy
+          @before-show="updateProxy"
+          cover
+          transition-show="scale"
+          transition-hide="scale"
+        >
+          <q-date v-model="storeReport.dateRange" range today-btn>
+            <div class="row items-center justify-end q-gutter-sm">
+              <q-btn label="Cancel" color="primary" flat v-close-popup />
+              <q-btn
+                label="OK"
+                color="primary"
+                flat
+                @click="storeReport.getReport(storeReport.dateRange)"
+                v-close-popup
+              />
+            </div>
+          </q-date>
+        </q-popup-proxy>
+      </q-btn>
+    </q-page-sticky>
   </q-page>
 </template>
 
