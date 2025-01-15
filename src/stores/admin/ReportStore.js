@@ -87,12 +87,12 @@ export const useReportStore = defineStore("report", {
         // Notify if no user has associated data
         const isNotHaveDataUser = listUserValue.every((item) => item === 0);
         if (isNotHaveDataUser) {
-          Notify.create({
-            type: "negative",
-            message: "Không có dữ liệu để hiển thị",
-            position: "top",
-            timeout: 2000,
-          });
+          // Notify.create({
+          //   type: "negative",
+          //   message: "Không có dữ liệu để hiển thị",
+          //   position: "top",
+          //   timeout: 2000,
+          // });
         }
 
         return {
@@ -127,12 +127,12 @@ export const useReportStore = defineStore("report", {
 
         this.isNotHaveDataSite = listSiteValue.every((item) => item === 0);
         if (this.isNotHaveDataSite) {
-          Notify.create({
-            type: "negative",
-            message: "Không có dữ liệu để hiển thị",
-            position: "top",
-            timeout: 2000,
-          });
+          // Notify.create({
+          //   type: "negative",
+          //   message: "Không có dữ liệu để hiển thị",
+          //   position: "top",
+          //   timeout: 2000,
+          // });
         }
 
         return {
