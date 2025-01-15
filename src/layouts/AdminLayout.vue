@@ -66,17 +66,13 @@ function handleGetRouterName(value) {
 onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
+  const routerPath = router.currentRoute.value.fullPath;
 
   if ((isLogin && role.value === "admin") || role.value === "superadmin") {
-    router.push(router.currentRoute.value.fullPath);
-    handleGetRouterName(router.currentRoute.value.fullPath);
+    handleGetRouterName(routerPath);
     if (role.value === "admin") {
       listRouter.shift();
     }
-  } else if (isLogin && role.value !== "admin") {
-    router.push("/data");
-  } else {
-    router.push("/");
   }
 });
 
