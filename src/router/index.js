@@ -49,16 +49,28 @@ export default route(function (/* { store, ssrContext } */) {
       if (role === "admin" || role === "superadmin") {
         return next();
       } else {
-        return next("/data");
+        if (routerPath.startsWith("/admin")) {
+          return next("/404");
+        }
+
+        //this is use for "user" role
+        if (routerPath === "/") {
+          return next("/data");
+        }
       }
     }
 
-    //no login
-    else {
-      if (routerPath !== "/") {
-        return next("/");
-      }
+    // No login, allow only the login page
+    if (!isLogin && routerPath !== "/") {
+      return next("/");
     }
+
+    //no login
+    // else {
+    //   if (routerPath !== "/") {
+    //     return next("/");
+    //   }
+    // }
 
     next();
   });

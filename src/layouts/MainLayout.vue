@@ -1,13 +1,9 @@
 <script setup>
 import { ref, onMounted, onBeforeMount, watch } from "vue";
-import { useMainStore } from "src/stores/main-store";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
-import { useRouter } from "vue-router";
 import { storageUtil } from "src/utils/storageUtil";
 
-const router = useRouter();
-const storeMain = useMainStore();
 const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
 
@@ -17,58 +13,10 @@ const userStatus = ref("");
 const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 const role = ref("");
 const routerName = ref("");
-const listRouter = [
-  {
-    path: "/admin",
-    name: "Báo cáo",
-    icon: "eva-pie-chart-outline",
-  },
-  {
-    path: "/admin/account",
-    name: "Quản lý tài khoản",
-    icon: "eva-people-outline",
-  },
-
-  {
-    path: "/admin/order",
-    name: "Quản lý đơn hàng",
-    icon: "eva-file-text-outline",
-  },
-
-  {
-    path: "/admin/discount",
-    name: "Quản lý mã giảm giá",
-    icon: "eva-credit-card-outline",
-  },
-
-  {
-    path: "/admin/giftcard",
-    name: "Quản lý mã quà tặng",
-    icon: "eva-gift-outline",
-  },
-];
-
-function handleGetRouterName(value) {
-  try {
-    const finder = listRouter.filter((item) => item.path === value)[0];
-    routerName.value = finder.name;
-  } catch (err) {
-    console.error("Internal Server Error: ", err);
-  }
-}
 
 onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
-
-  if ((isLogin && role.value === "admin") || role.value === "superadmin") {
-    router.push("/admin");
-    handleGetRouterName(router.currentRoute.value.fullPath);
-  } else if (isLogin && role.value !== "admin") {
-    router.push("/data");
-  } else {
-    router.push("/");
-  }
 });
 
 onBeforeMount(() => {});
@@ -83,18 +31,11 @@ watch(
     userStatus.value = selfUserData;
   }
 );
-
-watch(
-  () => router.currentRoute.value.fullPath,
-  (val) => {
-    handleGetRouterName(val);
-  }
-);
 </script>
 
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header class="q-py-sm" elevated>
+    <q-header class="q-py-sm" elevated >
       <q-toolbar>
         <div
           class="flex justify-between full-width"
@@ -114,8 +55,8 @@ watch(
             >
           </q-btn>
 
-          <div v-if="role !== 'admin'" class="flex justify-end">
-            <div v-if="isShowLogoutButton">
+          <div v-if="role !== 'admin' && role !== 'superadmin'" class="flex justify-end">
+            <div v-if="isShowLogoutButton == true">
               <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
                   userStatus?.status_name

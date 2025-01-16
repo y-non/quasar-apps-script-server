@@ -1,6 +1,6 @@
 <script setup>
 import { useReportStore } from "src/stores/admin/ReportStore";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import { dateUtil } from "src/utils/dateUtil";
 
@@ -48,10 +48,6 @@ const createPerUserChart = (listUser, listValue) => {
             display: true,
             position: "top",
           },
-          // title: {
-          //   display: true,
-          //   text: "Doanh thu",
-          // },
         },
       },
     });
@@ -130,11 +126,19 @@ async function createReportChart(val) {
 }
 
 async function initChart(val) {
-  console.log(val);
   storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
   await storeReport.handleShowDataUser();
 
   createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
+}
+
+async function initDataTab2(val) {
+  const userResponse = await storeReport.getListUsersBaseOnSite(val.id);
+  await storeReport.handleGetRevenueByUser(
+    userResponse,
+    storeReport.listOrder,
+    storeReport.siteSelectedTextReport.id
+  );
 }
 
 // Watch for data changes and update the charts
@@ -142,11 +146,6 @@ watch(
   () => storeReport.siteSelected, // Replace with the actual reactive variable for updates
   async (val) => {
     if (val) {
-      // storeReport.listUser = await storeReport.getListUsersBaseOnSite(val.id);
-      // await storeReport.handleShowDataUser();
-
-      // createPerUserChart(storeReport.listUserName, storeReport.listUserValue);
-
       initChart(val);
     }
   }
@@ -174,20 +173,27 @@ onMounted(async () => {
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="storeReport.tab" class="text-teal">
-      <q-tab name="chart" icon="eva-pie-chart-outline" label="Theo biểu đồ" />
-      <q-tab name="number" icon="format_list_numbered" label="Theo số liệu" />
-    </q-tabs>
-
-    <q-tab-panels v-model="storeReport.tab" animated>
-      <q-tab-panel
-        name="chart"
+      <q-tab
         @click="
           () => {
             initChart(storeReport.siteSelected);
             createReportChart(storeReport.objectCallWatchAction);
           }
         "
-      >
+        name="chart"
+        icon="eva-pie-chart-outline"
+        label="Theo biểu đồ"
+      />
+      <q-tab
+        @click="initDataTab2(storeReport.siteSelectedTextReport)"
+        name="number"
+        icon="format_list_numbered"
+        label="Theo số liệu"
+      />
+    </q-tabs>
+
+    <q-tab-panels v-model="storeReport.tab" animated>
+      <q-tab-panel name="chart">
         <q-card flat bordered class="q-mb-md">
           <q-card-section>
             <div class="text-h6 text-primary">Tổng kết doanh thu</div>
@@ -244,30 +250,7 @@ onMounted(async () => {
                 outline
                 class="q-pa-xs"
               />
-              <!-- {{ dateUtil.formatDateOnly(storeReport.objectCallWatchAction.to) }} -->
             </div>
-
-            <!-- <q-btn icon="eva-calendar-outline" round color="primary">
-              <q-popup-proxy
-                @before-show="updateProxy"
-                cover
-                transition-show="scale"
-                transition-hide="scale"
-              >
-                <q-date v-model="storeReport.dateRange" range today-btn>
-                  <div class="row items-center justify-end q-gutter-sm">
-                    <q-btn label="Cancel" color="primary" flat v-close-popup />
-                    <q-btn
-                      label="OK"
-                      color="primary"
-                      flat
-                      @click="storeReport.getReport(storeReport.dateRange)"
-                      v-close-popup
-                    />
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-btn> -->
           </div>
 
           <q-card flat bordered class="q-mb-md">
@@ -312,6 +295,114 @@ onMounted(async () => {
             </q-card-section>
             <q-card-section>
               <canvas id="revenuePerSite"></canvas>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-tab-panel>
+
+      <q-tab-panel name="number">
+        <q-card flat bordered class="q-mb-md">
+          <q-card-section>
+            <div class="text-h6 text-primary">Báo cáo số liệu doanh thu</div>
+            <div class="text-subtitle2 text-grey-7">
+              Thống kê chi tiết doanh thu theo từng người dùng và site
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <div
+          v-if="storeReport.isLoadingNumberTab"
+          style="height: 30vh"
+          class="full-width flex column flex-center"
+        >
+          Đang tải <q-spinner-ios size="lg" color="blue" />
+        </div>
+
+        <div v-show="!storeReport.isLoadingNumberTab" class="q-pb-md">
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section class="flex justify-between">
+              <div>
+                <div class="text-h6">Doanh thu theo người dùng</div>
+                <q-badge :label="storeReport.siteSelectedTextReport.name" />
+              </div>
+
+              <q-icon name="store" size="md" class="t-default">
+                <q-menu>
+                  <q-list style="min-width: 100px">
+                    <div
+                      v-for="(item, index) in storeReport.listSite"
+                      :key="index"
+                    >
+                      <q-item
+                        :class="
+                          storeReport.siteSelectedTextReport.name === item.name
+                            ? 'bg-default'
+                            : ''
+                        "
+                        clickable
+                        @click="
+                          storeReport.siteSelectedTextReport = { ...item }
+                        "
+                      >
+                        <q-item-section>{{ item.name }}</q-item-section>
+                      </q-item>
+                      <q-separator />
+                    </div>
+                  </q-list>
+                </q-menu>
+              </q-icon>
+            </q-card-section>
+            <q-card-section>
+              <table class="q-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th class="text-left">Người dùng</th>
+                    <th class="text-right">Doanh thu (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(user, index) in storeReport.revenueByUser"
+                    :key="index"
+                  >
+                    <td>{{ index + 1 }}</td>
+                    <td class="text-left">{{ user.name }}</td>
+                    <td class="text-right">
+                      {{ dateUtil.formatter.format(user.revenue) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered>
+            <q-card-section>
+              <div class="text-h6">Doanh thu theo site</div>
+            </q-card-section>
+            <q-card-section>
+              <table class="q-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th class="text-left">Site</th>
+                    <th class="text-right">Doanh thu (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(site, index) in storeReport.revenueBySite"
+                    :key="index"
+                  >
+                    <td>{{ index + 1 }}</td>
+                    <td class="text-left">{{ site.name }}</td>
+                    <td class="text-right">
+                      {{ dateUtil.formatter.format(site.revenue) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </q-card-section>
           </q-card>
         </div>

@@ -1,7 +1,5 @@
 import { defineStore } from "pinia";
 import { supabase } from "src/utils/superbase";
-import { useUtilsStore } from "../UtilsStore";
-import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { Notify } from "quasar";
 
@@ -32,18 +30,25 @@ export const useReportStore = defineStore("report", {
     tab: "chart",
     selectMonth: {},
     selectYear: {},
+
+    //handle in text report
+    revenueByUser: [],
+    revenueBySite: [],
+    siteSelectedTextReport: {},
   }),
   actions: {
     async getInit() {
       this.handleGetListMonthAndYear();
       this.listSite = storageUtil.getLocalStorageData("siteData");
+
+      //assign the test data for first page init
+      this.objectCallWatchAction = new Date();
       this.siteSelected = this.listSite[0];
-      // this.listUser = await this.getListUsersBaseOnSite(this.siteSelected.id);
+      this.siteSelectedTextReport = this.listSite[0];
 
       const newDate = new Date();
       this.listOrder = await this.getOrderList(newDate, newDate);
       await this.handleShowDataSite();
-      // await this.handleShowDataUser();
     },
 
     async handleShowDataSite() {
@@ -74,6 +79,7 @@ export const useReportStore = defineStore("report", {
       try {
         let listUserName = [];
         let listUserValue = [];
+        this.revenueByUser = [];
 
         userData.forEach((user) => {
           // Filter orders associated with the current user and site
@@ -86,6 +92,11 @@ export const useReportStore = defineStore("report", {
             (total, order) => total + (order.total_price || 0),
             0
           );
+
+          this.revenueByUser.push({
+            name: user.display_name,
+            revenue: totalPrice,
+          });
 
           // Push user data into respective lists
           listUserName.push(user.display_name || "Unknown User");
@@ -117,6 +128,7 @@ export const useReportStore = defineStore("report", {
         //handle show in report
         let listSiteName = [];
         let listSiteValue = [];
+        this.revenueBySite = [];
 
         listSiteName = await Promise.all(
           siteData.map(async (item) => {
@@ -128,6 +140,11 @@ export const useReportStore = defineStore("report", {
             });
 
             listSiteValue.push(sumTotalBySite);
+
+            this.revenueBySite.push({
+              name: item.name,
+              revenue: sumTotalBySite,
+            });
 
             return item.name;
           })
@@ -281,5 +298,47 @@ export const useReportStore = defineStore("report", {
         console.error("Internal Server Error: ", err);
       }
     },
+
+    // handleGetListUserRevenueBySite(userData, orderData, siteId) {
+    //   try {
+    //     let listUserName = [];
+    //     let listUserValue = [];
+
+    //     userData.forEach((user) => {
+    //       // Filter orders associated with the current user and site
+    //       const listOrderByUser = orderData.filter(
+    //         (order) => order.users?.id === user.id && order.site === siteId
+    //       );
+
+    //       // Calculate total price for the user's orders
+    //       const totalPrice = listOrderByUser.reduce(
+    //         (total, order) => total + (order.total_price || 0),
+    //         0
+    //       );
+
+    //       // Push user data into respective lists
+    //       listUserName.push(user.display_name || "Unknown User");
+    //       listUserValue.push(totalPrice);
+    //     });
+
+    //     // Notify if no user has associated data
+    //     const isNotHaveDataUser = listUserValue.every((item) => item === 0);
+    //     if (isNotHaveDataUser) {
+    //       // Notify.create({
+    //       //   type: "negative",
+    //       //   message: "Không có dữ liệu để hiển thị",
+    //       //   position: "top",
+    //       //   timeout: 2000,
+    //       // });
+    //     }
+
+    //     return {
+    //       listUserName,
+    //       listUserValue,
+    //     };
+    //   } catch (err) {
+    //     console.error("Internal Server Error: ", err);
+    //   }
+    // },
   },
 });

@@ -112,6 +112,7 @@ export const useAuthenticationStore = defineStore("authentication", {
           } else if (role === "admin") {
             this.router.push("/admin/account");
           } else {
+            console.log("dzo day ne");
             this.router.push("/data");
           }
 
