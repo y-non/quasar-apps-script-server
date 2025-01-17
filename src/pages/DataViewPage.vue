@@ -239,15 +239,16 @@ const onDetect = (decodedString) => {
   <q-page class="q-pa-sm">
     <!-- Display User Badges -->
     <div v-if="!storeSupabase.isLoadingMainScreen" class="q-my-sm">
-      <div v-if="!storeSupabase.isShowMoreUsers">
+      <div v-if="!storeSupabase.isShowMoreUsers" class="flex justify-between">
         <q-btn
           v-for="user in visibleUsers"
           :key="user.userName"
           color="grey-6"
-          class="q-mx-xs q-pa-sm q-my-xs"
+          class="q-mx-xs q-pa-sm q-my-xs text-subtitle2"
+          dense
           outline
           size="md"
-          style="min-width: 100px"
+          style="min-width: 47%;"
         >
           <q-icon
             name="circle"
@@ -309,39 +310,41 @@ const onDetect = (decodedString) => {
         </div>
 
         <!-- User List -->
-        <div
-          v-for="user in sortedUsers"
-          :key="user.userName"
-          class="flex q-py-none"
-          style="align-items: center"
-        >
-          <div style="width: 30%">
-            <q-btn
-              :color="
-                user.status_name === 'serving'
-                  ? 'green-8'
-                  : user.status_name === 'waiting'
-                  ? 'yellow-8'
-                  : 'red-8'
-              "
-              class="q-pa-sm q-my-xs q-py-none"
-              outline
-              size="md"
-              style="min-width: 100px"
-            >
-              {{ user.username }}
-            </q-btn>
-          </div>
+        <div class="q-mt-lg">
+          <div
+            v-for="user in sortedUsers"
+            :key="user.userName"
+            class="flex q-py-none"
+            style="align-items: center"
+          >
+            <div style="width: 35%">
+              <q-btn
+                :color="
+                  user.status_name === 'serving'
+                    ? 'green-8'
+                    : user.status_name === 'waiting'
+                    ? 'yellow-8'
+                    : 'red-8'
+                "
+                class="q-pa-sm q-my-xs q-py-none"
+                outline
+                size="md"
+                style="min-width: 140px"
+              >
+                {{ user.username }}
+              </q-btn>
+            </div>
 
-          <div class="flex q-py-none" style="align-items: center">
-            <q-badge
-              v-for="(item, index) in +user.ordernumber"
-              :key="index"
-              color="primary"
-              outline
-              class="q-pa-sm q-px-sm q-ml-sm"
-              :label="item"
-            />
+            <div class="flex q-py-none" style="align-items: center">
+              <q-badge
+                v-for="(item, index) in +user.ordernumber "
+                :key="index"
+                color="primary"
+                outline
+                class="q-pa-sm q-px-sm q-ml-sm"
+                :label="item"
+              />
+            </div>
           </div>
         </div>
 
@@ -356,26 +359,6 @@ const onDetect = (decodedString) => {
           "
         />
       </div>
-
-      <!-- <q-btn
-        v-if="hasMoreUsers"
-        flat
-        text-color="grey-4"
-        label=""
-        icon-right="unfold_more"
-        class="q-ml-sm"
-        @click="showMore"
-      />
-      <q-btn
-        v-else
-        flat
-        label=""
-        dense
-        text-color="grey-4"
-        icon-right="unfold_less"
-        class="q-ml-sm"
-        @click="showLess"
-      /> -->
     </div>
 
     <div
@@ -678,7 +661,7 @@ const onDetect = (decodedString) => {
             @submit="storeSupabase.addData(storeSupabase.newData)"
           >
             <div class="full-width justify-between flex q-px-md">
-              <q-badge
+              <!-- <q-badge
                 :outline="!item.isSelected"
                 color="primary"
                 v-for="(item, index) in storeSupabase.listDiscount"
@@ -692,7 +675,7 @@ const onDetect = (decodedString) => {
                   storeSupabase.handleClickDiscount(item.id);
                   storeSupabase.isHaveNotSaveDataAddYet = true;
                 "
-              />
+              /> -->
             </div>
 
             <span
