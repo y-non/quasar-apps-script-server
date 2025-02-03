@@ -210,7 +210,6 @@ watch(
                       />
 
                       <q-icon
-                        v-if="item.role === 'user'"
                         name="eva-more-vertical-outline"
                         size="sm"
                         @click="storeAccountManagement.editAccount(item)"

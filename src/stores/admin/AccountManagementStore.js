@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { Dialog, Loading, Notify } from "quasar";
+import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
 
 export const useAccountManagementStore = defineStore("accountManagement", {
@@ -71,10 +72,36 @@ export const useAccountManagementStore = defineStore("accountManagement", {
 
     async getListAccount() {
       try {
+        const userData = storageUtil.getLocalStorageData("userAuthInfo");
+        const role = userData.role;
+
+        const filter =
+          role === "admin"
+            ? ["user"]
+            : role === "superadmin"
+            ? ["user", "admin"]
+            : [];
+
         this.isLoadingMainScreen = true;
-        let { data: users, error } = await supabase
-          .from("users")
-          .select("*, site(*), status(*)");
+
+        let users = [];
+        let error = "";
+        if (role === "user") {
+          let { data: usersResponse, errorResponse } = await supabase
+            .from("users")
+            .select("*, site(*), status(*)");
+
+          users = usersResponse;
+          error = errorResponse;
+        } else {
+          let { data: usersResponse, errorResponse } = await supabase
+            .from("users")
+            .select("*, site(*), status(*)")
+            .in("role", filter);
+
+          users = usersResponse;
+          error = errorResponse;
+        }
 
         this.isLoadingMainScreen = false;
 

@@ -73,7 +73,7 @@ function showAction(item) {
     <q-list class="q-mt-lg" v-else>
       <div v-if="storeDiscount.listDiscount?.length">
         <span class="text-h6 t-default text-bold q-pa-sm q-mb-md"
-          >Danh sách lựa chọn giảm giá</span
+          >Danh sách mã giảm giá</span
         >
         <q-card
           v-for="(item, index) in storeDiscount.listDiscount"

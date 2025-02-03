@@ -70,7 +70,7 @@ onMounted(async () => {
 
   if ((isLogin && role.value === "admin") || role.value === "superadmin") {
     handleGetRouterName(routerPath);
-    if (role.value === "admin") {
+    if (role.value === "superadmin") {
       listRouter.shift();
     }
   }

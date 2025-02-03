@@ -42,7 +42,7 @@ export default route(function (/* { store, ssrContext } */) {
     const routerPath = to.fullPath;
 
     if (isLogin) {
-      if (role === "admin" && routerPath === "/admin") {
+      if (role === "superadmin" && routerPath === "/admin") {
         return next("/admin/account");
       }
 
