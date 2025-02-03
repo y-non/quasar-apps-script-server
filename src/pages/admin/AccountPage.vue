@@ -536,7 +536,6 @@ watch(
               flat
               class="t-default bg-default"
               style="border-radius: 8px; padding: 0.7em"
-              @click="createAccount"
             />
           </q-card-actions>
         </q-form>
@@ -737,5 +736,9 @@ watch(
   &:hover {
     box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
   }
+}
+
+label {
+  font-weight: bold !important;
 }
 </style>

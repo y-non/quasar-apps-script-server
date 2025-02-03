@@ -195,23 +195,23 @@ function showAction(item) {
       >
         <div>
           <q-card-section>
+            <label for="">Giá trị</label>
             <q-input
               v-model="storeDiscount.newDiscount.value"
               type="number"
-              label="Giá trị"
               filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
+            <label for="">Loại giảm giá</label>
             <q-select
               v-model="storeDiscount.newDiscount.type"
               :options="['€', '%']"
-              label="Loại giảm giá"
               filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
+            <label for="">Mô tả</label>
             <q-input
               v-model="storeDiscount.newDiscount.description"
-              label="Mô tả"
               filled
               class="q-mb-md"
             />
@@ -261,23 +261,23 @@ function showAction(item) {
       >
         <div>
           <q-card-section>
+            <label for="">Giá trị</label>
             <q-input
               v-model="storeDiscount.editDiscount.value"
               type="number"
-              label="Giá trị"
               filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
+            <label for="">Loại giảm giá</label>
             <q-select
               v-model="storeDiscount.editDiscount.type"
               :options="['none', '%']"
-              label="Loại giảm giá"
               filled
               :rules="[(val) => !!val || 'Không được để trống']"
             />
+            <label for="">Mô tả</label>
             <q-input
               v-model="storeDiscount.editDiscount.description"
-              label="Mô tả"
               filled
               class="q-mb-md"
             />

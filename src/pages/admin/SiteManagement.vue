@@ -140,7 +140,6 @@ onMounted(async () => {
             flat
             class="t-default bg-default"
             style="border-radius: 8px; padding: 0.7em"
-            @click="createAccount"
           />
         </q-card-actions>
       </q-form>

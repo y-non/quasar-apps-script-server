@@ -20,3 +20,8 @@
 .bg-default {
   background-color: $bg-default;
 }
+
+label {
+  font-weight: bold !important;
+  color: $c-default;
+}

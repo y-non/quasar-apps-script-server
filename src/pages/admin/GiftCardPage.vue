@@ -319,7 +319,7 @@ watch(
             <div class="row justify-between">
               <div style="width: 30%">
                 <div class="flex flex-center full-width q-py-md">
-                  <QRCodeVue :value="giftCard.code" size="80" />
+                  <QRCodeVue :value="giftCard.code" :size="80" />
 
                   <!-- <q-btn
                     icon="download"
