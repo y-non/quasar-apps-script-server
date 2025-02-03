@@ -223,7 +223,7 @@ const handleChangePassword = async () => {
     >
       <q-scroll-area v-if="role === 'admin'" class="fit">
         <q-list padding class="menu-list">
-          <div v-for="(item, index) in listRouter" :key="index">
+          <!-- <div v-for="(item, index) in listRouter" :key="index">
             <router-link :to="item.path">
               <q-item clickable v-ripple>
                 <q-item-section avatar>
@@ -235,22 +235,7 @@ const handleChangePassword = async () => {
                 </q-item-section>
               </q-item>
             </router-link>
-          </div>
-
-          <!-- <router-link to="/admin/discount">
-            <q-item clickable v-ripple>
-              <q-item-section avatar>
-                <q-icon
-                  class="text-primary text-bold"
-                  name="eva-file-text-outline"
-                />
-              </q-item-section>
-
-              <q-item-section class="text-grey-9">
-                Danh sách giảm giá
-              </q-item-section>
-            </q-item>
-          </router-link> -->
+          </div> -->
 
           <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>

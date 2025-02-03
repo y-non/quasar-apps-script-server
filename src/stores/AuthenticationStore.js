@@ -99,8 +99,6 @@ export const useAuthenticationStore = defineStore("authentication", {
             return;
           }
 
-          await storeSupabase.getUserStatus();
-
           const role = storageUtil.getLocalStorageData("userAuthInfo").role;
           localStorage.setItem("access_token", data.session.access_token);
           localStorage.setItem("refresh_token", data.session.refresh_token);
@@ -113,13 +111,14 @@ export const useAuthenticationStore = defineStore("authentication", {
           } else if (role === "admin") {
             this.router.push("/admin");
           } else {
+            await storeSupabase.getUserStatus();
             this.router.push("/data");
+            setTimeout(() => {
+              window.location.reload();
+            }, 200);
           }
 
           Loading.hide();
-          setTimeout(() => {
-            window.location.reload();
-          }, 200);
         }
       } catch (err) {
         Loading.hide();
@@ -215,6 +214,60 @@ export const useAuthenticationStore = defineStore("authentication", {
       } catch (err) {
         Loading.hide();
         console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async resetUserPassword(email, newPassword = "111111") {
+      try {
+        Loading.show();
+        // // 2️⃣ Get target user by email
+        // const { data: targetUser, error: userError } = await supabase
+        //   .from("users")
+        //   .select("user_id")
+        //   .eq("email", email)
+        //   .single();
+
+        // if (userError || !targetUser) {
+        //   console.error("User not found:", userError);
+        //   return { success: false, message: "User not found" };
+        // }
+
+        // // 3️⃣ Reset password (Requires Admin API)
+        // const { error: updateError } = await supabase.auth.admin.updateUserById(
+        //   targetUser.user_id,
+        //   {
+        //     password: newPassword,
+        //   }
+        // );
+
+        // const { updateError } = await supabase.rpc("reset_user_password", {
+        //   target_email: email,
+        //   new_password: newPassword,
+        // });
+        const { error } = await supabase.rpc("reset_user_password", {
+          target_email: email,
+          new_password: newPassword,
+        });
+
+        if (error) {
+          console.error("Failed to reset password:", error);
+          Loading.hide();
+          return { success: false, message: "Failed to reset password" };
+        }
+
+        Notify.create({
+          type: "positive",
+          message: "Khôi phục mật khẩu thành công!",
+          timeout: 2000,
+          position: "top",
+        });
+        Loading.hide();
+      } catch (err) {
+        Loading.hide();
+        console.error(
+          "Internal Server Error resetUserPassword(email, newPassword): ",
+          err
+        );
       }
     },
 

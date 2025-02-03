@@ -1,11 +1,15 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useAccountManagementStore } from "src/stores/admin/AccountManagementStore";
+import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 
 import noData from "../../assets/images/nodata.jpg";
 import { watch } from "vue";
+import { Dialog } from "quasar";
 
 const storeAccountManagement = useAccountManagementStore();
+const storeAuthentication = useAuthenticationStore();
+
 const tab = ref("user");
 // Password visibility toggle
 const showPassword = ref(false);
@@ -671,15 +675,43 @@ watch(
               </div>
 
               <div class="form-group">
-                <label class="t-default text-subtitle2" for=""
-                  >Phương thức</label
-                >
+                <label class="t-default text-subtitle2" for="">Email</label>
                 <q-input
-                  v-model="storeAccountManagement.selectedAccount.provider"
+                  v-model="storeAccountManagement.selectedAccount.email"
                   filled
                   class="q-mb-md"
                   readonly
                 />
+              </div>
+
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for="">Mật khẩu</label>
+                <q-input
+                  v-model="storeAccountManagement.selectedAccount.email"
+                  filled
+                  class="q-mb-md"
+                  type="password"
+                  readonly
+                >
+                  <template v-slot:append>
+                    <q-icon
+                      name="eva-refresh-outline"
+                      @click="
+                        Dialog.create({
+                          title: 'Xác nhận',
+                          message: `Xác nhận khôi phục lại mật khẩu của tài khoản <b class='text-bold'>${storeAccountManagement.selectedAccount.email}</b>? <br/>Mật khẩu mặc định sẽ là: 111111`,
+                          ok: true,
+                          html: true,
+                          cancel: true,
+                        }).onOk(async () => {
+                          await storeAuthentication.resetUserPassword(
+                            storeAccountManagement.selectedAccount.email
+                          );
+                        })
+                      "
+                    />
+                  </template>
+                </q-input>
               </div>
 
               <!-- Creation Date (readonly) -->

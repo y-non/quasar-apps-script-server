@@ -412,7 +412,6 @@ onMounted(async () => {
     <q-page-sticky position="bottom-right" :offset="[18, 48]">
       <q-btn class="q-pa-sm" icon="eva-calendar-outline" round color="primary">
         <q-popup-proxy
-          @before-show="updateProxy"
           cover
           transition-show="scale"
           transition-hide="scale"

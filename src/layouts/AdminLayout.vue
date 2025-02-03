@@ -78,16 +78,16 @@ onMounted(async () => {
 
 onBeforeMount(() => {});
 
-watch(
-  () => storeSupabase.listUserData,
-  (val) => {
-    const selfUserData = val.filter(
-      (item) =>
-        item.userid === storageUtil.getLocalStorageData("selfAppInfo").userid
-    )[0];
-    userStatus.value = selfUserData;
-  }
-);
+// watch(
+//   () => storeSupabase.listUserData,
+//   (val) => {
+//     const selfUserData = val.filter(
+//       (item) =>
+//         item.userid === storageUtil.getLocalStorageData("selfAppInfo").userid
+//     )[0];
+//     userStatus.value = selfUserData;
+//   }
+// );
 
 watch(
   () => router.currentRoute.value.fullPath,
