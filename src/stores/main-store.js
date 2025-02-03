@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { Dialog, Loading, Notify } from "quasar";
 import { dateUtil } from "src/utils/dateUtil";
+import { storageUtil } from "src/utils/storageUtil";
 
 export const useMainStore = defineStore("main", {
   state: () => ({
@@ -15,6 +16,7 @@ export const useMainStore = defineStore("main", {
     statusOff: "off",
     listUserData: [],
     userData: [],
+    menuData: [],
 
     /* reactive */
     isLogin: false,
@@ -40,14 +42,14 @@ export const useMainStore = defineStore("main", {
   },
   actions: {
     getInit() {
-      if (this.getLocalStorageData("username")) {
-        this.username = this.getLocalStorageData("username");
+      if (storageUtil.getLocalStorageData("username")) {
+        this.username = storageUtil.getLocalStorageData("username");
       }
 
-      if (this.getLocalStorageData("password")) {
-        this.password = this.getLocalStorageData("password");
+      if (storageUtil.getLocalStorageData("password")) {
+        this.password = storageUtil.getLocalStorageData("password");
       }
-      this.isLogin = this.getLocalStorageData("isLogin");
+      this.isLogin = storageUtil.getLocalStorageData("isLogin");
     },
 
     async login(username, pass) {
@@ -77,9 +79,9 @@ export const useMainStore = defineStore("main", {
 
         if (data.success) {
           this.isLogin = true;
-          this.setLocalStorageData("isLogin", this.isLogin);
-          this.setLocalStorageData("username", username);
-          this.setLocalStorageData("password", pass);
+          storageUtil.setLocalStorageData("isLogin", this.isLogin);
+          storageUtil.setLocalStorageData("username", username);
+          storageUtil.setLocalStorageData("password", pass);
 
           this.router.push({ name: "DataViewPage" });
         } else {
@@ -305,9 +307,7 @@ export const useMainStore = defineStore("main", {
           })
 
           .onCancel(() => {})
-          .onDismiss(() => {
-            // console.log('I am triggered on both OK and Cancel')
-          });
+          .onDismiss(() => {});
       } catch (error) {
         console.error("Error adding data:", error);
         Loading.hide(); // Ensure loading state is reset even in case of error
@@ -588,22 +588,6 @@ export const useMainStore = defineStore("main", {
         this.isLoadingMenuData = false;
         this.loadingSelect = false;
         console.error("Error fetching data:", error);
-      }
-    },
-
-    getLocalStorageData(key) {
-      try {
-        return JSON.parse(localStorage.getItem(key));
-      } catch (err) {
-        console.error("Failed to set local item:", err);
-      }
-    },
-
-    setLocalStorageData(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch (err) {
-        console.error("Failed to set local item:", err);
       }
     },
 

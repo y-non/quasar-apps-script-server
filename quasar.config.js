@@ -30,7 +30,9 @@ module.exports = configure(function (/* ctx */) {
     boot: ["axios"],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
-    css: ["app.scss"],
+    css: [
+      "app.scss", // Existing Quasar app styles
+    ],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
@@ -52,6 +54,9 @@ module.exports = configure(function (/* ctx */) {
         browser: ["es2019", "edge88", "firefox78", "chrome87", "safari13.1"],
         node: "node16",
       },
+
+      // envFolder: "./",
+      env: require("dotenv").config().parsed,
 
       vueRouterMode: "hash", // available values: 'hash', 'history'
       // vueRouterBase,
@@ -105,9 +110,9 @@ module.exports = configure(function (/* ctx */) {
       plugins: ["Loading", "Notify", "Dialog", "BottomSheet"],
     },
 
-    // animations: 'all', // --- includes all animations
+    animations: "all", // --- includes all animations
     // https://v2.quasar.dev/options/animations
-    animations: [],
+    // animations: [],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#property-sourcefiles
     // sourceFiles: {

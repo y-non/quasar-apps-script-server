@@ -1,46 +1,93 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { useMainStore } from "src/stores/main-store";
-import { QSpinnerIos } from "quasar";
+import { useAuthenticationStore } from "src/stores/AuthenticationStore";
+import { useSupabaseStore } from "src/stores/SupabaseStore";
+import { Dialog, QSpinnerIos } from "quasar";
 import { useQuasar } from "quasar";
+import { useScanQrStore } from "src/stores/ScanQrStore";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
 import noData from "../assets/images/nodata.jpg";
+import historyImg from "../assets/icons/history.png";
 import updateImg from "../assets/icons/update.png";
 import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
+import { storageUtil } from "src/utils/storageUtil";
+import { supabase } from "src/utils/superbase";
+// Make sure to install vue-qrcode-reader
 
-const storeMain = useMainStore();
-const username = storeMain.getLocalStorageData("username");
-const password = storeMain.getLocalStorageData("password");
-const selectMenuRef = ref(null);
-const selectMenuRefUpdate = ref(null);
+import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
+import ScanQrComponent from "../components/ScanQrComponent.vue";
+import ScanQrComponentV2 from "../components/ScanQrComponentV2.vue";
+
+const showQRCodeDialog = ref(false); // Dialog visibility state
+const storeScanQr = useScanQrStore();
+
+// Handle the QR Code scan result
+const handleQRCodeScan = (decodedString) => {
+  // You can handle the decoded data here, for example, set the value to the input
+  storeSupabase.newData.giftCard = decodedString;
+  showQRCodeDialog.value = false; // Close the dialog after scanning
+};
 
 const $q = useQuasar();
+const router = useRouter();
+
+const storeAuthentication = useAuthenticationStore();
+const storeSupabase = useSupabaseStore();
+const username = storageUtil.getLocalStorageData("username");
+const password = storageUtil.getLocalStorageData("password");
+const selectMenuRef = ref(null);
+const selectMenuRefUpdate = ref(null);
 
 const optionsMenuData = ref([]);
 
 /* state for handle reactive in UI */
-const slideItems = ref(storeMain.slideItems);
-const slideItemsUpdate = ref(storeMain.slideItemsUpdate);
+const slideItems = ref(storeSupabase.slideItems);
+const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
 
 const visibleCount = ref(3);
 const visibleUsers = computed(() =>
-  storeMain.listUserData.slice(0, visibleCount.value)
+  storeSupabase.listUserData.slice(0, visibleCount.value)
 );
 const hasMoreUsers = computed(
-  () => visibleCount.value < storeMain.listUserData.length
+  () => visibleCount.value < storeSupabase.listUserData.length
 );
 
+const menuVisible = ref(false);
+const sortOrder = ref("desc"); // Default sorting order
+
+const sortedUsers = computed(() => {
+  return [...storeSupabase.listUserData].sort((a, b) => {
+    if (sortOrder.value === "asc") {
+      return a.ordernumber - b.ordernumber;
+    }
+    return b.ordernumber - a.ordernumber;
+  });
+});
+
+function sortUsers(order) {
+  sortOrder.value = order;
+}
+
 onMounted(async () => {
-  storeMain.getInit();
-  await storeMain.fetchData();
+  await storeSupabase.getInit();
+
+  supabase.auth.onAuthStateChange(async (_, session) => {
+    if (session) {
+      storeAuthentication.validateSession();
+    }
+  });
+});
+
+onUnmounted(() => {
+  supabase.removeAllChannels();
 });
 
 // FUNCTIONAL METHOD
 const showMore = () => {
-  visibleCount.value = storeMain.listUserData.length;
+  visibleCount.value = storeSupabase.listUserData.length;
 };
 const showLess = () => {
   visibleCount.value = 3;
@@ -57,43 +104,87 @@ function showAction(grid) {
         id: "update",
       },
       {},
+
       {
-        label: "Xóa",
-        avatar: deleteImg,
-        id: "delete",
+        label: "Lịch sử chỉnh sửa",
+        img: historyImg,
+        id: "history",
       },
+
+      // {
+      //   label: "Xóa",
+      //   avatar: deleteImg,
+      //   id: "delete",
+      // },
     ],
   })
     .onOk((action) => {
-      let listSelectedMenu;
       switch (action.id) {
         case "update":
-          storeMain.showUpdateDialog = true;
+          storeSupabase.showUpdateDialog = true;
 
-          storeMain.updateData = storeMain.userData.filter(
-            (item) => item.id === grid
-          )[0];
+          storeSupabase.updateData = {
+            ...storeSupabase.dataItem.filter((item) => item.id === grid)[0],
+          };
 
-          listSelectedMenu =
-            storeMain.updateData.menu.length > 1
-              ? storeMain.updateData.menu.split(";")
-              : storeMain.updateData.menu;
+          storeSupabase.updateData.isCustomerOrder = false;
 
-          storeMain.updateData.menu.length > 1
-            ? (storeMain.updateData.menuSelected = listSelectedMenu.map(
-                (item) => {
-                  return storeMain.menuData.filter(
-                    (menuItem) => item == menuItem.id
-                  )[0];
+          storeSupabase.updateData.menuSelected =
+            storeSupabase.updateData.menuSelected
+              .map((item) => {
+                if (item.isMultiSelect) {
+                  return {
+                    ...item,
+                    selectCount: item.quantity,
+                  };
                 }
-              ))
-            : (storeMain.updateData.menuSelected = storeMain.menuData.filter(
-                (menuItem) => storeMain.updateData.menu == menuItem.id
-              )[0]);
+                return item;
+              })
+              .filter((item) => item);
+
+          storeSupabase.updateData.menuMultipleSelect = storeSupabase.menuData
+            .map((item) => {
+              if (item.isMultiSelect) {
+                const quantity = storeSupabase.updateData.menu.filter(
+                  (itemMultiSelect) => itemMultiSelect.menu_id === item.id
+                )[0];
+
+                return {
+                  id: item.id,
+                  label: item.label,
+                  price: parseFloat(item.value),
+                  selectCount: quantity ? quantity.quantity : 0,
+                  isMultiSelect: true,
+                };
+              }
+            })
+            .filter((item) => item);
+
+          //handle highlight discount
+          if (storeSupabase.updateData.isHaveDiscount) {
+            storeSupabase.listDiscountUpdate =
+              storeSupabase.listDiscountUpdate.map((item) => {
+                if (item.id === storeSupabase.updateData.discountObject.id) {
+                  return {
+                    ...item,
+                    isSelected: true,
+                  };
+                }
+                return {
+                  ...item,
+                  isSelected: false,
+                };
+              });
+          }
           break;
 
         case "delete":
-          storeMain.deleteData(grid);
+          storeSupabase.deleteData(grid);
+          break;
+
+        case "history":
+          storeSupabase.showHistoryDialog = true;
+          storeSupabase.fetchHistoryData(grid);
           break;
 
         default:
@@ -107,7 +198,9 @@ function showAction(grid) {
 const filterFn = (val, update) => {
   if (val === "") {
     update(() => {
-      optionsMenuData.value = storeMain.menuData;
+      optionsMenuData.value = storeSupabase.menuData.filter(
+        (item) => !item.isMultiSelect
+      );
 
       // here you have access to "ref" which
       // is the Vue reference of the QSelect
@@ -117,8 +210,9 @@ const filterFn = (val, update) => {
 
   update(() => {
     const needle = val.toLowerCase();
-    optionsMenuData.value = storeMain.menuData.filter(
-      (v) => v.filterSearch.toLowerCase().indexOf(needle) > -1
+    optionsMenuData.value = storeSupabase.menuData.filter(
+      (v) =>
+        v.filterSearch.toLowerCase().indexOf(needle) > -1 && !v.isMultiSelect
     );
   });
 };
@@ -135,53 +229,140 @@ const getColor = (status) => {
       return "primary";
   }
 };
+
+const onDetect = (decodedString) => {
+  handleQRCodeScan(decodedString);
+};
 </script>
 
 <template>
   <q-page class="q-pa-sm">
     <!-- Display User Badges -->
-    <div v-if="!storeMain.loadingTable" class="q-my-sm">
-      <q-btn
-        v-for="user in visibleUsers"
-        :key="user.benutzername"
-        color="grey-6"
-        class="q-mx-xs q-pa-sm q-my-xs"
-        outline
-        size="md"
-        style="min-width: 100px"
-      >
-        <q-icon
-          name="circle"
-          :color="getColor(user.status)"
-          size="xs"
-          class="q-mx-xs"
-        />
-        {{ user.name }} - {{ user.orderCount }}
-      </q-btn>
+    <div v-if="!storeSupabase.isLoadingMainScreen" class="q-my-sm">
+      <div v-if="!storeSupabase.isShowMoreUsers" class="flex justify-between">
+        <q-btn
+          v-for="user in visibleUsers"
+          :key="user.userName"
+          color="grey-6"
+          class="q-mx-xs q-pa-sm q-my-xs text-subtitle2"
+          dense
+          outline
+          size="md"
+          style="min-width: 47%;"
+        >
+          <q-icon
+            name="circle"
+            :color="getColor(user.status_name)"
+            size="xs"
+            class="q-mx-xs"
+          />
+          {{ user.username }} - {{ user.ordernumber }}
+        </q-btn>
 
-      <q-btn
-        v-if="hasMoreUsers"
-        flat
-        text-color="grey-4"
-        label=""
-        icon-right="unfold_more"
-        class="q-ml-sm"
-        @click="showMore"
-      />
-      <q-btn
-        v-else
-        flat
-        label=""
-        dense
-        text-color="grey-4"
-        icon-right="unfold_less"
-        class="q-ml-sm"
-        @click="showLess"
-      />
+        <q-btn
+          v-if="!storeSupabase.isShowMoreUsers"
+          flat
+          text-color="grey-4"
+          icon-right="unfold_more"
+          class="q-ml-sm"
+          @click="
+            storeSupabase.isShowMoreUsers = !storeSupabase.isShowMoreUsers
+          "
+        />
+
+        <q-btn
+          v-else
+          flat
+          dense
+          text-color="grey-4"
+          icon-right="unfold_less"
+          class="q-ml-sm"
+          @click="
+            storeSupabase.isShowMoreUsers = !storeSupabase.isShowMoreUsers
+          "
+        />
+      </div>
+      <div class="column" v-else>
+        <!-- Filter Icon -->
+        <div
+          class="filter-icon"
+          style="position: absolute; top: 16px; right: 16px"
+        >
+          <q-btn
+            dense
+            round
+            flat
+            icon="filter_list"
+            @click="menuVisible.value = !menuVisible.value"
+            v-close-popup
+          >
+            <q-menu v-model="menuVisible">
+              <q-list>
+                <q-item clickable v-close-popup @click="sortUsers('asc')">
+                  <q-item-section>Sắp xếp theo thứ tự bé lớn</q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="sortUsers('desc')">
+                  <q-item-section>Sắp xếp theo thứ tự lớn bé</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </div>
+
+        <!-- User List -->
+        <div class="q-mt-lg">
+          <div
+            v-for="user in sortedUsers"
+            :key="user.userName"
+            class="flex q-py-none"
+            style="align-items: center"
+          >
+            <div style="width: 35%">
+              <q-btn
+                :color="
+                  user.status_name === 'serving'
+                    ? 'green-8'
+                    : user.status_name === 'waiting'
+                    ? 'yellow-8'
+                    : 'red-8'
+                "
+                class="q-pa-sm q-my-xs q-py-none"
+                outline
+                size="md"
+                style="min-width: 140px"
+              >
+                {{ user.username }}
+              </q-btn>
+            </div>
+
+            <div class="flex q-py-none" style="align-items: center">
+              <q-badge
+                v-for="(item, index) in +user.ordernumber "
+                :key="index"
+                color="primary"
+                outline
+                class="q-pa-sm q-px-sm q-ml-sm"
+                :label="item"
+              />
+            </div>
+          </div>
+        </div>
+
+        <q-btn
+          flat
+          dense
+          text-color="grey-4"
+          icon-right="unfold_less"
+          class="q-ml-sm"
+          @click="
+            storeSupabase.isShowMoreUsers = !storeSupabase.isShowMoreUsers
+          "
+        />
+      </div>
     </div>
 
     <div
-      v-if="storeMain.loadingTable"
+      v-if="storeSupabase.isLoadingMainScreen"
       style="height: 30vh"
       class="full-width flex column flex-center"
     >
@@ -189,9 +370,9 @@ const getColor = (status) => {
     </div>
 
     <q-list class="q-mt-md" v-else>
-      <div v-if="storeMain.userData.length">
+      <div v-if="storeSupabase.dataItem?.length">
         <q-card
-          v-for="(item, index) in storeMain.userData"
+          v-for="(item, index) in storeSupabase.dataItem"
           :key="index"
           flat
           bordered
@@ -206,21 +387,40 @@ const getColor = (status) => {
             </div>
 
             <div class="flex flex-center">
-              <!-- <video
-                v-if="loadingSelect"
-                autoplay
-                loop
-                muted
-                width="50"
-                height="50"
-                :src="loadingVideo"
-              ></video> -->
+              <!-- <q-badge
+                v-if="item.discountObject.id"
+                color="primary"
+                outline
+                :label="`-${item.discountObject.value}${
+                  item.discountObject.type === 'none'
+                    ? '€'
+                    : item.discountObject.type
+                }`"
+                class="q-mr-sm"
+              >
+              </q-badge>
+
+              <q-badge
+                v-if="item.giftCardObject.id"
+                color="red"
+                outline
+                :label="`-${item.giftCardObject.value}€`"
+                class="q-mr-sm"
+              /> -->
+
+              <q-icon
+                v-if="item.is_edit"
+                name="eva-edit-2-outline"
+                size="sm"
+                color="grey-5"
+                class="text-bold"
+              />
 
               <q-icon
                 name="more_vert"
                 size="sm"
-                :color="storeMain.loadingSelect ? 'grey-3' : 'grey-5'"
-                @click="!storeMain.loadingSelect ? showAction(item.id) : []"
+                :color="storeSupabase.loadingSelect ? 'grey-3' : 'grey-5'"
+                @click="!storeSupabase.loadingSelect ? showAction(item.id) : []"
               />
             </div>
           </q-card-section>
@@ -231,9 +431,83 @@ const getColor = (status) => {
               style="align-items: center"
             >
               <span class="text-bold text-grey-7 text-h6">Doanh thu</span>
-              <span class="text-blue text-h4">{{
+
+              <!-- Doanh thu value session -->
+              <span v-if="!item.showQList" class="text-blue text-h4">{{
                 dateUtil.formatter.format(item.umsatz)
               }}</span>
+
+              <div v-else class="column flex q-pt-lg" style="align-items: end">
+                <div style="width: 100%" class="flex justify-between">
+                  <span class="text-grey-8">Giá gốc: </span>
+
+                  <span>
+                    {{ dateUtil.formatter.format(item.totalPrice) }}
+                  </span>
+                </div>
+
+                <div
+                  v-if="item.isHaveDiscount"
+                  class="float-bottom text-subtitle2 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span>Mã giảm giá: </span>
+
+                  <span
+                    class="text-red-8"
+                    v-if="item.discountObject.type === 'none'"
+                    >-{{
+                      dateUtil.formatter.format(item.discountObject.value)
+                    }}</span
+                  >
+
+                  <span v-else class="text-red-8"
+                    >-{{ item.discountObject.value }}
+                    {{ item.discountObject.type }}</span
+                  >
+                </div>
+
+                <div
+                  v-if="item.isHaveGiftCard"
+                  class="float-bottom text-subtitle2 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span>Mã quà tặng: </span>
+
+                  <span class="text-red-8"
+                    >-{{
+                      dateUtil.formatter.format(item.giftCardObject.value)
+                    }}</span
+                  >
+                </div>
+
+                <div
+                  class="float-bottom text-subtitle1 flex justify-between"
+                  style="right: 5%; width: 100%"
+                >
+                  <span class="text-bold q-pr-md">Tổng cộng:</span>
+                  <span class="text-blue text-bold">
+                    {{
+                      dateUtil.formatter.format(
+                        Math.max(
+                          (item.isHaveDiscount
+                            ? item.discountObject.type === "none"
+                              ? item.totalPrice - item.discountObject.value
+                              : item.totalPrice -
+                                (item.totalPrice / 100) *
+                                  item.discountObject.value
+                            : item.totalPrice) -
+                            // Trừ gift card
+                            (item.isHaveGiftCard
+                              ? item.giftCardObject.value
+                              : 0),
+                          0 // Ensure the value is at least 0
+                        )
+                      )
+                    }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <q-list v-if="item.showQList" class="q-mb-md" bordered separator>
@@ -241,10 +515,12 @@ const getColor = (status) => {
                 <q-item-section>
                   <div class="flex justify-between" style="align-items: center">
                     <div class="flex justify-between full-width">
-                      <div class="text-grey-7">
+                      <div style="width: 80%" class="text-grey-7">
                         {{ menu.label }}
                       </div>
                       <div class="text-grey text-bold">
+                        <span class="text-blue">{{ menu.quantity }} x</span>
+
                         {{ dateUtil.formatter.format(menu.value) }}
                       </div>
                     </div>
@@ -279,44 +555,237 @@ const getColor = (status) => {
         color="green-7"
         class="q-pa-md"
         round
-        @click="storeMain.showAddDialog = true"
+        :disable="storeSupabase.isLoadingMainScreen"
+        @click="storeSupabase.showAddDialog = true"
       />
     </q-page-sticky>
 
     <q-dialog
-      :maximized="storeMain.showAddDialog"
+      :maximized="storeSupabase.showAddDialog"
       class="full-width full-height"
-      v-model="storeMain.showAddDialog"
+      v-model="storeSupabase.showAddDialog"
     >
       <q-card class="full-width full-height">
         <div
-          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          class="flex justify-between q-py-none q-pr-md bg-white z-max"
           style="position: sticky; top: 0"
         >
           <q-btn
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeMain.showAddDialog = false"
+            @click="storeSupabase.handleClickBackAddButtonShowAlert()"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
 
-          <div class="float-bottom text-h6" style="right: 5%">
-            <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(storeMain.newData.umsatz) }}
+          <div class="column flex q-pt-lg" style="align-items: end">
+            <div style="width: 100%" class="flex justify-between">
+              <span class="text-grey-8">Giá gốc: </span>
+
+              <span>
+                {{ dateUtil.formatter.format(storeSupabase.newData.umsatz) }}
+              </span>
+            </div>
+
+            <div
+              v-if="storeSupabase.newData.isHaveDiscount"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã giảm giá: </span>
+
+              <span
+                class="text-red-8"
+                v-if="storeSupabase.newData.discountObject.type === 'none'"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.newData.discountObject.value
+                  )
+                }}</span
+              >
+
+              <span v-else class="text-red-8"
+                >-{{ storeSupabase.newData.discountObject.value }}
+                {{ storeSupabase.newData.discountObject.type }}</span
+              >
+            </div>
+
+            <div
+              v-if="storeSupabase.newData.isHaveGiftCard"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã quà tặng: </span>
+
+              <span class="text-red-8"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.newData.giftCardObject.value
+                  )
+                }}</span
+              >
+            </div>
+
+            <div
+              class="float-bottom text-subtitle1 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span class="text-bold q-pr-md">Tổng cộng:</span>
+              <span>
+                {{
+                  dateUtil.formatter.format(
+                    Math.max(
+                      (storeSupabase.newData.isHaveDiscount
+                        ? storeSupabase.newData.discountObject.type === "none"
+                          ? storeSupabase.newData.umsatz -
+                            storeSupabase.newData.discountObject.value
+                          : storeSupabase.newData.umsatz -
+                            (storeSupabase.newData.umsatz / 100) *
+                              storeSupabase.newData.discountObject.value
+                        : storeSupabase.newData.umsatz) -
+                        (storeSupabase.newData.isHaveGiftCard
+                          ? storeSupabase.newData.giftCardObject.value
+                          : 0),
+                      0
+                    )
+                  )
+                }}
+              </span>
+            </div>
           </div>
         </div>
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeMain.addData"
+            @submit="storeSupabase.addData(storeSupabase.newData)"
           >
+            <div class="full-width justify-between flex q-px-md">
+              <!-- <q-badge
+                :outline="!item.isSelected"
+                color="primary"
+                v-for="(item, index) in storeSupabase.listDiscount"
+                :key="index"
+                :label="`-${item.value}${
+                  item.type === 'none' ? '€' : item.type
+                }`"
+                class="q-pa-sm q-px-lg q-mb-sm"
+                style="width: 23%"
+                @click="
+                  storeSupabase.handleClickDiscount(item.id);
+                  storeSupabase.isHaveNotSaveDataAddYet = true;
+                "
+              /> -->
+            </div>
+
+            <span
+              v-if="storeSupabase.newData.menuSelected?.length"
+              class="text-subtitle1"
+              >Dịch vụ đã chọn</span
+            >
+            <q-list
+              v-if="storeSupabase.newData.menuSelected?.length"
+              bordered
+              separator
+            >
+              <q-slide-item
+                v-for="(item, index) in storeSupabase.newData.menuSelected"
+                :key="index"
+                ref="slideItems"
+                @right="storeSupabase.onRightSlide(item.id, index)"
+                right-color="red-5"
+              >
+                <template v-slot:right>
+                  <q-icon name="delete" /> Xoá...
+                </template>
+
+                <q-item>
+                  <q-item-section>
+                    <div
+                      class="flex justify-between"
+                      style="align-items: center"
+                    >
+                      <div
+                        class="flex justify-between full-width"
+                        style="align-items: center"
+                      >
+                        <div class="flex text-grey-7" style="width: 70%">
+                          <div
+                            class="column"
+                            :style="item.isMultiSelect ? 'width: 30%' : []"
+                          >
+                            {{ item.label }}
+                            <span v-if="item.isMultiSelect" class="text-blue"
+                              >x {{ item.selectCount }}</span
+                            >
+                          </div>
+
+                          <div v-if="item.isMultiSelect" class="flex">
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-minus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInAddDataMinus(
+                                  item
+                                )
+                              "
+                              outline
+                            />
+
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-plus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInAddData(item)
+                              "
+                              class="q-ml-sm"
+                              outline
+                            />
+                          </div>
+                        </div>
+                        <div
+                          v-if="item.isMultiSelect"
+                          class="text-blue text-bold"
+                        >
+                          {{
+                            dateUtil.formatter.format(
+                              item.value * item.selectCount
+                            )
+                          }}
+                        </div>
+
+                        <div v-else class="text-blue text-bold">
+                          {{ dateUtil.formatter.format(item.value) }}
+                        </div>
+                      </div>
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-slide-item>
+            </q-list>
+
             <span class="text-subtitle1">Chọn dịch vụ</span>
+            <!-- <div style="display: grid; grid-template-columns: 1fr 1fr 1fr">
+              <q-btn
+                v-for="(item, index) in storeSupabase.menuData.filter(
+                  (item) => item.isMultiSelect
+                )"
+                :key="index"
+                push
+                color="white"
+                text-color="primary"
+                class="q-mx-sm"
+                :label="item.label"
+              >
+                <q-badge color="orange" floating>{{
+                  item.selectCount
+                }}</q-badge>
+              </q-btn>
+            </div> -->
             <q-select
               ref="selectMenuRef"
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeMain.newData.menuSelected"
+              v-model="storeSupabase.newData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -326,24 +795,68 @@ const getColor = (status) => {
               @filter="filterFn"
               input-debounce="300"
               @update:model-value="
-                storeMain.newData.umsatz = storeMain.newData.menuSelected
-                  .map((item) => item.value)
-                  .reduce((acc, current) => acc + current, 0)
+                storeSupabase.newData.umsatz =
+                  storeSupabase.newData.menuSelected
+                    .map((item) => item.value)
+                    .reduce((acc, current) => acc + current, 0);
+                storeSupabase.isHaveNotSaveDataAddYet = true;
               "
-              :disable="storeMain.loadingSelect"
+              :disable="storeSupabase.loadingSelect"
               hide-selected
-              behavior="menu"
+              style="position: relative"
             >
               <template v-slot:before-options>
-                <div class="flex q-pt-md">
-                  <q-btn
-                    text-color="grey-5"
-                    icon="close"
-                    flat
-                    label="Đóng menu"
-                    class="full-width q-mb-md"
-                    @click="selectMenuRef.hidePopup()"
-                  ></q-btn>
+                <div
+                  class="q-pt-md q-px-md bg-white"
+                  style="position: sticky; top: 0; z-index: 10"
+                >
+                  <div class="flex">
+                    <q-btn
+                      text-color="grey-5"
+                      icon="close"
+                      flat
+                      label="Đóng menu"
+                      class="full-width q-mb-md"
+                      @click="selectMenuRef.hidePopup()"
+                    ></q-btn>
+                  </div>
+                  <div
+                    style="display: grid; grid-template-columns: 1fr 1fr 1fr"
+                    class="q-mb-md"
+                  >
+                    <!-- v-for="(item, index) in storeSupabase.menuData
+                    .filter((item) => item.isMultiSelect) .sort((a, b) =>
+                    a.value - b.value)" -->
+                    <q-btn
+                      v-for="(
+                        item, index
+                      ) in storeSupabase.newData.menuMultipleSelect.sort(
+                        (a, b) => a.price - b.price
+                      )"
+                      :key="index"
+                      class="q-mr-sm"
+                      outline
+                      color="white"
+                      text-color="primary"
+                      :label="item.label"
+                      @click="storeSupabase.clickMultiSelectInAddData(item)"
+                    >
+                      <q-badge color="red" :label="item.selectCount" floating />
+                    </q-btn>
+                    <!-- <q-btn
+                      v-for="(item, index) in storeSupabase.menuData.filter(
+                        (item) => item.isMultiSelect
+                      )"
+                      :key="index"
+                      push
+                      color="white"
+                      text-color="primary"
+                      class="q-mx-sm"
+                      :label="item.label"
+                    >
+
+                    </q-btn> -->
+                  </div>
                 </div>
               </template>
 
@@ -362,6 +875,7 @@ const getColor = (status) => {
 
               <template v-slot:option="scope">
                 <q-item
+                  clickable="false"
                   v-bind="scope.itemProps"
                   :class="[
                     scope.selected
@@ -398,73 +912,172 @@ const getColor = (status) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="storeMain.clickToggleAddMenuItem(scope)"
+                        @click="storeSupabase.clickToggleAddMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
                 </q-item>
               </template>
             </q-select>
+            <!-- <div
+              class="flex flex-center"
+              v-if="!storeSupabase.updateData.isShowGiftCard"
+            >
+              <q-btn
+                color="primary"
+                icon="add"
+                label="Nhập giftcard"
+                @click="
+                  storeSupabase.updateData.isShowGiftCard =
+                    !storeSupabase.updateData.isShowGiftCard
+                "
+              />
+            </div> -->
 
-            <span
-              v-if="storeMain.newData.menuSelected?.length"
-              class="text-subtitle1"
-              >Dịch vụ đã chọn</span
+            <div
+              v-if="!storeSupabase.updateData.isShowGiftCard"
+              @click="
+                storeSupabase.updateData.isShowGiftCard =
+                  !storeSupabase.updateData.isShowGiftCard
+              "
+              class="flex flex-center text-blue"
             >
-            <q-list
-              v-if="storeMain.newData.menuSelected?.length"
-              bordered
-              separator
-            >
-              <q-slide-item
-                v-for="(item, index) in storeMain.newData.menuSelected"
-                :key="index"
-                ref="slideItems"
-                @right="storeMain.onRightSlide(item.id, index)"
-                right-color="red-5"
+              <q-icon name="add" size="sm" rounded />Thêm giftcard
+            </div>
+
+            <div v-else>
+              <span class="text-subtitle1">Gift card</span>
+
+              <q-input
+                v-model="storeSupabase.newData.giftCard"
+                placeholder="Vui lòng nhập gift card tại đây..."
+                outlined
+                debounce="500"
+                @update:model-value="
+                  storeSupabase.validateGiftCard(storeSupabase.newData.giftCard)
+                "
               >
-                <template v-slot:right>
-                  <q-icon name="delete" /> Xoá...
+                <template v-slot:append>
+                  <!-- QR Code Icon with click event to show QR Scanner dialog -->
+                  <q-icon
+                    name="qr_code_scanner"
+                    @click="showQRCodeDialog = true"
+                  />
                 </template>
+              </q-input>
 
-                <q-item>
-                  <q-item-section>
-                    <div
-                      class="flex justify-between"
-                      style="align-items: center"
-                    >
-                      <div class="flex justify-between full-width">
-                        <div class="text-grey-7">
-                          {{ item.label }}
-                        </div>
-                        <div class="text-blue text-bold">
-                          {{ dateUtil.formatter.format(item.value) }}
-                        </div>
-                      </div>
-                    </div>
-                  </q-item-section>
-                </q-item>
-              </q-slide-item>
-            </q-list>
+              <!-- QR Code Scan Dialog -->
+              <q-dialog v-model="showQRCodeDialog">
+                <q-card style="min-width: 90vw">
+                  <q-card-section>
+                    <div class="text-h6">Scan QR Code</div>
+                  </q-card-section>
+
+                  <q-card-section class="q-pa-md flex flex-center">
+                    <!-- QR Scanner Component, make sure to install and use a QR scanning library -->
+                    <!-- <qrcode-stream @detect="onDetect"></qrcode-stream> -->
+                    <ScanQrComponent
+                      :height="500"
+                      :detect-func="storeScanQr.scanData"
+                    ></ScanQrComponent>
+                  </q-card-section>
+
+                  <q-card-actions align="right">
+                    <q-btn
+                      flat
+                      dense
+                      label="Đóng"
+                      color="grey"
+                      @click="showQRCodeDialog = false"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </q-dialog>
+
+              <q-card
+                v-if="storeSupabase.newData.isHaveGiftCard"
+                class="my-card"
+              >
+                <q-card-section>
+                  <div class="flex justify-between">
+                    <div class="text-h6">Thẻ quà tặng</div>
+                    <q-icon
+                      name="eva-trash-2-outline"
+                      size="md"
+                      color="red-8"
+                      @click="
+                        Dialog.create({
+                          title: 'Xác nhận',
+                          message:
+                            'Bạn có chắc chắn muốn xoá thẻ quà tặng này?',
+                          ok: true,
+                          cancel: true,
+                        }).onOk(() => {
+                          storeSupabase.newData.isHaveGiftCard = false;
+                          storeSupabase.newData.giftCardObject = {};
+                          storeSupabase.newData.giftCard = '';
+                        })
+                      "
+                    />
+                  </div>
+                  <div class="text-subtitle2">
+                    Giá trị:
+                    <span class="text-primary">{{
+                      storeSupabase.newData.giftCardObject.value
+                    }}</span>
+                  </div>
+                </q-card-section>
+                <q-card-section>
+                  <div class="full-width text-grey-6 flex justify-between">
+                    <span>
+                      Từ ngày:
+                      {{
+                        new Date(
+                          storeSupabase.newData.giftCardObject.date_from
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                    <span>
+                      Đến ngày:
+                      {{
+                        new Date(
+                          storeSupabase.newData.giftCardObject.date_expired
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- checkbox customer order -->
+            <div class="flex justify-end">
+              <q-checkbox
+                left-label
+                v-model="storeSupabase.newData.isCustomerOrder"
+                label="Khách đặt"
+              />
+            </div>
+
             <!-- notizen -->
             <div
-              v-if="!storeMain.showNotizen"
-              @click="storeMain.showNotizen = true"
+              v-if="!storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = true"
               class="flex flex-center text-blue"
             >
               <q-icon name="add" size="sm" rounded />Hiện ghi chú
             </div>
 
             <q-input
-              v-if="storeMain.showNotizen"
-              v-model="storeMain.newData.notizen"
+              v-if="storeSupabase.showNotizen"
+              v-model="storeSupabase.newData.notizen"
               label="Thêm ghi chú"
               outlined
             />
 
             <div
-              v-if="storeMain.showNotizen"
-              @click="storeMain.showNotizen = false"
+              v-if="storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = false"
               class="flex flex-center text-blue"
             >
               <q-icon name="remove" size="sm" rounded />Ẩn ghi chú
@@ -484,38 +1097,466 @@ const getColor = (status) => {
     </q-dialog>
 
     <q-dialog
-      :maximized="storeMain.showUpdateDialog"
-      v-model="storeMain.showUpdateDialog"
+      :maximized="storeSupabase.showHistoryDialog"
+      v-model="storeSupabase.showHistoryDialog"
     >
-      <q-card class="full-width full-height">
+      <q-card
+        v-if="!storeSupabase.isLoadingHistory"
+        class="full-width full-height"
+      >
         <div
-          class="flex justify-between q-py-md q-pr-md bg-white z-max"
+          class="flex justify-between q-pr-md bg-white z-max q-py-lg"
           style="position: sticky; top: 0"
         >
           <q-btn
             icon="eva-arrow-ios-back-outline"
             class="text-blue"
             flat
-            @click="storeMain.handleClickBackButtonShowAlert"
+            @click="storeSupabase.showHistoryDialog = false"
           >
             <span class="text-subtitle1">Quay lại</span>
           </q-btn>
+          <span class="text-h6 text-bold">Lịch sử chỉnh sửa</span>
+        </div>
+        <q-card-section>
+          <q-list>
+            <!-- <q-item
+              v-for="(item, index) in storeSupabase.listOrderHistories"
+              :key="index"
+              clickable
+              v-ripple
+              class="column"
+            >
+              <q-item-section avatar>
+                {{ item.operation }}
+              </q-item-section>
+              <q-item-section>{{ item }}</q-item-section>
+            </q-item> -->
 
+            <q-card
+              v-for="(item, index) in storeSupabase.listOrderHistories"
+              :key="index"
+              class="my-card q-mb-lg"
+            >
+              <q-card-section>
+                <div class="flex justify-between">
+                  <div>
+                    <div
+                      class="text-h5"
+                      :class="
+                        item.operation.toLowerCase() === 'insert'
+                          ? 'text-green'
+                          : 'text-orange'
+                      "
+                    >
+                      {{
+                        item.operation.toLowerCase() === "insert"
+                          ? "Tạo mới"
+                          : "Cập nhập"
+                      }}
+                    </div>
+                    <div class="text-subtitle2 text-grey-6 q-ml-xs">
+                      {{ item.dateFormat }}
+                    </div>
+                  </div>
+
+                  <div class="column flex q-pt-lg" style="align-items: end">
+                    <div style="width: 100%" class="flex justify-between">
+                      <span class="text-grey-8">Giá gốc: </span>
+
+                      <span>
+                        {{ dateUtil.formatter.format(item.totalPrice) }}
+                      </span>
+                    </div>
+
+                    <div
+                      v-if="item.isHaveDiscount"
+                      class="float-bottom text-subtitle2 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span>Mã giảm giá: </span>
+
+                      <span
+                        class="text-red-8"
+                        v-if="item.discountObject.type === 'none'"
+                        >-{{
+                          dateUtil.formatter.format(item.discountObject.value)
+                        }}</span
+                      >
+
+                      <span v-else class="text-red-8"
+                        >-{{ item.discountObject.value }}
+                        {{ item.discountObject.type }}</span
+                      >
+                    </div>
+
+                    <div
+                      v-if="item.isHaveGiftCard"
+                      class="float-bottom text-subtitle2 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span>Mã quà tặng: </span>
+
+                      <span class="text-red-8"
+                        >-{{
+                          dateUtil.formatter.format(item.giftCardObject.value)
+                        }}</span
+                      >
+                    </div>
+
+                    <div
+                      class="float-bottom text-subtitle1 flex justify-between"
+                      style="right: 5%; width: 100%"
+                    >
+                      <span class="text-bold q-pr-md">Tổng cộng:</span>
+                      <span class="text-blue text-bold">
+                        {{
+                          dateUtil.formatter.format(
+                            Math.max(
+                              (item.isHaveDiscount
+                                ? item.discountObject.type === "none"
+                                  ? item.totalPrice - item.discountObject.value
+                                  : item.totalPrice -
+                                    (item.totalPrice / 100) *
+                                      item.discountObject.value
+                                : item.totalPrice) -
+                                // Trừ gift card
+                                (item.isHaveGiftCard
+                                  ? item.giftCardObject.value
+                                  : 0),
+                              0 // Ensure the value is at least 0
+                            )
+                          )
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                  <!-- test -->
+
+                  <!-- <div
+                    class="right-history column flex"
+                    style="align-items: end"
+                  >
+                    <div class="flex justify-end" style="align-items: center">
+                      <q-badge
+                        v-if="item.discountObject.id"
+                        color="primary"
+                        outline
+                        :label="`-${item.discountObject.value}${
+                          item.discountObject.type === 'none'
+                            ? '€'
+                            : item.discountObject.type
+                        }`"
+                        class="q-mr-sm"
+                      >
+                      </q-badge>
+
+                      <q-badge
+                        v-if="item.giftCardObject.id"
+                        color="red"
+                        outline
+                        :label="`-${item.giftCardObject.value}€`"
+                        class="q-mr-sm"
+                      />
+
+                      <span class="text-right text-subtitle1">{{
+                        dateUtil.formatter.format(
+                          item.details.menu_items.reduce(
+                            (total, item) => total + item.price,
+                            0
+                          )
+                        )
+                      }}</span>
+                    </div>
+
+                    <div class="text-blue text-h5">
+                      = {{ dateUtil.formatter.format(item.umsatz.toFixed(2)) }}
+                    </div>
+                  </div> -->
+                </div>
+              </q-card-section>
+              <q-card-section>
+                <q-list class="q-mb-md" bordered separator>
+                  <q-item
+                    v-for="(step, stepIndex) in item.details.menu_items"
+                    :key="stepIndex"
+                    clickable
+                    v-ripple
+                    class="flex justify-between"
+                  >
+                    <q-item-section>
+                      <div class="flex justify-between">
+                        <span style="width: 80%">
+                          {{
+                            storeSupabase.menuData.filter(
+                              (menuItem) => menuItem.id === step.menu_id
+                            )[0].label
+                          }}
+                        </span>
+
+                        <span
+                          >{{ step.quantity }} x
+                          {{ step.price / step.quantity }}</span
+                        >
+                      </div>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card-section>
+
+              <!-- khách đặt -->
+              <div
+                class="flex full-width justify-end q-px-lg"
+                style="align-items: center"
+                v-if="item.details.is_customer_order"
+              >
+                <span class="text-blue text-bold">
+                  Khách đặt
+                  <q-icon
+                    name="eva-checkmark-circle-outline"
+                    size="sm"
+                    color="primary"
+                  />
+                </span>
+              </div>
+
+              <q-card-section>
+                <span class="q-px-md"
+                  >Mô tả: {{ item.details.description }}</span
+                >
+              </q-card-section>
+            </q-card>
+          </q-list>
+        </q-card-section>
+      </q-card>
+
+      <q-card v-else class="full-width flex flex-center full-height">
+        <div style="height: 30vh" class="full-width flex column flex-center">
+          Đang tải <q-spinner-ios size="lg" color="blue" />
+        </div>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog
+      :maximized="storeSupabase.showUpdateDialog"
+      v-model="storeSupabase.showUpdateDialog"
+    >
+      <q-card class="full-width full-height">
+        <div
+          class="flex justify-between q-pr-md bg-white z-max"
+          style="position: sticky; top: 0"
+        >
+          <q-btn
+            icon="eva-arrow-ios-back-outline"
+            class="text-blue"
+            flat
+            @click="storeSupabase.handleClickBackButtonShowAlert"
+          >
+            <span class="text-subtitle1">Quay lại</span>
+          </q-btn>
+          <!--
           <div class="float-bottom text-h6" style="right: 5%">
             <span class="text-bold">Tổng cộng:</span>
-            {{ dateUtil.formatter.format(storeMain.updateData.umsatz) }}
+            {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }}
+          </div> -->
+          <div class="column flex q-pt-lg" style="align-items: end">
+            <div style="width: 100%" class="flex justify-between">
+              <span class="text-grey-8">Giá gốc: </span>
+
+              <span>
+                {{
+                  dateUtil.formatter.format(storeSupabase.updateData.totalPrice)
+                }}
+              </span>
+            </div>
+
+            <div
+              v-if="storeSupabase.updateData.isHaveDiscount"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã giảm giá: </span>
+
+              <span
+                class="text-red-8"
+                v-if="storeSupabase.updateData.discountObject.type === 'none'"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.updateData.discountObject.value
+                  )
+                }}</span
+              >
+
+              <span v-else class="text-red-8"
+                >-{{ storeSupabase.updateData.discountObject.value }}
+                {{ storeSupabase.updateData.discountObject.type }}</span
+              >
+            </div>
+
+            <div
+              v-if="storeSupabase.updateData.isHaveGiftCard"
+              class="float-bottom text-subtitle2 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span>Mã quà tặng: </span>
+
+              <span class="text-red-8"
+                >-{{
+                  dateUtil.formatter.format(
+                    storeSupabase.updateData.giftCardObject.value
+                  )
+                }}</span
+              >
+            </div>
+
+            <div
+              class="float-bottom text-subtitle1 flex justify-between"
+              style="right: 5%; width: 100%"
+            >
+              <span class="text-bold q-pr-md">Tổng cộng:</span>
+              <span>
+                {{
+                  dateUtil.formatter.format(
+                    Math.max(
+                      (storeSupabase.updateData.isHaveDiscount
+                        ? storeSupabase.updateData.discountObject.type ===
+                          "none"
+                          ? storeSupabase.updateData.totalPrice -
+                            storeSupabase.updateData.discountObject.value
+                          : storeSupabase.updateData.totalPrice -
+                            (storeSupabase.updateData.totalPrice / 100) *
+                              storeSupabase.updateData.discountObject.value
+                        : storeSupabase.updateData.totalPrice) -
+                        (storeSupabase.updateData.isHaveGiftCard
+                          ? storeSupabase.updateData.giftCardObject.value
+                          : 0),
+                      0
+                    )
+                  )
+                }}
+
+                <!-- {{ dateUtil.formatter.format(storeSupabase.updateData.umsatz) }} -->
+              </span>
+            </div>
           </div>
         </div>
+
         <q-card-section>
           <q-form
             class="q-gutter-md q-py-lg flex column"
-            @submit="storeMain.postUpdateItem(storeMain.updateData)"
+            @submit="storeSupabase.postUpdateItem(storeSupabase.updateData)"
           >
+            <div class="full-width justify-between flex q-px-md">
+              <q-badge
+                :outline="!item.isSelected"
+                color="primary"
+                v-for="(item, index) in storeSupabase.listDiscountUpdate"
+                :key="index"
+                :label="`-${item.value}${
+                  item.type === 'none' ? '€' : item.type
+                }`"
+                class="q-pa-sm q-px-lg q-mb-sm"
+                style="width: 23%"
+                @click="
+                  storeSupabase.handleClickDiscountUpdate(item.id);
+                  storeSupabase.isHaveNotSaveDataYet = true;
+                "
+              />
+            </div>
+
+            <span
+              v-if="storeSupabase.updateData.menuSelected?.length"
+              class="text-subtitle1"
+              >Dịch vụ đã chọn</span
+            >
+
+            <q-list
+              v-if="storeSupabase.updateData.menuSelected?.length"
+              bordered
+              separator
+            >
+              <q-slide-item
+                v-for="(item, index) in storeSupabase.updateData.menuSelected"
+                :key="index"
+                ref="slideItems"
+                @right="storeSupabase.onRightSlide(item.id, index)"
+                right-color="red-5"
+              >
+                <template v-slot:right>
+                  <q-icon name="delete" /> Xoá...
+                </template>
+
+                <q-item>
+                  <q-item-section>
+                    <div
+                      class="flex justify-between"
+                      style="align-items: center"
+                    >
+                      <div
+                        class="flex justify-between full-width"
+                        style="align-items: center"
+                      >
+                        <div class="flex text-grey-7" style="width: 70%">
+                          <div
+                            class="column"
+                            :style="item.isMultiSelect ? 'width: 30%' : []"
+                          >
+                            {{ item.label }}
+                            <span v-if="item.isMultiSelect" class="text-blue"
+                              >x {{ item.selectCount }}</span
+                            >
+                          </div>
+
+                          <div v-if="item.isMultiSelect" class="flex">
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-minus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInUpdateDataMinus(
+                                  item
+                                )
+                              "
+                              outline
+                            />
+
+                            <q-btn
+                              color="grey-6"
+                              icon="eva-plus-outline"
+                              @click="
+                                storeSupabase.clickMultiSelectInUpdateData(item)
+                              "
+                              class="q-ml-sm"
+                              outline
+                            />
+                          </div>
+                        </div>
+                        <div
+                          v-if="item.isMultiSelect"
+                          class="text-blue text-bold"
+                        >
+                          {{
+                            dateUtil.formatter.format(
+                              item.value * item.selectCount
+                            )
+                          }}
+                        </div>
+
+                        <div v-else class="text-blue text-bold">
+                          {{ dateUtil.formatter.format(item.value) }}
+                        </div>
+                      </div>
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-slide-item>
+            </q-list>
+
             <span class="text-subtitle1">Chọn dịch vụ</span>
+
             <q-select
               ref="selectMenuRefUpdate"
               :rules="[(val) => !!val || 'Không được để rỗng']"
-              v-model="storeMain.updateData.menuSelected"
+              v-model="storeSupabase.updateData.menuSelected"
               :options="optionsMenuData"
               option-label="label"
               option-value="id"
@@ -524,22 +1565,22 @@ const getColor = (status) => {
               use-input
               @filter="filterFn"
               input-debounce="300"
-              behavior="menu"
               @update:model-value="
-                storeMain.updateData.umsatz = storeMain.updateData.menuSelected
-                  .map((item) => item.value)
-                  .reduce((acc, current) => acc + current, 0);
+                storeSupabase.updateData.umsatz =
+                  storeSupabase.updateData.menuSelected
+                    .map((item) => item.value)
+                    .reduce((acc, current) => acc + current, 0);
 
-                storeMain.isHaveNotSaveDataYet = true;
+                storeSupabase.isHaveNotSaveDataYet = true;
               "
-              :disable="storeMain.loadingSelect"
+              :disable="storeSupabase.loadingSelect"
               hide-selected
             >
               <template v-slot:selected>
                 <!-- <div>
                   Already checked
                   <span class="text-bold">{{
-                    storeMain.updateData.menuSelected?.length
+                    storeSupabase.updateData.menuSelected?.length
                   }}</span>
                   items
                 </div> -->
@@ -555,6 +1596,28 @@ const getColor = (status) => {
                     class="full-width q-mb-md"
                     @click="selectMenuRefUpdate.hidePopup()"
                   ></q-btn>
+
+                  <div
+                    style="display: grid; grid-template-columns: 1fr 1fr 1fr"
+                    class="q-mb-md full-width"
+                  >
+                    <q-btn
+                      v-for="(
+                        item, index
+                      ) in storeSupabase.updateData.menuMultipleSelect.sort(
+                        (a, b) => a.price - b.price
+                      )"
+                      :key="index"
+                      class="q-mr-sm"
+                      outline
+                      color="white"
+                      text-color="primary"
+                      :label="item.label"
+                      @click="storeSupabase.clickMultiSelectInUpdateData(item)"
+                    >
+                      <q-badge color="red" :label="item.selectCount" floating />
+                    </q-btn>
+                  </div>
                 </div>
               </template>
 
@@ -609,28 +1672,24 @@ const getColor = (status) => {
                       <q-toggle
                         v-model="scope.selected"
                         color="green"
-                        @click="storeMain.clickToggleUpdateMenuItem(scope)"
+                        @click="storeSupabase.clickToggleUpdateMenuItem(scope)"
                       />
                     </div>
                   </q-item-section>
                 </q-item>
               </template>
             </q-select>
-            <span
-              v-if="storeMain.updateData.menuSelected?.length"
-              class="text-subtitle1"
-              >Dịch vụ đã chọn</span
-            >
-            <q-list
-              v-if="storeMain.updateData.menuSelected?.length"
+
+            <!-- <q-list
+              v-if="storeSupabase.updateData.menuSelected?.length"
               bordered
               separator
             >
               <q-slide-item
-                v-for="(item, index) in storeMain.updateData.menuSelected"
+                v-for="(item, index) in storeSupabase.updateData.menuSelected"
                 :key="index"
                 ref="slideItemsUpdate"
-                @right="storeMain.onRightSlideUpdate(item.id, index)"
+                @right="storeSupabase.onRightSlideUpdate(item.id, index)"
                 right-color="red-5"
               >
                 <template v-slot:right>
@@ -655,27 +1714,144 @@ const getColor = (status) => {
                   </q-item-section>
                 </q-item>
               </q-slide-item>
-            </q-list>
+            </q-list> -->
+
+            <div>
+              <span class="text-subtitle1">Gift card</span>
+
+              <q-input
+                v-model="storeSupabase.updateData.giftCard"
+                placeholder="Vui lòng nhập gift card tại đây..."
+                outlined
+                debounce="500"
+                @update:model-value="
+                  storeSupabase.validateGiftCard(
+                    storeSupabase.updateData.giftCard
+                  )
+                "
+              >
+                <template v-slot:append>
+                  <!-- QR Code Icon with click event to show QR Scanner dialog -->
+                  <q-icon
+                    name="qr_code_scanner"
+                    @click="showQRCodeDialog = true"
+                  />
+                </template>
+              </q-input>
+
+              <!-- QR Code Scan Dialog -->
+              <q-dialog v-model="showQRCodeDialog">
+                <q-card style="min-width: 90vw">
+                  <q-card-section>
+                    <div class="text-h6">Scan QR Code</div>
+                  </q-card-section>
+
+                  <q-card-section class="q-pa-md flex flex-center">
+                    <!-- QR Scanner Component, make sure to install and use a QR scanning library -->
+                    <!-- <qrcode-stream @detect="onDetect"></qrcode-stream> -->
+                    <ScanQrComponent
+                      :height="500"
+                      :detect-func="storeScanQr.scanData"
+                    ></ScanQrComponent>
+                  </q-card-section>
+
+                  <q-card-actions align="right">
+                    <q-btn
+                      flat
+                      dense
+                      label="Đóng"
+                      color="grey"
+                      @click="showQRCodeDialog = false"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </q-dialog>
+
+              <q-card
+                v-if="storeSupabase.updateData.isHaveGiftCard"
+                class="my-card"
+              >
+                <q-card-section>
+                  <div class="flex justify-between">
+                    <div class="text-h6">Thẻ quà tặng</div>
+                    <q-icon
+                      name="eva-trash-2-outline"
+                      size="md"
+                      color="red-8"
+                      @click="
+                        Dialog.create({
+                          title: 'Xác nhận',
+                          message:
+                            'Bạn có chắc chắn muốn xoá thẻ quà tặng này?',
+                          ok: true,
+                          cancel: true,
+                        }).onOk(() => {
+                          storeSupabase.updateData.isHaveGiftCard = false;
+                          storeSupabase.updateData.giftCardObject = {};
+                          storeSupabase.updateData.giftCard = '';
+                        })
+                      "
+                    />
+                  </div>
+                  <div class="text-subtitle2">
+                    Giá trị:
+                    <span class="text-primary">{{
+                      storeSupabase.updateData.giftCardObject.value
+                    }}</span>
+                  </div>
+                </q-card-section>
+                <q-card-section>
+                  <div class="full-width text-grey-6 flex justify-between">
+                    <span>
+                      Từ ngày:
+                      {{
+                        new Date(
+                          storeSupabase.updateData.giftCardObject.date_from
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                    <span>
+                      Đến ngày:
+                      {{
+                        new Date(
+                          storeSupabase.updateData.giftCardObject.date_expired
+                        ).toLocaleDateString("vi-VN")
+                      }}
+                    </span>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- checkbox customer order -->
+            <div class="flex justify-end">
+              <q-checkbox
+                left-label
+                v-model="storeSupabase.updateData.isCustomerOrder"
+                label="Khách đặt"
+              />
+            </div>
+
             <!-- notizen -->
             <div
-              v-if="!storeMain.showNotizen"
-              @click="storeMain.showNotizen = true"
+              v-if="!storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = true"
               class="flex flex-center text-blue"
             >
               <q-icon name="add" size="sm" rounded />Hiện ghi chú
             </div>
 
             <q-input
-              v-if="storeMain.showNotizen"
-              v-model="storeMain.updateData.notizen"
+              v-if="storeSupabase.showNotizen"
+              v-model="storeSupabase.updateData.notizen"
               label="Thêm ghi chú"
-              @update:model-value="storeMain.isHaveNotSaveDataYet = true"
+              @update:model-value="storeSupabase.isHaveNotSaveDataYet = true"
               outlined
             />
 
             <div
-              v-if="storeMain.showNotizen"
-              @click="storeMain.showNotizen = false"
+              v-if="storeSupabase.showNotizen"
+              @click="storeSupabase.showNotizen = false"
               class="flex flex-center text-blue"
             >
               <q-icon name="remove" size="sm" rounded />Ẩn ghi chú
@@ -696,4 +1872,10 @@ const getColor = (status) => {
   </q-page>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.filter-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+</style>

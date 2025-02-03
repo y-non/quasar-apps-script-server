@@ -7,8 +7,21 @@
   font-weight: 400;
   font-style: normal;
 
-  // font-family: "Open Sans", sans-serif;
-  // font-optical-sizing: auto;
-  // font-weight: 400;
-  // font-style: normal;
+  font-family: "Open Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.t-default {
+  color: $c-default;
+}
+
+.bg-default {
+  background-color: $bg-default;
+}
+
+label {
+  font-weight: bold !important;
+  color: $c-default;
 }
