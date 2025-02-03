@@ -13,8 +13,12 @@ const userStatus = ref("");
 const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 const role = ref("");
 const routerName = ref("");
-const currentPassword = ref('')
-const newPassword = ref('')
+
+/* in Vue file states */
+const currentPassword = ref("");
+const newPassword = ref("");
+const isShowCurrentPassword = ref(false);
+const isShowNewPassword = ref(false);
 
 onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
@@ -35,9 +39,12 @@ watch(
 );
 
 const handleChangePassword = async () => {
-  if (!currentPassword.value || !newPassword.value) return
-  await storeAuthentication.changePassword(currentPassword.value, newPassword.value)
-}
+  if (!currentPassword.value || !newPassword.value) return;
+  await storeAuthentication.changePassword(
+    currentPassword.value,
+    newPassword.value
+  );
+};
 </script>
 
 <template>
@@ -273,7 +280,11 @@ const handleChangePassword = async () => {
             class="q-mt-sm"
           />
 
-          <q-item clickable v-ripple @click="storeAuthentication.dialogChangePassword = true">
+          <q-item
+            clickable
+            v-ripple
+            @click="storeAuthentication.dialogChangePassword = true"
+          >
             <q-item-section avatar>
               <q-icon class="text-grey-8" name="eva-unlock-outline" />
             </q-item-section>
@@ -310,17 +321,39 @@ const handleChangePassword = async () => {
       <q-card-section>
         <q-input
           v-model="currentPassword"
-          type="password"
+          :type="isShowCurrentPassword ? 'text' : 'password'"
           label="Mật khẩu hiện tại"
           filled
-        />
+        >
+          <template v-slot:append>
+            <q-icon
+              @click="isShowCurrentPassword = !isShowCurrentPassword"
+              :name="
+                isShowCurrentPassword
+                  ? 'eva-eye-off-outline'
+                  : 'eva-eye-outline'
+              "
+              size="sm"
+            />
+          </template>
+        </q-input>
         <q-input
           v-model="newPassword"
-          type="password"
+          :type="isShowNewPassword ? 'text' : 'password'"
           label="Mật khẩu mới"
           filled
           class="q-mt-md"
-        />
+        >
+          <template v-slot:append>
+            <q-icon
+              @click="isShowNewPassword = !isShowNewPassword"
+              :name="
+                isShowNewPassword ? 'eva-eye-off-outline' : 'eva-eye-outline'
+              "
+              size="sm"
+            />
+          </template>
+        </q-input>
       </q-card-section>
 
       <q-card-actions align="right">
