@@ -35,7 +35,7 @@ watch(
 
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header class="q-py-sm" elevated >
+    <q-header class="q-py-sm" elevated>
       <q-toolbar>
         <div
           class="flex justify-between full-width"
@@ -55,7 +55,10 @@ watch(
             >
           </q-btn>
 
-          <div v-if="role !== 'admin' && role !== 'superadmin'" class="flex justify-end">
+          <div
+            v-if="role !== 'admin' && role !== 'superadmin'"
+            class="flex justify-end"
+          >
             <div v-if="isShowLogoutButton == true">
               <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
@@ -247,12 +250,14 @@ watch(
 
       <q-scroll-area v-else class="fit">
         <q-list padding class="menu-list">
-          <q-item clickable v-ripple>
+          <q-item clickable v-ripple @click="storeSupabase.syncMenu">
             <q-item-section avatar>
-              <q-icon class="text-green-8 text-bold text-bold" name="sync" />
+              <q-icon class="text-green-8" name="sync" />
             </q-item-section>
 
-            <q-item-section> Đồng bộ Menu </q-item-section>
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              Đồng bộ Menu
+            </q-item-section>
           </q-item>
           <q-linear-progress
             v-if="storeSupabase.isLoadingMenuData"
@@ -261,12 +266,24 @@ watch(
             class="q-mt-sm"
           />
 
-          <q-item @click="storeAuthentication.signOut" clickable v-ripple>
+          <q-item clickable v-ripple>
             <q-item-section avatar>
-              <q-icon class="text-red-8 text-bold text-bold" name="logout" />
+              <q-icon class="text-grey-8" name="eva-unlock-outline" />
             </q-item-section>
 
-            <q-item-section> Đăng xuất </q-item-section>
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              Đổi mật khấu
+            </q-item-section>
+          </q-item>
+
+          <q-item @click="storeAuthentication.signOut" clickable v-ripple>
+            <q-item-section avatar>
+              <q-icon class="text-red-8" name="logout" />
+            </q-item-section>
+
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              Đăng xuất
+            </q-item-section>
           </q-item>
         </q-list>
       </q-scroll-area>
