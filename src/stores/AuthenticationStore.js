@@ -109,9 +109,9 @@ export const useAuthenticationStore = defineStore("authentication", {
           storageUtil.setLocalStorageData("isLogin", this.isLogin);
 
           if (role === "superadmin") {
-            this.router.push("/admin");
-          } else if (role === "admin") {
             this.router.push("/admin/account");
+          } else if (role === "admin") {
+            this.router.push("/admin");
           } else {
             this.router.push("/data");
           }
