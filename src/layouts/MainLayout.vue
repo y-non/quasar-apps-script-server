@@ -13,6 +13,8 @@ const userStatus = ref("");
 const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
 const role = ref("");
 const routerName = ref("");
+const currentPassword = ref('')
+const newPassword = ref('')
 
 onMounted(async () => {
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
@@ -31,6 +33,11 @@ watch(
     userStatus.value = selfUserData;
   }
 );
+
+const handleChangePassword = async () => {
+  if (!currentPassword.value || !newPassword.value) return
+  await storeAuthentication.changePassword(currentPassword.value, newPassword.value)
+}
 </script>
 
 <template>
@@ -266,13 +273,13 @@ watch(
             class="q-mt-sm"
           />
 
-          <q-item clickable v-ripple>
+          <q-item clickable v-ripple @click="storeAuthentication.dialogChangePassword = true">
             <q-item-section avatar>
               <q-icon class="text-grey-8" name="eva-unlock-outline" />
             </q-item-section>
 
             <q-item-section class="text-grey-8" style="font-size: 1.1em">
-              Đổi mật khấu
+              Đổi mật khẩu
             </q-item-section>
           </q-item>
 
@@ -293,6 +300,35 @@ watch(
       <router-view />
     </q-page-container>
   </q-layout>
+
+  <q-dialog v-model="storeAuthentication.dialogChangePassword">
+    <q-card style="width: 400px">
+      <q-card-section>
+        <div class="text-h6">Đổi mật khẩu</div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-input
+          v-model="currentPassword"
+          type="password"
+          label="Mật khẩu hiện tại"
+          filled
+        />
+        <q-input
+          v-model="newPassword"
+          type="password"
+          label="Mật khẩu mới"
+          filled
+          class="q-mt-md"
+        />
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Hủy" v-close-popup />
+        <q-btn color="primary" label="Xác nhận" @click="handleChangePassword" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <style lang="scss" scoped>

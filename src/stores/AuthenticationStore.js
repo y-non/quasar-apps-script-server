@@ -11,6 +11,7 @@ export const useAuthenticationStore = defineStore("authentication", {
     repassword: "",
     userList: [],
     isLogin: false,
+    dialogChangePassword: false,
   }),
   actions: {
     async getInit() {
@@ -148,6 +149,72 @@ export const useAuthenticationStore = defineStore("authentication", {
         });
       } catch (err) {
         console.error("Internal Server Error signOut(): ", err);
+      }
+    },
+
+    async changePassword(currentPassword, newPassword) {
+      try {
+        Loading.show();
+        // const { data: user, error: userError } = await supabase.auth.getUser();
+        // if (userError || !user) {
+        //   console.error("User not found:", userError);
+        //   return;
+        // }
+
+        const userData = storageUtil.getLocalStorageData("userData");
+        const email = userData.email;
+
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: currentPassword,
+        });
+
+        if (signInError) {
+          Dialog.create({
+            title: "Thông báo",
+            message: "Mật khẩu hiện tại không đúng!",
+            ok: true,
+            cancel: false,
+          });
+          Loading.hide();
+          return;
+        }
+
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (updateError) {
+          console.error("Failed to update password:", updateError);
+          Loading.hide();
+          return;
+        }
+
+        Notify.create({
+          type: "positive",
+          message: "Đổi mật khẩu thành công!",
+          timeout: 1000,
+          position: "top",
+        });
+        this.dialogChangePassword = false;
+        Loading.hide();
+
+        setTimeout(async () => {
+          localStorage.clear();
+          this.router.push("/");
+
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error("Error signing out:", error.message);
+            return;
+          }
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }, 1000);
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
       }
     },
 
