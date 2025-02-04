@@ -99,7 +99,11 @@ watch(
 
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header class="q-py-sm bg-white text-black" elevated>
+    <q-header
+      class="q-py-sm"
+      style="background-color: #1f1f1f; color: #c9c9c9"
+      elevated
+    >
       <q-toolbar>
         <div
           class="flex justify-between full-width"
@@ -247,7 +251,7 @@ watch(
           </div>
 
           <div v-else>
-            <span class="text-h6 t-default">{{ routerName }}</span>
+            <span class="text-h6">{{ routerName }}</span>
           </div>
 
           <q-btn

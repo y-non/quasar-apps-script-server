@@ -67,7 +67,7 @@ const handleChangePassword = async () => {
             @click="drawer = !drawer"
           >
             <span class="q-ml-md"
-              >{{ userStatus?.username }} - {{ userStatus?.status_name }}</span
+              >{{ userStatus?.username }}</span
             >
           </q-btn>
 
