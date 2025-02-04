@@ -663,7 +663,7 @@ const onDetect = (decodedString) => {
             @submit="storeSupabase.addData(storeSupabase.newData)"
           >
             <div class="full-width justify-between flex q-px-md">
-              <!-- <q-badge
+              <q-badge
                 :outline="!item.isSelected"
                 color="primary"
                 v-for="(item, index) in storeSupabase.listDiscount"
@@ -677,7 +677,7 @@ const onDetect = (decodedString) => {
                   storeSupabase.handleClickDiscount(item.id);
                   storeSupabase.isHaveNotSaveDataAddYet = true;
                 "
-              /> -->
+              />
             </div>
 
             <span

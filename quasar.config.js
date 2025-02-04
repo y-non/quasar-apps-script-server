@@ -159,6 +159,22 @@ module.exports = configure(function (/* ctx */) {
       // extendInjectManifestOptions (cfg) {},
       // extendManifestJson (json) {}
       // extendPWACustomSWConf (esbuildConf) {}
+      workboxOptions: {
+        runtimeCaching: [
+          {
+            urlPattern: /\/api\/.*/, // Cache API requests
+            handler: "NetworkFirst",
+            options: {
+              backgroundSync: {
+                name: "api-sync-queue",
+                options: {
+                  maxRetentionTime: 24 * 60, // Retain for 24 hours
+                },
+              },
+            },
+          },
+        ],
+      },
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli/developing-cordova-apps/configuring-cordova
