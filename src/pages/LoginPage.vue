@@ -40,7 +40,7 @@ onMounted(async () => {
         "
         style="width: 500px"
       >
-        <div class="text-h6 q-mb-md">Vui lòng đăng nhập</div>
+        <div class="text-h6 q-mb-md">Đăng nhập</div>
         <q-input
           v-model="storeAuthentication.username"
           label="Tên đăng nhập"

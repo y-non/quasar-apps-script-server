@@ -8,9 +8,8 @@ const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
 
 const drawer = ref(false);
-const isShowLogoutButton = ref(false);
 const userStatus = ref("");
-const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
+const isLogin = storageUtil.getLocalStorageData("isLogin");
 const role = ref("");
 const routerName = ref("");
 
@@ -21,7 +20,6 @@ const isShowCurrentPassword = ref(false);
 const isShowNewPassword = ref(false);
 
 onMounted(async () => {
-  isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
 });
 
@@ -49,7 +47,11 @@ const handleChangePassword = async () => {
 
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header class="q-py-sm" elevated>
+    <q-header
+      class="q-py-sm text-white"
+      style="background-color: #1f1f1f; color: #c9c9c9"
+      elevated
+    >
       <q-toolbar>
         <div
           class="flex justify-between full-width"
@@ -73,7 +75,7 @@ const handleChangePassword = async () => {
             v-if="role !== 'admin' && role !== 'superadmin'"
             class="flex justify-end"
           >
-            <div v-if="isShowLogoutButton == true">
+            <div v-if="isLogin == true">
               <div class="active">
                 <span class="text-capitalize q-mr-sm">{{
                   userStatus?.status_name

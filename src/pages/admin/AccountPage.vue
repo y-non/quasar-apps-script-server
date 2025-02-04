@@ -575,6 +575,46 @@ watch(
         >
           <div>
             <q-card-section>
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for="">Email</label>
+                <q-input
+                  v-model="storeAccountManagement.selectedAccount.email"
+                  filled
+                  class="q-mb-md"
+                  readonly
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="t-default text-subtitle2" for="">Mật khẩu</label>
+                <q-input
+                  v-model="storeAccountManagement.selectedAccount.email"
+                  filled
+                  class="q-mb-md"
+                  type="password"
+                  readonly
+                >
+                  <template v-slot:append>
+                    <q-icon
+                      name="eva-refresh-outline"
+                      @click="
+                        Dialog.create({
+                          title: 'Xác nhận',
+                          message: `Xác nhận khôi phục lại mật khẩu của tài khoản <b class='text-bold'>${storeAccountManagement.selectedAccount.email}</b>? <br/>Mật khẩu mặc định sẽ là: 111111`,
+                          ok: true,
+                          html: true,
+                          cancel: true,
+                        }).onOk(async () => {
+                          await storeAuthentication.resetUserPassword(
+                            storeAccountManagement.selectedAccount.email
+                          );
+                        })
+                      "
+                    />
+                  </template>
+                </q-input>
+              </div>
+
               <!-- Display Name -->
 
               <div class="form-group">
@@ -674,49 +714,9 @@ watch(
                 />
               </div>
 
-              <div class="form-group">
-                <label class="t-default text-subtitle2" for="">Email</label>
-                <q-input
-                  v-model="storeAccountManagement.selectedAccount.email"
-                  filled
-                  class="q-mb-md"
-                  readonly
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="t-default text-subtitle2" for="">Mật khẩu</label>
-                <q-input
-                  v-model="storeAccountManagement.selectedAccount.email"
-                  filled
-                  class="q-mb-md"
-                  type="password"
-                  readonly
-                >
-                  <template v-slot:append>
-                    <q-icon
-                      name="eva-refresh-outline"
-                      @click="
-                        Dialog.create({
-                          title: 'Xác nhận',
-                          message: `Xác nhận khôi phục lại mật khẩu của tài khoản <b class='text-bold'>${storeAccountManagement.selectedAccount.email}</b>? <br/>Mật khẩu mặc định sẽ là: 111111`,
-                          ok: true,
-                          html: true,
-                          cancel: true,
-                        }).onOk(async () => {
-                          await storeAuthentication.resetUserPassword(
-                            storeAccountManagement.selectedAccount.email
-                          );
-                        })
-                      "
-                    />
-                  </template>
-                </q-input>
-              </div>
-
               <!-- Creation Date (readonly) -->
 
-              <div class="form-group">
+              <!-- <div class="form-group">
                 <label class="t-default text-subtitle2" for="">Ngày tạo</label>
                 <q-input
                   :placeholder="`${new Date(
@@ -726,7 +726,7 @@ watch(
                   readonly
                   class="q-mb-md"
                 />
-              </div>
+              </div> -->
 
               <q-checkbox
                 right-label
