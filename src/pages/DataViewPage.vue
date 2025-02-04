@@ -48,9 +48,13 @@ const slideItems = ref(storeSupabase.slideItems);
 const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
 
 const visibleCount = ref(3);
-const visibleUsers = computed(() =>
-  storeSupabase.listUserData.slice(0, visibleCount.value)
-);
+const visibleUsers = computed(() => {
+  const sortArray = [...storeSupabase.listUserData].sort(
+    (a, b) => b.ordernumber - a.ordernumber
+  );
+  // return storeSupabase.listUserData.slice(0, visibleCount.value);
+  return sortArray.slice(0, visibleCount.value);
+});
 const hasMoreUsers = computed(
   () => visibleCount.value < storeSupabase.listUserData.length
 );
