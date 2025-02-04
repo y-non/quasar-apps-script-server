@@ -13,7 +13,7 @@ import {
   createHandlerBoundToURL,
 } from "workbox-precaching";
 import { registerRoute, NavigationRoute } from "workbox-routing";
-import { StaleWhileRevalidate } from "workbox-strategies";
+import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 
 self.skipWaiting();
 clientsClaim();
@@ -48,4 +48,10 @@ registerRoute(
   new StaleWhileRevalidate({
     cacheName: "workbox-precache-http",
   })
+);
+
+/* implement network first strategy */
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/rest/v1"),
+  new NetworkFirst()
 );
