@@ -19,11 +19,47 @@ const newPassword = ref("");
 const isShowCurrentPassword = ref(false);
 const isShowNewPassword = ref(false);
 
+/* handle service worker state */
+var deferredPrompt;
+
 onMounted(async () => {
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    console.log("beforeinstallprompt event fired!"); // Debugging log
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallAppPrompt(e);
+  });
 });
 
-onBeforeMount(() => {});
+const showInstallAppPrompt = async () => {
+  console.log("Deferred Prompt:", deferredPrompt); // Debugging log
+
+  if (!deferredPrompt) {
+    console.warn("No install prompt available.");
+    return;
+  }
+
+  try {
+    await deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      console.log("User choice:", choiceResult);
+      deferredPrompt = null;
+    });
+  } catch (err) {
+    console.error("Error in showInstallAppPrompt:", err);
+  }
+};
+
+onBeforeMount(() => {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    console.log("beforeinstallprompt event fired!"); // Debugging log
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallAppPrompt(e);
+  });
+});
 
 watch(
   () => storeSupabase.listUserData,
@@ -66,9 +102,7 @@ const handleChangePassword = async () => {
             aria-label="Menu"
             @click="drawer = !drawer"
           >
-            <span class="q-ml-md"
-              >{{ userStatus?.username }}</span
-            >
+            <span class="q-ml-md">{{ userStatus?.username }}</span>
           </q-btn>
 
           <div
@@ -278,6 +312,19 @@ const handleChangePassword = async () => {
 
             <q-item-section class="text-grey-8" style="font-size: 1.1em">
               Đổi mật khẩu
+            </q-item-section>
+          </q-item>
+
+          <q-item clickable v-ripple @click="showInstallAppPrompt()">
+            <q-item-section avatar>
+              <q-icon
+                class="text-primary"
+                name="eva-arrow-circle-down-outline"
+              />
+            </q-item-section>
+
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              Tải app
             </q-item-section>
           </q-item>
 
