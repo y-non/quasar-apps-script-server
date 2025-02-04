@@ -248,15 +248,17 @@ const onDetect = (decodedString) => {
           dense
           outline
           size="md"
-          style="min-width: 47%;"
+          style="min-width: 47%"
         >
-          <q-icon
-            name="circle"
-            :color="getColor(user.status_name)"
-            size="xs"
-            class="q-mx-xs"
-          />
-          {{ user.username }} - {{ user.ordernumber }}
+          <div class="flex flex-start full-width">
+            <q-icon
+              name="circle"
+              :color="getColor(user.status_name)"
+              size="xs"
+              class="q-mx-xs"
+            />
+            {{ user.username }} - {{ user.ordernumber }}
+          </div>
         </q-btn>
 
         <q-btn
@@ -337,7 +339,7 @@ const onDetect = (decodedString) => {
 
             <div class="flex q-py-none" style="align-items: center">
               <q-badge
-                v-for="(item, index) in +user.ordernumber "
+                v-for="(item, index) in +user.ordernumber"
                 :key="index"
                 color="primary"
                 outline
@@ -552,7 +554,7 @@ const onDetect = (decodedString) => {
     <q-page-sticky position="bottom-right" :offset="[18, 48]">
       <q-btn
         icon="add"
-        color="green-7"
+        color="green-9"
         class="q-pa-md"
         round
         :disable="storeSupabase.isLoadingMainScreen"
