@@ -5,6 +5,7 @@ import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { useRouter } from "vue-router";
 import { storageUtil } from "src/utils/storageUtil";
+import { useQuasar } from "quasar";
 
 const router = useRouter();
 const storeMain = useMainStore();
@@ -53,6 +54,11 @@ const listRouter = [
     icon: "eva-gift-outline",
   },
 ];
+const $q = useQuasar();
+const isShowInstallApp = ref(false);
+
+/* handle service worker state */
+var deferredPrompt;
 
 function handleGetRouterName(value) {
   try {
@@ -64,6 +70,10 @@ function handleGetRouterName(value) {
 }
 
 onMounted(async () => {
+  $q.platform.is.android && $q.platform.is.mobile
+    ? (isShowInstallApp.value = true)
+    : (isShowInstallApp.value = false);
+
   isShowLogoutButton.value = localStorage.getItem("isLogin") || false;
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
   const routerPath = router.currentRoute.value.fullPath;
@@ -74,7 +84,33 @@ onMounted(async () => {
       listRouter.shift();
     }
   }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    console.log("beforeinstallprompt event fired!"); // Debugging log
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallAppPrompt(e);
+  });
 });
+
+const showInstallAppPrompt = async () => {
+  console.log("Deferred Prompt:", deferredPrompt); // Debugging log
+
+  if (!deferredPrompt) {
+    console.warn("No install prompt available.");
+    return;
+  }
+
+  try {
+    await deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      console.log("User choice:", choiceResult);
+      deferredPrompt = null;
+    });
+  } catch (err) {
+    console.error("Error in showInstallAppPrompt:", err);
+  }
+};
 
 onBeforeMount(() => {});
 
@@ -309,6 +345,24 @@ watch(
               </q-item-section>
             </q-item>
           </router-link> -->
+
+          <q-item
+            v-if="isShowInstallApp"
+            clickable
+            v-ripple
+            @click="showInstallAppPrompt()"
+          >
+            <q-item-section avatar>
+              <q-icon
+                class="text-primary"
+                name="eva-arrow-circle-down-outline"
+              />
+            </q-item-section>
+
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              Tải app
+            </q-item-section>
+          </q-item>
 
           <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>

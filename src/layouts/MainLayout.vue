@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted, onBeforeMount, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { storageUtil } from "src/utils/storageUtil";
+import { useQuasar } from "quasar";
 
 const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
@@ -12,17 +13,23 @@ const userStatus = ref("");
 const isLogin = storageUtil.getLocalStorageData("isLogin");
 const role = ref("");
 const routerName = ref("");
+const $q = useQuasar();
 
 /* in Vue file states */
 const currentPassword = ref("");
 const newPassword = ref("");
 const isShowCurrentPassword = ref(false);
 const isShowNewPassword = ref(false);
+const isShowInstallApp = ref(false);
 
 /* handle service worker state */
 var deferredPrompt;
 
 onMounted(async () => {
+  $q.platform.is.android && $q.platform.is.mobile
+    ? (isShowInstallApp.value = true)
+    : (isShowInstallApp.value = false);
+
   role.value = storageUtil.getLocalStorageData("userAuthInfo")?.role;
 
   window.addEventListener("beforeinstallprompt", (e) => {
@@ -51,15 +58,6 @@ const showInstallAppPrompt = async () => {
     console.error("Error in showInstallAppPrompt:", err);
   }
 };
-
-onBeforeMount(() => {
-  window.addEventListener("beforeinstallprompt", (e) => {
-    console.log("beforeinstallprompt event fired!"); // Debugging log
-    e.preventDefault();
-    deferredPrompt = e;
-    showInstallAppPrompt(e);
-  });
-});
 
 watch(
   () => storeSupabase.listUserData,
@@ -315,7 +313,12 @@ const handleChangePassword = async () => {
             </q-item-section>
           </q-item>
 
-          <q-item clickable v-ripple @click="showInstallAppPrompt()">
+          <q-item
+            v-if="isShowInstallApp"
+            clickable
+            v-ripple
+            @click="showInstallAppPrompt()"
+          >
             <q-item-section avatar>
               <q-icon
                 class="text-primary"
