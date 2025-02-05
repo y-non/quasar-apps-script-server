@@ -11,15 +11,14 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@primevue/themes": "^4.2.5",
     "@quasar/extras": "^1.0.0",
     "@supabase/supabase-js": "^2.47.8",
+    "@vueuse/core": "^12.5.0",
     "axios": "^0.21.1",
     "chart.js": "^4.4.7",
     "dotenv": "^16.4.7",
     "html5-qrcode": "^2.3.8",
     "pinia": "^2.0.11",
-    "primeicons": "^7.0.0",
     "qrcode.vue": "^3.6.0",
     "quasar": "^2.6.0",
     "vue": "^3.0.0",
