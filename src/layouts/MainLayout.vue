@@ -4,6 +4,7 @@ import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { storageUtil } from "src/utils/storageUtil";
 import { useQuasar } from "quasar";
+import { useNetwork } from "@vueuse/core";
 
 const storeAuthentication = useAuthenticationStore();
 const storeSupabase = useSupabaseStore();
@@ -14,6 +15,7 @@ const isLogin = storageUtil.getLocalStorageData("isLogin");
 const role = ref("");
 const routerName = ref("");
 const $q = useQuasar();
+const { downlink } = useNetwork();
 
 /* in Vue file states */
 const currentPassword = ref("");
@@ -77,6 +79,38 @@ const handleChangePassword = async () => {
     newPassword.value
   );
 };
+
+/* Handle network */
+window.addEventListener("online", () => {
+  storeSupabase.isOnline = true;
+});
+
+window.addEventListener("offline", () => {
+  storeSupabase.isOnline = false;
+});
+
+//handle weak network
+// navigator.connection.addEventListener("change", updateConnectionStatus);
+// function updateConnectionStatus() {
+//   const connection = navigator.connection;
+
+//   if (connection) {
+//     if (connection.downlink < 1) {
+//       storeSupabase.isShowWeakNetwork = true;
+//     } else {
+//       storeSupabase.isShowWeakNetwork = false;
+//     }
+//   }
+// }
+
+watch(downlink, (speed) => {
+  // storeSupabase.isShowWeakNetwork = speed < 1;
+  if (speed < 1) {
+    storeSupabase.isShowWeakNetwork = true;
+  } else {
+    storeSupabase.isShowWeakNetwork = false;
+  }
+});
 </script>
 
 <template>
@@ -91,17 +125,19 @@ const handleChangePassword = async () => {
           class="flex justify-between full-width"
           style="align-items: center"
         >
-          <q-btn
-            v-if="isLogin && role !== 'admin'"
-            flat
-            dense
-            round
-            icon="menu"
-            aria-label="Menu"
-            @click="drawer = !drawer"
-          >
+          <div>
+            <q-btn
+              v-if="isLogin && role !== 'admin'"
+              flat
+              dense
+              round
+              icon="menu"
+              aria-label="Menu"
+              @click="drawer = !drawer"
+            >
+            </q-btn>
             <span class="q-ml-md">{{ userStatus?.username }}</span>
-          </q-btn>
+          </div>
 
           <div
             v-if="role !== 'admin' && role !== 'superadmin'"
@@ -416,6 +452,28 @@ const handleChangePassword = async () => {
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <q-banner
+    v-if="storeSupabase.isOnline === false"
+    dense
+    class="bg-red-8 text-white full-width"
+    style="position: fixed; bottom: 0; z-index: -1"
+  >
+    <q-icon name="eva-wifi-off-outline" size="xs" />
+    <span class="q-pa-sm"
+      >Bạn đang ngoại tuyến. Một số tính năng có thể không hoạt động.</span
+    >
+  </q-banner>
+
+  <q-banner
+    v-else-if="storeSupabase.isOnline && storeSupabase.isShowWeakNetwork"
+    dense
+    class="bg-yellow-10 text-white full-width"
+    style="position: fixed; bottom: 0; z-index: -1"
+  >
+    <q-icon name="eva-wifi-off-outline" size="xs" />
+    <span class="q-pa-sm">Cảnh báo kết nối mạng yếu.</span>
+  </q-banner>
 </template>
 
 <style lang="scss" scoped>

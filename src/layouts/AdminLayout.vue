@@ -6,6 +6,7 @@ import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { useRouter } from "vue-router";
 import { storageUtil } from "src/utils/storageUtil";
 import { useQuasar } from "quasar";
+import { useNetwork } from "@vueuse/core";
 
 const router = useRouter();
 const storeMain = useMainStore();
@@ -55,6 +56,7 @@ const listRouter = [
   },
 ];
 const $q = useQuasar();
+const { downlink } = useNetwork();
 const isShowInstallApp = ref(false);
 
 /* handle service worker state */
@@ -142,18 +144,27 @@ window.addEventListener("offline", () => {
 });
 
 //handle weak network
-navigator.connection.addEventListener("change", updateConnectionStatus);
-function updateConnectionStatus() {
-  const connection = navigator.connection;
-  if (connection) {
-    // connection.effectiveType === "slow-2g"
-    if (connection.downlink < 1) {
-      storeSupabase.isShowWeakNetwork = true;
-    } else {
-      storeSupabase.isShowWeakNetwork = false;
-    }
+// navigator.connection.addEventListener("change", updateConnectionStatus);
+// function updateConnectionStatus() {
+//   const connection = navigator.connection;
+//   if (connection) {
+//     // connection.effectiveType === "slow-2g"
+//     if (connection.downlink < 1) {
+//       storeSupabase.isShowWeakNetwork = true;
+//     } else {
+//       storeSupabase.isShowWeakNetwork = false;
+//     }
+//   }
+// }
+
+watch(downlink, (speed) => {
+  // storeSupabase.isShowWeakNetwork = speed < 1;
+  if (speed < 1) {
+    storeSupabase.isShowWeakNetwork = true;
+  } else {
+    storeSupabase.isShowWeakNetwork = false;
   }
-}
+});
 </script>
 
 <template>

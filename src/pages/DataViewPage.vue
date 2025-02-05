@@ -238,30 +238,6 @@ const getColor = (status) => {
 const onDetect = (decodedString) => {
   handleQRCodeScan(decodedString);
 };
-
-/* Handle network */
-window.addEventListener("online", () => {
-  storeSupabase.isOnline = true;
-});
-
-window.addEventListener("offline", () => {
-  storeSupabase.isOnline = false;
-});
-
-//handle weak network
-navigator.connection.addEventListener("change", updateConnectionStatus);
-function updateConnectionStatus() {
-  const connection = navigator.connection;
-
-  console.log(connection);
-  if (connection) {
-    if (connection.downlink < 1) {
-      storeSupabase.isShowWeakNetwork = true;
-    } else {
-      storeSupabase.isShowWeakNetwork = false;
-    }
-  }
-}
 </script>
 
 <template>
@@ -1901,28 +1877,6 @@ function updateConnectionStatus() {
       </q-card>
     </q-dialog>
   </q-page>
-
-  <q-banner
-    v-if="storeSupabase.isOnline === false"
-    dense
-    class="bg-red-8 text-white full-width"
-    style="position: fixed; bottom: 0; z-index: -1"
-  >
-    <q-icon name="eva-wifi-off-outline" size="xs" />
-    <span class="q-pa-sm"
-      >Bạn đang ngoại tuyến. Một số tính năng có thể không hoạt động.</span
-    >
-  </q-banner>
-
-  <q-banner
-    v-else-if="storeSupabase.isOnline && storeSupabase.isShowWeakNetwork"
-    dense
-    class="bg-yellow-10 text-white full-width"
-    style="position: fixed; bottom: 0; z-index: -1"
-  >
-    <q-icon name="eva-wifi-off-outline" size="xs" />
-    <span class="q-pa-sm">Cảnh báo kết nối mạng yếu.</span>
-  </q-banner>
 </template>
 
 <style lang="scss" scoped>
