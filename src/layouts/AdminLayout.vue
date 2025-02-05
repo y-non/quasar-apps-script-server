@@ -387,6 +387,23 @@ function updateConnectionStatus() {
             </q-item-section>
           </q-item>
 
+          <q-item clickable v-ripple @click="$q.fullscreen.toggle()">
+            <q-item-section avatar>
+              <q-icon
+                class="text-grey-8"
+                :name="
+                  $q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'
+                "
+              />
+            </q-item-section>
+
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              {{
+                $q.fullscreen.isActive ? "Thoát toàn màn hình" : "Toàn màn hình"
+              }}
+            </q-item-section>
+          </q-item>
+
           <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-red-10 text-bold" name="logout" />
