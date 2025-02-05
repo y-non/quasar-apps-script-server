@@ -5,8 +5,13 @@ import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
 import { useRouter } from "vue-router";
 import { storageUtil } from "src/utils/storageUtil";
-import { useQuasar } from "quasar";
+import { Dialog, useQuasar } from "quasar";
 import { useNetwork } from "@vueuse/core";
+import { useCounter, useIdle } from "@vueuse/core";
+import { supabase } from "src/utils/superbase";
+
+const { inc, count } = useCounter();
+const { idle, lastActive, reset } = useIdle(30 * 6 * 1000); // 5 min
 
 const router = useRouter();
 const storeMain = useMainStore();
@@ -133,6 +138,31 @@ watch(
     handleGetRouterName(val);
   }
 );
+
+watch(idle, (idleValue) => {
+  if (idleValue && isLogin) {
+    inc();
+    Dialog.create({
+      title: "Thông báo",
+      message: "Đã hết phiên đăng nhập, vui lòng đăng nhập lại!",
+      ok: true,
+      cancel: false,
+      persistent: true,
+    }).onOk(async () => {
+      localStorage.clear();
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error.message);
+        return;
+      }
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    });
+    reset(); // restarts the idle timer. Does not change lastActive value
+  }
+});
 
 /* Handle network */
 window.addEventListener("online", () => {
