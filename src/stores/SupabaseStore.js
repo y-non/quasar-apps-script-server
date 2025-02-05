@@ -4,6 +4,7 @@ import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
 import { useAuthenticationStore } from "./AuthenticationStore";
+import { openDB } from "idb";
 
 export const useSupabaseStore = defineStore("supabase", {
   state: () => ({
@@ -767,29 +768,42 @@ export const useSupabaseStore = defineStore("supabase", {
         const { data: result, error } = await supabase.rpc(
           "fetch_user_order_data"
         );
+        console.log(result);
+        const userData = storageUtil.getLocalStorageData("userAuthInfo");
+
+        /*  handle offline mode get data form indexDB */
+        //Open indexDB here and create if not exist
+        const db = await openDB("myAppDB", 1, {
+          upgrade(db) {
+            if (!db.objectStoreNames.contains("userStatus")) {
+              db.createObjectStore("userStatus", { keyPath: "userid" });
+            }
+          },
+        });
 
         if (error) {
-          console.error("Error fetching user status: ", error);
+          //get data from indexDB
+          this.listUserData = await db.getAll("userStatus");
         } else {
           this.listUserData = result;
 
-          //set user data to local for quick access
-          // storageUtil.setLocalStorageData("listUserData", this.listUserData);
+          //after have data now set to indexDB
+          const tx = db.transaction("userStatus", "readwrite");
+          const store = tx.objectStore("userStatus");
+          await store.clear();
+          result.forEach(async (item) => await store.put(item));
+        }
 
-          //and now gonna set self user status to localstorage
-          const userData = storageUtil.getLocalStorageData("userAuthInfo");
+        if (userData) {
+          const selfUserStatus = this.listUserData.filter(
+            (item) => item.userid === userData.user_id
+          )[0];
 
-          if (userData) {
-            const selfUserStatus = this.listUserData.filter(
-              (item) => item.userid === userData.user_id
-            )[0];
+          this.selfUserStatus = { ...selfUserStatus };
 
-            this.selfUserStatus = { ...selfUserStatus };
-
-            storageUtil.setLocalStorageData("selfAppInfo", selfUserStatus);
-          } else {
-            console.error("Data user not found");
-          }
+          storageUtil.setLocalStorageData("selfAppInfo", selfUserStatus);
+        } else {
+          console.error("Data user not found");
         }
       } catch (err) {
         console.error("Internal Server Error: ", err);
