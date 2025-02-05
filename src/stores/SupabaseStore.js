@@ -62,6 +62,7 @@ export const useSupabaseStore = defineStore("supabase", {
     showUpdateDialog: false,
     showHistoryDialog: false,
     showNotizen: false,
+    isOnline: true,
   }),
   actions: {
     async getInit() {
@@ -768,7 +769,6 @@ export const useSupabaseStore = defineStore("supabase", {
         const { data: result, error } = await supabase.rpc(
           "fetch_user_order_data"
         );
-        console.log(result);
         const userData = storageUtil.getLocalStorageData("userAuthInfo");
 
         /*  handle offline mode get data form indexDB */

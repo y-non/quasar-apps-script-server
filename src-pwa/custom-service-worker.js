@@ -41,9 +41,7 @@ registerRoute(
     return (
       url.pathname !== "/rest/v1/order_menu" &&
       url.pathname !== "/rest/v1/user_sessions" &&
-      url.pathname !== "/rest/v1/orders" &&
-      url !== "https://www.google.com/favicon.ico"
-      // url.pathname !== "/rest/v1/discounts"
+      url.pathname !== "/rest/v1/orders"
     );
   },
   new StaleWhileRevalidate({
