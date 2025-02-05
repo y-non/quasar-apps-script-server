@@ -252,8 +252,10 @@ window.addEventListener("offline", () => {
 navigator.connection.addEventListener("change", updateConnectionStatus);
 function updateConnectionStatus() {
   const connection = navigator.connection;
+
+  console.log(connection);
   if (connection) {
-    if (connection.effectiveType === "slow-2g") {
+    if (connection.downlink < 1) {
       storeSupabase.isShowWeakNetwork = true;
     } else {
       storeSupabase.isShowWeakNetwork = false;
