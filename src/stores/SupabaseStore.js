@@ -63,6 +63,7 @@ export const useSupabaseStore = defineStore("supabase", {
     showHistoryDialog: false,
     showNotizen: false,
     isOnline: true,
+    isShowWeakNetwork: false,
   }),
   actions: {
     async getInit() {

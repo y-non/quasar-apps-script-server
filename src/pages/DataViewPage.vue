@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { ref, onMounted, computed, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
@@ -15,12 +15,12 @@ import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
+
 // Make sure to install vue-qrcode-reader
 
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
 import ScanQrComponent from "../components/ScanQrComponent.vue";
 import ScanQrComponentV2 from "../components/ScanQrComponentV2.vue";
-import { watch } from "vue";
 
 const showQRCodeDialog = ref(false); // Dialog visibility state
 const storeScanQr = useScanQrStore();
@@ -247,6 +247,19 @@ window.addEventListener("online", () => {
 window.addEventListener("offline", () => {
   storeSupabase.isOnline = false;
 });
+
+//handle weak network
+navigator.connection.addEventListener("change", updateConnectionStatus);
+function updateConnectionStatus() {
+  const connection = navigator.connection;
+  if (connection) {
+    if (connection.effectiveType === "slow-2g") {
+      storeSupabase.isShowWeakNetwork = true;
+    } else {
+      storeSupabase.isShowWeakNetwork = false;
+    }
+  }
+}
 </script>
 
 <template>
@@ -1897,6 +1910,16 @@ window.addEventListener("offline", () => {
     <span class="q-pa-sm"
       >Bạn đang ngoại tuyến. Một số tính năng có thể không hoạt động.</span
     >
+  </q-banner>
+
+  <q-banner
+    v-else-if="storeSupabase.isOnline && storeSupabase.isShowWeakNetwork"
+    dense
+    class="bg-yellow-10 text-white full-width"
+    style="position: fixed; bottom: 0; z-index: -1"
+  >
+    <q-icon name="eva-wifi-off-outline" size="xs" />
+    <span class="q-pa-sm">Cảnh báo kết nối mạng yếu.</span>
   </q-banner>
 </template>
 
