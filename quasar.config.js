@@ -107,7 +107,7 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: ["Loading", "Notify", "Dialog", "BottomSheet"],
+      plugins: ["Loading", "Notify", "Dialog", "BottomSheet", "AppFullscreen"],
     },
 
     animations: "all", // --- includes all animations
@@ -149,7 +149,7 @@ module.exports = configure(function (/* ctx */) {
 
     // https://v2.quasar.dev/quasar-cli/developing-pwa/configuring-pwa
     pwa: {
-      workboxMode: "generateSW", // or 'injectManifest'
+      workboxMode: "injectManifest", // or 'injectManifest'
       injectPwaMetaTags: true,
       swFilename: "sw.js",
       manifestFilename: "manifest.json",
@@ -159,6 +159,22 @@ module.exports = configure(function (/* ctx */) {
       // extendInjectManifestOptions (cfg) {},
       // extendManifestJson (json) {}
       // extendPWACustomSWConf (esbuildConf) {}
+      // workboxOptions: {
+      //   runtimeCaching: [
+      //     {
+      //       urlPattern: /\/api\/.*/, // Cache API requests
+      //       handler: "NetworkFirst",
+      //       options: {
+      //         backgroundSync: {
+      //           name: "api-sync-queue",
+      //           options: {
+      //             maxRetentionTime: 24 * 60, // Retain for 24 hours
+      //           },
+      //         },
+      //       },
+      //     },
+      //   ],
+      // },
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli/developing-cordova-apps/configuring-cordova

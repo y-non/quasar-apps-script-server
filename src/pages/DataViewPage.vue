@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from "vue";
+import { ref, onMounted, computed, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 import { useSupabaseStore } from "src/stores/SupabaseStore";
@@ -15,6 +15,7 @@ import deleteImg from "../assets/icons/delete.png";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
+
 // Make sure to install vue-qrcode-reader
 
 import { QrcodeStream, QrcodeDropZone, QrcodeCapture } from "vue-qrcode-reader";
@@ -48,9 +49,13 @@ const slideItems = ref(storeSupabase.slideItems);
 const slideItemsUpdate = ref(storeSupabase.slideItemsUpdate);
 
 const visibleCount = ref(3);
-const visibleUsers = computed(() =>
-  storeSupabase.listUserData.slice(0, visibleCount.value)
-);
+const visibleUsers = computed(() => {
+  const sortArray = [...storeSupabase.listUserData].sort(
+    (a, b) => b.ordernumber - a.ordernumber
+  );
+  // return storeSupabase.listUserData.slice(0, visibleCount.value);
+  return sortArray.slice(0, visibleCount.value);
+});
 const hasMoreUsers = computed(
   () => visibleCount.value < storeSupabase.listUserData.length
 );
@@ -663,7 +668,7 @@ const onDetect = (decodedString) => {
             @submit="storeSupabase.addData(storeSupabase.newData)"
           >
             <div class="full-width justify-between flex q-px-md">
-              <!-- <q-badge
+              <q-badge
                 :outline="!item.isSelected"
                 color="primary"
                 v-for="(item, index) in storeSupabase.listDiscount"
@@ -677,7 +682,7 @@ const onDetect = (decodedString) => {
                   storeSupabase.handleClickDiscount(item.id);
                   storeSupabase.isHaveNotSaveDataAddYet = true;
                 "
-              /> -->
+              />
             </div>
 
             <span

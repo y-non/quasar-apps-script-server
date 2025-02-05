@@ -13,9 +13,9 @@
 
 
 
-import {Loading,Notify,Dialog,BottomSheet} from 'quasar'
+import {Loading,Notify,Dialog,BottomSheet,AppFullscreen} from 'quasar'
 
 
 
-export default { config: {},plugins: {Loading,Notify,Dialog,BottomSheet} }
+export default { config: {},plugins: {Loading,Notify,Dialog,BottomSheet,AppFullscreen} }
 
