@@ -11,7 +11,7 @@ import { useCounter, useIdle } from "@vueuse/core";
 import { supabase } from "src/utils/superbase";
 
 const { inc, count } = useCounter();
-const { idle, lastActive, reset } = useIdle(30 * 6 * 1000); // 5 min
+const { idle, lastActive, reset } = useIdle(300 * 6 * 1000); // 5 min
 
 const router = useRouter();
 const storeMain = useMainStore();

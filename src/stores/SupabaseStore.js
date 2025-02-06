@@ -20,7 +20,7 @@ export const useSupabaseStore = defineStore("supabase", {
 
     /* reactive */
     isLogin: false,
-    isLoadingMainScreen: false,
+    isLoadingMainScreen: true,
     isShowMoreUsers: false,
     loadingSelect: false,
     isLoadingHistory: false,
@@ -78,11 +78,11 @@ export const useSupabaseStore = defineStore("supabase", {
     /* CRUD DATA */
     async fetchData() {
       try {
+        this.isLoadingMainScreen = true;
         //hàm này lên đầu để user không cần phải đợi load user data vẫn có thể thực hiện action khi app vừa render
         await this.fetchMenuData();
         await this.getListStatus();
         await this.getUserStatus();
-        this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
         const startOfToday = new Date();
