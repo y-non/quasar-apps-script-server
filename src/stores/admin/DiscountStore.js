@@ -15,6 +15,13 @@ export const useDiscountStore = defineStore("discount", {
     deleteObject: {},
   }),
   actions: {
+    async getInit() {
+      const storeUtils = useUtilsStore();
+      this.isLoadingMainScreen = true;
+      this.listDiscount = await storeUtils.getDiscount();
+      this.isLoadingMainScreen = false;
+    },
+
     async postCreateDiscount(dataInsert) {
       try {
         Loading.show();

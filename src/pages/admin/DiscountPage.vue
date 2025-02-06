@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUtilsStore } from "src/stores/UtilsStore";
+
 import { useDiscountStore } from "src/stores/admin/DiscountStore";
 
 // import loadingVideo from "../assets/video/angry-cute.mp4";
@@ -12,13 +12,11 @@ import deleteImg from "../../assets/icons/delete.png";
 import { useQuasar } from "quasar";
 
 const storeDiscount = useDiscountStore();
-const storeUtils = useUtilsStore();
+
 const $q = useQuasar();
 
 onMounted(async () => {
-  storeDiscount.isLoadingMainScreen = true;
-  storeDiscount.listDiscount = await storeUtils.getDiscount();
-  storeDiscount.isLoadingMainScreen = false;
+  await storeDiscount.getInit();
 });
 
 function showAction(item) {
@@ -71,30 +69,31 @@ function showAction(item) {
     </div>
 
     <q-list class="q-mt-lg" v-else>
-      <div v-if="storeDiscount.listDiscount?.length">
-        <span class="text-h6 t-default text-bold q-pa-sm q-mb-md"
-          >Danh sách mã giảm giá</span
-        >
-        <q-card
-          v-for="(item, index) in storeDiscount.listDiscount"
-          :key="index"
-          flat
-          bordered
-          class="my-card q-mb-md q-ma-sm bg-default"
-          style="border-radius: 8px"
-        >
-          <q-card-section
-            class="flex flex justify-between q-py-md"
-            style="align-items: center"
+      <q-pull-to-refresh @refresh="storeDiscount.getInit()" color="primary">
+        <div v-if="storeDiscount.listDiscount?.length">
+          <span class="text-h6 t-default text-bold q-pa-sm q-mb-md"
+            >Danh sách mã giảm giá</span
           >
-            <div>
-              <div class="text-subtitle2 text-grey">
-                {{ new Date(item.created_at).toLocaleDateString("vi-VN") }}
+          <q-card
+            v-for="(item, index) in storeDiscount.listDiscount"
+            :key="index"
+            flat
+            bordered
+            class="my-card q-mb-md q-ma-sm bg-default"
+            style="border-radius: 8px"
+          >
+            <q-card-section
+              class="flex flex justify-between q-py-md"
+              style="align-items: center"
+            >
+              <div>
+                <div class="text-subtitle2 text-grey">
+                  {{ new Date(item.created_at).toLocaleDateString("vi-VN") }}
+                </div>
               </div>
-            </div>
 
-            <div class="flex flex-center">
-              <!-- <q-icon
+              <div class="flex flex-center">
+                <!-- <q-icon
                 name="eva-edit-2-outline"
                 size="sm"
                 :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
@@ -106,59 +105,60 @@ function showAction(item) {
                 "
               /> -->
 
-              <q-icon
-                v-if="!item.isused"
-                name="more_vert"
-                size="sm"
-                :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
-                @click="!storeDiscount.loadingSelect ? showAction(item) : []"
-              />
+                <q-icon
+                  v-if="!item.isused"
+                  name="more_vert"
+                  size="sm"
+                  :color="storeDiscount.loadingSelect ? 'grey-3' : 'grey-5'"
+                  @click="!storeDiscount.loadingSelect ? showAction(item) : []"
+                />
 
-              <!-- <span v-else class="text-red-9">Đã dùng</span> -->
-            </div>
-          </q-card-section>
-          <q-card-section>
-            <div
-              class="flex justify-between full-width q-py-xs q-px-none q-mx-none"
-              @click="item.showQList = !item.showQList"
-              style="align-items: center"
-            >
-              <span class="text-bold text-grey-7 text-h6">Giá trị</span>
-              <span v-if="item.type === 'none'" class="t-default text-h4">{{
-                dateUtil.formatter.format(item.value)
-              }}</span>
-              <span v-else class="t-default text-h4"
-                >{{ item.value }} {{ item.type }}</span
+                <!-- <span v-else class="text-red-9">Đã dùng</span> -->
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <div
+                class="flex justify-between full-width q-py-xs q-px-none q-mx-none"
+                @click="item.showQList = !item.showQList"
+                style="align-items: center"
               >
-            </div>
+                <span class="text-bold text-grey-7 text-h6">Giá trị</span>
+                <span v-if="item.type === 'none'" class="t-default text-h4">{{
+                  dateUtil.formatter.format(item.value)
+                }}</span>
+                <span v-else class="t-default text-h4"
+                  >{{ item.value }} {{ item.type }}</span
+                >
+              </div>
 
-            <div class="flex justify-between">
-              <span class="text-grey-6">{{ item.description }}</span>
+              <div class="flex justify-between">
+                <span class="text-grey-6">{{ item.description }}</span>
 
-              <!-- <div
+                <!-- <div
                 class="text-body2"
                 :class="item.isused ? 'text-red' : 'text-green'"
               >
                 {{ item.isused ? "Đã sử dụng" : "Chưa sử dụng" }}
               </div> -->
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
 
-      <div
-        class="flex flex-center column full-height"
-        style="margin-top: 200px"
-        v-else
-      >
-        <q-img
-          :src="noData"
-          spinner-color="primary"
-          spinner-size="82px"
-          width="250px"
-        />
-        <span class="text-h5 text-grey-7 text-bold">Không có dữ liệu</span>
-      </div>
+        <div
+          class="flex flex-center column full-height"
+          style="margin-top: 200px"
+          v-else
+        >
+          <q-img
+            :src="noData"
+            spinner-color="primary"
+            spinner-size="82px"
+            width="250px"
+          />
+          <span class="text-h5 text-grey-7 text-bold">Không có dữ liệu</span>
+        </div>
+      </q-pull-to-refresh>
     </q-list>
 
     <q-page-sticky position="bottom-right" :offset="[18, 48]">

@@ -22,11 +22,13 @@ export const useAdminStore = defineStore("admin", {
   }),
   actions: {
     async getInit() {
+      this.isLoadingMainScreen = true;
       const storeUtils = useUtilsStore();
       this.listDiscount = await storeUtils.getDiscount();
       this.listGiftCard = await this.getListGiftCard();
       this.listOrder = await this.getOrderList();
       this.listOrderOriginal = this.listOrder;
+      this.isLoadingMainScreen = false;
     },
 
     async getOrderList() {
