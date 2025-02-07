@@ -204,7 +204,7 @@ const filterFn = (val, update) => {
                   style="align-items: center"
                 >
                   <q-icon name="eva-person-outline" size="xs" />
-                  <span class="q-ml-sm">{{ item.users.display_name }}</span>
+                  <span class="q-ml-sm">{{ item?.users?.display_name }}</span>
                 </div>
 
                 <div
@@ -213,7 +213,7 @@ const filterFn = (val, update) => {
                 >
                   <q-icon name="eva-home-outline" size="xs" />
                   <span class="q-ml-sm text-capitalize">
-                    {{ item.siteName }}</span
+                    {{ item.site.name }}</span
                   >
                 </div>
               </div>
@@ -248,15 +248,21 @@ const filterFn = (val, update) => {
             <q-card-section>
               <div
                 class="flex justify-between full-width q-py-xs q-px-none q-mx-none"
-                @click="item.showQList = !item.showQList"
+                @click="
+                  () => {
+                    if (!item.isHandled) {
+                      item.isLoadingShowDetail = true;
+                    }
+                    storeAdmin.clickShowOrderDetails(item.id);
+                    item.showQList = !item.showQList;
+                  }
+                "
                 style="align-items: center"
               >
                 <span class="text-bold text-grey-7 text-h6">Doanh thu</span>
-                <!-- <span class="text-blue text-h4">{{
-                dateUtil.formatter.format(item.totalPrice)
-              }}</span> -->
+
                 <span v-if="!item.showQList" class="text-blue text-h4">{{
-                  dateUtil.formatter.format(item.totalPrice)
+                  dateUtil.formatter.format(item.total_price)
                 }}</span>
 
                 <div
@@ -268,7 +274,7 @@ const filterFn = (val, update) => {
                     <span class="text-grey-8">Giá gốc: </span>
 
                     <span>
-                      {{ dateUtil.formatter.format(item.totalPrice) }}
+                      {{ dateUtil.formatter.format(item.originalPrice) }}
                     </span>
                   </div>
 
@@ -313,7 +319,7 @@ const filterFn = (val, update) => {
                   >
                     <span class="text-bold q-pr-md">Tổng cộng:</span>
                     <span class="text-blue text-bold">
-                      {{
+                      <!-- {{
                         dateUtil.formatter.format(
                           Math.max(
                             (item.isHaveDiscount
@@ -330,32 +336,43 @@ const filterFn = (val, update) => {
                             0 // Ensure the value is at least 0
                           )
                         )
-                      }}
+                      }} -->
+                      {{ dateUtil.formatter.format(item.total_price) }}
                     </span>
                   </div>
                 </div>
               </div>
 
               <q-list v-if="item.showQList" class="q-mb-md" bordered separator>
-                <q-item v-for="(menu, index) in item.menuSelected" :key="index">
-                  <q-item-section>
-                    <div
-                      class="flex justify-between"
-                      style="align-items: center"
-                    >
-                      <div class="flex justify-between full-width">
-                        <div style="width: 80%" class="text-grey-7">
-                          {{ menu.label }}
-                        </div>
-                        <div class="text-grey text-bold">
-                          <span class="text-blue">{{ menu.quantity }} x</span>
+                <q-linear-progress
+                  v-if="item.isLoadingShowDetail"
+                  indeterminate
+                />
 
-                          {{ dateUtil.formatter.format(menu.value) }}
+                <div v-else>
+                  <q-item
+                    v-for="(menu, index) in item.menuSelected"
+                    :key="index"
+                  >
+                    <q-item-section>
+                      <div
+                        class="flex justify-between"
+                        style="align-items: center"
+                      >
+                        <div class="flex justify-between full-width">
+                          <div style="width: 80%" class="text-grey-7">
+                            {{ menu.label }}
+                          </div>
+                          <div class="text-grey text-bold">
+                            <span class="text-blue">{{ menu.quantity }} x</span>
+
+                            {{ dateUtil.formatter.format(menu.value) }}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </q-item-section>
-                </q-item>
+                    </q-item-section>
+                  </q-item>
+                </div>
               </q-list>
 
               <span class="text-grey-6">{{ item.notizen }}</span>

@@ -4,6 +4,7 @@ import { useUtilsStore } from "./UtilsStore";
 import { Dialog, Loading, Notify } from "quasar";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
+import { subscribeUtil } from "src/utils/subscribeToChannelUtil";
 
 export const useAdminStore = defineStore("admin", {
   state: () => ({
@@ -17,6 +18,7 @@ export const useAdminStore = defineStore("admin", {
     isLoadingHistory: false,
     showEditDialog: false,
     selectedAccount: {},
+    isLoadingShowDetail: false,
 
     datePicker: "",
   }),
@@ -29,22 +31,156 @@ export const useAdminStore = defineStore("admin", {
       this.listOrder = await this.getOrderList();
       this.listOrderOriginal = this.listOrder;
       this.isLoadingMainScreen = false;
+      await subscribeUtil.subscribeToTableOrders();
+    },
+
+    async fetchOrderWithUser(orderId) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, users(*), site(*)") // Fetch related user data
+        .eq("id", orderId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching order with user:", error);
+        return null;
+      }
+
+      return data;
     },
 
     async getOrderList() {
       try {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0); // Set time to the start of the day (midnight)
+
         const storeUtils = useUtilsStore();
         const { data, error } = await supabase
           .from("orders")
-          .select("*, users(*)");
+          .select("*, users(*), site(*)")
+          .gte("created_at", startOfToday.toISOString()) // Filter for today only
+          .order("created_at", { ascending: false });
 
         if (error) {
           console.error("Caught error when fetching data: ", error);
         } else {
+          //get menu data if localstorage do not have
           this.menuData = await storeUtils.fetchMenuData();
 
-          return await this.handleDataToDisplay(data);
+          //format to show some values such as site and date time
+          return data.map((item) => {
+            const formattedTime = dateUtil.formatDate(item.created_at);
+            return {
+              ...item,
+              datum: formattedTime,
+            };
+          });
         }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    // async handleDataToDisplay(inputData) {
+    //   try {
+    //     let data = [];
+    //     //phần này để handle data to show lên cho người dùng
+    //     data = await Promise.all(
+    //       inputData
+    //         .map(async (item) => this.handleFormatOrderItemData(item))
+    //         .filter((item) => item)
+    //     );
+
+    //     await Promise.all(data);
+    //     /* handle menu item in main page */
+    //     data.forEach((_, index) => {
+    //       if (data[index].menu.length > 1) {
+    //         data[index].menuSelected = data[index].menu.map((item) => {
+    //           return {
+    //             ...this.menuData.filter(
+    //               (menuItem) => item.menu_id == menuItem.id
+    //             )[0],
+    //             quantity: item.quantity,
+    //           };
+    //         });
+    //       }
+    //     });
+    //     if (!data.length) {
+    //       data = [];
+    //     }
+
+    //     return data;
+    //   } catch (err) {
+    //     console.error("Internal Server Error: ", err);
+    //   }
+    // },
+
+    async handleFormatOrderItemData(item) {
+      try {
+        const menu = await this.fetchOrderItem(item.id);
+
+        let originalPrice = 0;
+        menu.forEach((item) => {
+          originalPrice += item.price;
+        });
+
+        const menuSelected = menu.map((item) => {
+          return {
+            ...this.menuData.filter(
+              (menuItem) => item.menu_id == menuItem.id
+            )[0],
+            quantity: item.quantity,
+          };
+        });
+
+        let discount = this.listDiscount.filter(
+          (discount) => discount.id == item.discount
+        )[0];
+
+        let giftCard = 0;
+
+        this.listGiftCard.forEach((item) => {
+          if (item.id == item.giftcard) {
+            giftCard = item.value;
+          }
+        });
+
+        return {
+          ...item,
+          notizen: item.description,
+          isHandled: true,
+          menuSelected,
+          originalPrice,
+          discountObject: discount ? discount : {},
+          giftCardObject: giftCard ? giftCard : {},
+          isHaveDiscount: discount ? true : false,
+          isHaveGiftCard: giftCard ? true : false,
+          isLoadingShowDetail: false,
+        };
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async clickShowOrderDetails(id) {
+      try {
+        const itemClickAt = this.listOrder.filter((item) => item.id === id)[0];
+        let formattedItem;
+
+        if (!itemClickAt.isHandled) {
+          formattedItem = await this.handleFormatOrderItemData(itemClickAt);
+          this.listOrder.forEach((item, index) => {
+            if (item.id === id) {
+              this.listOrder[index] = { ...formattedItem };
+            }
+          });
+        }
+
+        // this.listOrder = this.listOrder.map((item) => {
+        //   if (item.id === id) {
+        //     return formattedItem;
+        //   }
+        // });
       } catch (err) {
         console.error("Internal Server Error: ", err);
       }
@@ -226,7 +362,7 @@ export const useAdminStore = defineStore("admin", {
             });
             Loading.hide();
 
-            this.listOrder = this.listOrder.filter((item) => item.id !== rowId);
+            // this.listOrder = this.listOrder.filter((item) => item.id !== rowId);
           } else {
             alert("Failed to delete data");
           }
@@ -234,98 +370,6 @@ export const useAdminStore = defineStore("admin", {
       } catch (error) {
         console.error("Error deleting data:", error);
         Loading.hide(); // Ensure loading state is reset even in case of error
-      }
-    },
-
-    async handleDataToDisplay(inputData) {
-      try {
-        let data = [];
-        //phần này để handle data to show lên cho người dùng
-        data = await Promise.all(
-          inputData
-            .map(async (item) => {
-              const formattedTime = dateUtil.formatDate(item.created_at);
-
-              const menuData = await this.fetchOrderItem(item.id);
-
-              let totalPrice = 0;
-              menuData.forEach((item) => {
-                totalPrice += item.price;
-              });
-
-              //handle check discount
-              let discount = this.listDiscount.filter(
-                (discount) => discount.id == item.discount
-              )[0];
-
-              if (discount) {
-                if (discount.type === "none") {
-                  totalPrice -= discount.value;
-                } else {
-                  totalPrice -= (totalPrice / 100) * discount.value;
-                }
-              }
-
-              //handle check gift card
-              let giftCard = 0;
-
-              this.listGiftCard.forEach((item) => {
-                if (item.id == item.giftcard) {
-                  giftCard = item.value;
-                }
-              });
-
-              if (giftCard) {
-                totalPrice -= giftCard.value;
-              }
-
-              //handle show site name
-              const listSiteData = storageUtil.getLocalStorageData("siteData");
-              const siteName = listSiteData.filter(
-                (site) => site.id === item.site
-              )[0].name;
-
-              return {
-                id: item.id,
-                notizen: item.description,
-                menu: menuData,
-                datum: formattedTime,
-                isHandled: true,
-                totalPrice: totalPrice,
-                discountObject: discount ? discount : {},
-                giftCardObject: giftCard ? giftCard : {},
-                created_at: item.created_at,
-                users: item.users,
-                siteName,
-                isHaveDiscount: discount ? true : false,
-                isHaveGiftCard: giftCard ? true : false,
-                is_edit: item.is_edit,
-              };
-            })
-            .filter((item) => item)
-        );
-
-        await Promise.all(data);
-        /* handle menu item in main page */
-        data.forEach((_, index) => {
-          if (data[index].menu.length > 1) {
-            data[index].menuSelected = data[index].menu.map((item) => {
-              return {
-                ...this.menuData.filter(
-                  (menuItem) => item.menu_id == menuItem.id
-                )[0],
-                quantity: item.quantity,
-              };
-            });
-          }
-        });
-        if (!data.length) {
-          data = [];
-        }
-
-        return data;
-      } catch (err) {
-        console.error("Internal Server Error: ", err);
       }
     },
 
