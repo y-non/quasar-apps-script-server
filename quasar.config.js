@@ -9,6 +9,7 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 const { configure } = require("quasar/wrappers");
+import vue from "@vitejs/plugin-vue";
 
 module.exports = configure(function (/* ctx */) {
   return {
@@ -77,9 +78,10 @@ module.exports = configure(function (/* ctx */) {
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
 
-      // vitePlugins: [
-      //   [ 'package-name', { ..options.. } ]
-      // ]
+      vitePlugins: [
+        // [ 'package-name', { ..options.. } ]
+        vue(),
+      ],
       eslint: {
         warnings: true,
         errors: true,
