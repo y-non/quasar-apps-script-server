@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import LoginPageVue from "../LoginPage.vue";
+import LoginPageVue from "src/pages/LoginPage.vue";
 import { createTestingPinia } from "@pinia/testing";
 import { Quasar } from "quasar";
 
