@@ -70,9 +70,7 @@ const downloadQRCode = (index) => {
 };
 
 onMounted(async () => {
-  storeGiftCard.isLoadingMainScreen = true;
   await storeGiftCard.getInit();
-  storeGiftCard.isLoadingMainScreen = false;
 });
 
 const openCreateDialog = () => {
@@ -188,6 +186,8 @@ watch(
     </div>
 
     <div v-else style="position: relative">
+      <q-pull-to-refresh @refresh="storeGiftCard.getInit()" color="primary">
+
       <div
         style="position: sticky; top: 7%; z-index: 1; background-color: #ffffff"
       >
@@ -423,6 +423,8 @@ watch(
           </q-card-actions> -->
         </q-card>
       </q-list>
+
+      </q-pull-to-refresh>
     </div>
 
     <q-page-sticky position="bottom-right" :offset="[18, 38]">

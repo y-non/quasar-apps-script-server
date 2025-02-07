@@ -3,8 +3,8 @@ import { Dialog, Loading, Notify } from "quasar";
 import { dateUtil } from "src/utils/dateUtil";
 import { storageUtil } from "src/utils/storageUtil";
 import { supabase } from "src/utils/superbase";
-import { useAuthenticationStore } from "./AuthenticationStore";
 import { openDB } from "idb";
+import { subscribeUtil } from "src/utils/subscribeToChannelUtil";
 
 export const useSupabaseStore = defineStore("supabase", {
   state: () => ({
@@ -20,7 +20,7 @@ export const useSupabaseStore = defineStore("supabase", {
 
     /* reactive */
     isLogin: false,
-    isLoadingMainScreen: false,
+    isLoadingMainScreen: true,
     isShowMoreUsers: false,
     loadingSelect: false,
     isLoadingHistory: false,
@@ -72,17 +72,17 @@ export const useSupabaseStore = defineStore("supabase", {
       this.listDiscountUpdate = this.listDiscount;
       await this.fetchData();
       // await this.subscribeToTable();
-      await this.subscribeToTableUserSessions();
+      await subscribeUtil.subscribeToTableUserSessions();
     },
 
     /* CRUD DATA */
     async fetchData() {
       try {
+        this.isLoadingMainScreen = true;
         //hàm này lên đầu để user không cần phải đợi load user data vẫn có thể thực hiện action khi app vừa render
         await this.fetchMenuData();
         await this.getListStatus();
         await this.getUserStatus();
-        this.isLoadingMainScreen = true;
         this.loadingSelect = false;
 
         const startOfToday = new Date();
@@ -92,7 +92,7 @@ export const useSupabaseStore = defineStore("supabase", {
         const { data, error } = await supabase
           .from("orders")
           .select("*")
-          .order("created_at", { ascending: true })
+          .order("created_at", { ascending: false })
           .gte("created_at", startOfToday.toISOString()); // Filter for today only
 
         let dataResponse = data || [];
@@ -899,32 +899,6 @@ export const useSupabaseStore = defineStore("supabase", {
         this.isLoadingMenuData = false;
         this.loadingSelect = false;
         console.error("Error fetching data:", error);
-      }
-    },
-
-    async subscribeToTableUserSessions() {
-      try {
-        const storeAuthentication = useAuthenticationStore();
-        const subscription = supabase
-          .channel("public:user_sessions")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "user_sessions",
-            },
-            async (payload) => {
-              if (payload) {
-                await storeAuthentication.validateSession();
-              }
-            }
-          )
-          .subscribe();
-
-        return subscription;
-      } catch (err) {
-        console.error("Error subscribing to changes: ", err);
       }
     },
 

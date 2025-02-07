@@ -14,8 +14,10 @@ export const useGiftCardStore = defineStore("giftCard", {
   }),
   actions: {
     async getInit() {
+      this.isLoadingMainScreen = true;
       this.listGiftCards = await this.loadGiftCards();
       this.listGiftCardsOriginal = this.listGiftCards;
+      this.isLoadingMainScreen = false;
     },
     async loadGiftCards() {
       try {

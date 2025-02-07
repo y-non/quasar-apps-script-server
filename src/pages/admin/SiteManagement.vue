@@ -44,45 +44,49 @@ onMounted(async () => {
     </div>
 
     <div v-else class="wrapper-content q-px-md q-py-sm">
-      <div class="wrapper-content__title">
-        <span class="text-h5 t-default text-bold">Danh sách các site</span>
-      </div>
+      <q-pull-to-refresh @refresh="storeSite.getInit()" color="primary">
+        <div class="wrapper-content__title">
+          <span class="text-h5 t-default text-bold">Danh sách các site</span>
+        </div>
 
-      <div class="wrapper-content__list q-py-md">
-        <q-card
-          v-for="(item, index) in storeSite.listSite"
-          :key="index"
-          class="my-card q-mb-md bg-default"
-          style="border-radius: 18px"
-        >
-          <q-card-section>
-            <div class="flex justify-between" style="align-items: center">
-              <div class="flex" style="align-items: center">
-                <q-icon name="store" size="md" color="grey-6" />
-                <div class="text-h6 q-px-md t-default text-uppercase text-bold">
-                  {{ item.name }}
+        <div class="wrapper-content__list q-py-md">
+          <q-card
+            v-for="(item, index) in storeSite.listSite"
+            :key="index"
+            class="my-card q-mb-md bg-default"
+            style="border-radius: 18px"
+          >
+            <q-card-section>
+              <div class="flex justify-between" style="align-items: center">
+                <div class="flex" style="align-items: center">
+                  <q-icon name="store" size="md" color="grey-6" />
+                  <div
+                    class="text-h6 q-px-md t-default text-uppercase text-bold"
+                  >
+                    {{ item.name }}
+                  </div>
                 </div>
-              </div>
 
-              <q-icon
-                name="eva-edit-outline"
-                size="sm"
-                color="grey"
-                @click="
-                  storeSite.updateSite = { ...item };
-                  storeSite.isShowEditDialog = true;
-                "
-              />
-            </div>
-            <div class="text-subtitle2 t-default">
-              {{ dateUtil.formatDate(item.created_at) }}
-            </div>
-          </q-card-section>
-          <q-card-section>
-            <span class="text-grey-6">{{ item.description }}</span>
-          </q-card-section>
-        </q-card>
-      </div>
+                <q-icon
+                  name="eva-edit-outline"
+                  size="sm"
+                  color="grey"
+                  @click="
+                    storeSite.updateSite = { ...item };
+                    storeSite.isShowEditDialog = true;
+                  "
+                />
+              </div>
+              <div class="text-subtitle2 t-default">
+                {{ dateUtil.formatDate(item.created_at) }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <span class="text-grey-6">{{ item.description }}</span>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-pull-to-refresh>
     </div>
   </div>
 
