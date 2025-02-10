@@ -6,6 +6,7 @@ import OrderPageVue from "src/pages/admin/OrderPage.vue";
 import GiftCardPageVue from "src/pages/admin/GiftCardPage.vue";
 import SiteManagementVue from "src/pages/admin/SiteManagement.vue";
 import ReportPageVue from "src/pages/admin/ReportPage.vue";
+import CheckAuthnVue from "src/pages/CheckAuthn.vue";
 
 const routes = [
   {
@@ -15,6 +16,7 @@ const routes = [
       { path: "", component: LoginPage, name: "LoginPage" },
       // { path: "/:access_token", component: LoginPage, name: "LoginPage" },
       { path: "data", component: DataViewPage, name: "DataViewPage" },
+      { path: "check", component: CheckAuthnVue, name: "CheckAuthnVue" },
     ],
   },
 
