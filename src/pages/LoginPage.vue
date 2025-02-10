@@ -81,7 +81,9 @@ onMounted(async () => {
         </div>
 
         <div class="flex flex-center q-mt-lg">
-          <span @click="storeAuthentication.dialogLoginWithMagicLink = true"
+          <span
+            class="text-primary text-subtitle1"
+            @click="storeAuthentication.dialogLoginWithMagicLink = true"
             >Đăng nhập bằng magic link</span
           >
         </div>

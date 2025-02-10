@@ -544,19 +544,22 @@ watch(downlink, (speed) => {
             class="flex flex-center q-py-lg"
           >
             <label for="" class="q-mb-md">Vui lòng nhập mã OTP hiện tại</label>
-            <InputOtp v-model="storeAuthentication.otpCodeConfirm" />
+            <InputOtp
+              integerOnly
+              v-model="storeAuthentication.otpCodeConfirm"
+            />
           </div>
 
           <div v-else class="flex flex-center q-py-lg">
             <label for="" class="q-mb-md">Vui lòng nhập mã OTP mới</label>
-            <InputOtp v-model="storeAuthentication.otpCodeUpdate" />
+            <InputOtp integerOnly v-model="storeAuthentication.otpCodeUpdate" />
           </div>
         </div>
       </q-card-section>
 
       <!-- tạo mới OTP -->
       <q-card-section v-else class="flex flex-center">
-        <InputOtp v-model="storeAuthentication.otpCode" />
+        <InputOtp integerOnly v-model="storeAuthentication.otpCode" />
       </q-card-section>
 
       <!-- tạo mới -->
