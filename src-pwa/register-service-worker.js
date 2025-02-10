@@ -21,7 +21,6 @@ register(process.env.SERVICE_WORKER_FILE, {
     }
 
     showNotification("Thông báo", "Test thông báo");
-    console.log("haha");
   },
 
   registered(/* registration */) {

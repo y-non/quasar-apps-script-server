@@ -7,6 +7,7 @@ import {
 } from "vue-router";
 import routes from "./routes";
 import { storageUtil } from "src/utils/storageUtil";
+import { useAuthenticationStore } from "src/stores/AuthenticationStore";
 
 /*
  * If not building with SSR mode, you can
@@ -34,7 +35,8 @@ export default route(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach((to, from, next) => {
+  Router.beforeEach(async (to, from, next) => {
+    const storeAuthentication = useAuthenticationStore();
     const isLogin = storageUtil.getLocalStorageData("isLogin") || false;
     const role =
       storageUtil.getLocalStorageData("userAuthInfo")?.role || "user";
@@ -62,7 +64,24 @@ export default route(function (/* { store, ssrContext } */) {
 
     // No login, allow only the login page
     if (!isLogin && routerPath !== "/") {
-      return next("/");
+      if (to.fullPath.includes("access_token")) {
+        const accessToken = to.fullPath
+          .slice(1)
+          .split("access_token=")[1]
+          ?.split("&")[0];
+        const refreshToken = to.fullPath
+          .slice(1)
+          .split("refresh_token=")[1]
+          ?.split("&")[0];
+
+        await storeAuthentication.signInWithMagicLink(
+          accessToken,
+          refreshToken
+        );
+        return next();
+      } else {
+        return next("/");
+      }
     }
 
     //no login

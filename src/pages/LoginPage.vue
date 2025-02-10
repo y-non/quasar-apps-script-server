@@ -79,6 +79,14 @@ onMounted(async () => {
             class="full-width q-py-md"
           />
         </div>
+
+        <div class="flex flex-center q-mt-lg">
+          <span
+            class="text-primary text-subtitle1"
+            @click="storeAuthentication.dialogLoginWithMagicLink = true"
+            >Đăng nhập bằng magic link</span
+          >
+        </div>
       </q-form>
     </div>
 
@@ -145,6 +153,33 @@ onMounted(async () => {
         </q-form>
       </div>
     </div>
+
+    <q-dialog v-model="storeAuthentication.dialogLoginWithMagicLink">
+      <q-card style="min-width: 90vw">
+        <q-form
+          @submit="
+            storeAuthentication.sendMagicLink(
+              storeAuthentication.emailMagicLink.toLowerCase().trim()
+            )
+          "
+          class="q-gutter-md"
+        >
+          <div>
+            <q-card-section class="column">
+              <label class="q-ml-sm">Vui lòng nhập email.</label>
+              <q-input
+                v-model="storeAuthentication.emailMagicLink"
+                type="text"
+                :rules="[(val) => !!val || 'Không được để rỗng!']"
+              />
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-btn label="Gửi" color="black" v-close-popup />
+            </q-card-actions>
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
 
     <!-- <div v-if="isShowLogin" class="flex flex-center">
       Chưa có tài khoản?

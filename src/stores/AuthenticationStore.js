@@ -12,6 +12,19 @@ export const useAuthenticationStore = defineStore("authentication", {
     userList: [],
     isLogin: false,
     dialogChangePassword: false,
+    dialogLoginWithMagicLink: false,
+    dialogOtp: false,
+    otpCode: "",
+    otpCodeConfirm: "",
+    otpCodeUpdate: "",
+    isAlreadyHaveOtp: false,
+    emailMagicLink: "",
+    isShowChangeOtpStep: false,
+    isAlreadyConfirmTrueOldOtp: false,
+
+    /* check session expired */
+    dialogConfirmSessionExpired: false,
+    otpSession: "",
   }),
   actions: {
     async getInit() {
@@ -151,6 +164,244 @@ export const useAuthenticationStore = defineStore("authentication", {
       }
     },
 
+    /* Handle Magic link Login */
+    async sendMagicLink(email) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email, // ✅ Use email directly instead of email.value
+        options: { shouldCreateUser: false, type: "email" },
+      });
+
+      if (error) {
+        console.error("Error sending magic link:", error.message);
+        Dialog.create({
+          title: "Thông báo",
+          message: `"Lỗi khi gửi email package: " ${error.message}`,
+          ok: true,
+          persistent: false,
+        });
+        return;
+      }
+
+      this.dialogLoginWithMagicLink = false;
+      this.emailMagicLink = "s";
+      alert("Vui lòng kiểm tra hòm thư của bạn!");
+    },
+
+    async signInWithMagicLink(accessToken, refreshToken) {
+      try {
+        Loading.show();
+        const storeSupabase = useSupabaseStore();
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          console.error(
+            "Caught error when handling function signInWithMagicLink(accessToken, refreshToken): ",
+            error
+          );
+        } else {
+          const { data, error: userError } = await supabase.auth.getUser();
+
+          const user = data.user;
+          /* OLD HANDLE */
+          await this.getUserAccountData(user.id);
+          const sessionToken = this.generateSessionToken();
+
+          // Start a transaction to enforce single-device login
+          const { data: sessionData, error: sessionError } = await supabase.rpc(
+            "manage_user_sessions",
+            {
+              user_id: user.id,
+              session_token: sessionToken,
+            }
+          );
+
+          if (sessionError) throw sessionError;
+
+          localStorage.setItem("session_token", sessionToken);
+
+          // Handle post-login actions, such as redirecting the user
+          if (accessToken && refreshToken) {
+            //handle check data user day off
+            const userAuthData =
+              storageUtil.getLocalStorageData("userAuthInfo");
+
+            const dayoffFrom = userAuthData.dayoff_from;
+            const dayoffTo = userAuthData.dayoff_to;
+
+            const currentDate = new Date();
+            const currentDateString = currentDate.toISOString().split("T")[0];
+
+            // Check if the current date is outside the range
+            const isExcluded =
+              currentDateString <= dayoffFrom || currentDateString >= dayoffTo;
+
+            //check if account already disable
+            if (userAuthData.disable) {
+              Loading.hide();
+              Dialog.create({
+                title: "Thông báo",
+                message: "Tài khoản đã bị vô hiệu hóa, không thể đăng nhập!",
+                ok: true,
+                persistent: "",
+              });
+
+              return;
+            }
+
+            if (isExcluded) {
+              Loading.hide();
+              Dialog.create({
+                title: "Thông báo",
+                message: "Nhân viên đang nghỉ phép, không thể đăng nhập!",
+                ok: true,
+                persistent: "",
+              });
+
+              return;
+            }
+            console.log("Already reach that step");
+            const role = storageUtil.getLocalStorageData("userAuthInfo").role;
+            localStorage.setItem("access_token", accessToken);
+            localStorage.setItem("refresh_token", refreshToken);
+            storageUtil.setLocalStorageData("userData", user);
+            this.isLogin = true;
+            storageUtil.setLocalStorageData("isLogin", true);
+
+            if (role === "superadmin") {
+              this.router.push("/admin/account");
+            } else if (role === "admin") {
+              this.router.push("/admin");
+            } else {
+              await storeSupabase.getUserStatus();
+              this.router.push("/data");
+              setTimeout(() => {
+                window.location.reload();
+              }, 200);
+            }
+
+            Loading.hide();
+          }
+        }
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* Handle otp feature */
+    async checkHaveOtp() {
+      try {
+        Loading.show();
+        const { data, error: userError } = await supabase.auth.getUser();
+
+        await this.getUserAccountData(data.user.id);
+
+        Loading.hide();
+        // if (userData.pin) {
+        // }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* update otp session */
+    async checkMatchOtp(otp) {
+      try {
+        const { data, error: userError } = await supabase.auth.getUser();
+
+        let { data: users, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("user_id", data.user.id);
+
+        return users[0].pin === otp;
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* update otp session */
+    async clickCheckMatchOtpUpdate(otp) {
+      try {
+        Loading.show();
+        // const { data, error: userError } = await supabase.auth.getUser();
+
+        // let { data: users, error } = await supabase
+        //   .from("users")
+        //   .select("*")
+        //   .eq("user_id", data.user.id);
+
+        const checkMatchOtp = await this.checkMatchOtp(otp);
+
+        if (checkMatchOtp) {
+          this.isAlreadyConfirmTrueOldOtp = true;
+        } else {
+          Notify.create({
+            type: "negative",
+            message: "Mã OTP không trùng khớp",
+            timeout: 2000,
+            position: "top",
+          });
+        }
+        Loading.hide();
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async updateOtp(newOtp) {
+      try {
+        Loading.show();
+
+        const userData = storageUtil.getLocalStorageData("userAuthInfo");
+
+        const payload = {
+          pin: newOtp,
+        };
+
+        const { data, error } = await supabase
+          .from("users")
+          .update(payload)
+          .eq("id", userData.id)
+          .select();
+
+        if (error) {
+          Dialog.create({
+            title: "Lỗi",
+            message: `Lỗi khi cập nhật OTP: ${error.message}`,
+          });
+        } else {
+          Notify.create({
+            type: "positive",
+            message: "Cập nhật thành công!",
+            timeout: 2000,
+            position: "top",
+          });
+
+          this.resetStateOtp();
+          this.dialogOtp = false;
+        }
+
+        Loading.hide();
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    resetStateOtp() {
+      this.isAlreadyConfirmTrueOldOtp = false;
+      this.isShowChangeOtpStep = false;
+      this.otpCode = "";
+      this.otpCodeConfirm = "";
+      this.otpCodeUpdate = "";
+    },
+
     async changePassword(currentPassword, newPassword) {
       try {
         Loading.show();
@@ -278,6 +529,16 @@ export const useAuthenticationStore = defineStore("authentication", {
           .select("*")
           .eq("user_id", id);
 
+        if (users[0].pin?.length) {
+          this.isAlreadyHaveOtp = true;
+          storageUtil.setLocalStorageData("isHaveOtp", true);
+        } else {
+          this.isAlreadyHaveOtp = false;
+          storageUtil.setLocalStorageData("isHaveOtp", false);
+        }
+
+        /* set thằng này sau cuối để remove cái mã pin của nó ra */
+        delete users[0].pin;
         storageUtil.setLocalStorageData("userAuthInfo", users[0]);
       } catch (err) {
         console.error("Internal Server Error getUserAccountData(): ", err);
@@ -312,6 +573,40 @@ export const useAuthenticationStore = defineStore("authentication", {
         }, 300);
 
         console.error("Session validation failed. User logged out.");
+      }
+    },
+
+    async checkSessionViaOtp(otp) {
+      try {
+        Loading.show();
+
+        const checkMatchOtp = await this.checkMatchOtp(otp);
+
+        if (checkMatchOtp) {
+          this.dialogConfirmSessionExpired = false;
+          this.otpSession = "";
+          Notify.create({
+            type: "positive",
+            message: "Xác thực thành công!",
+            timeout: 2000,
+            position: "top",
+          });
+          storageUtil.setLocalStorageData("isLogin", true);
+        } else {
+          Notify.create({
+            type: "negative",
+            message: "Xác thực thất bại!",
+            timeout: 2000,
+            position: "top",
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+
+        Loading.hide();
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
       }
     },
 
