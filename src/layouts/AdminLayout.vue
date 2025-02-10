@@ -140,24 +140,33 @@ watch(
 watch(idle, (idleValue) => {
   if (idleValue && isLogin) {
     inc();
-    Dialog.create({
-      title: "Thông báo",
-      message: "Đã hết phiên đăng nhập, vui lòng đăng nhập lại!",
-      ok: true,
-      cancel: false,
-      persistent: true,
-    }).onOk(async () => {
-      localStorage.clear();
 
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Error signing out:", error.message);
-        return;
-      }
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-    });
+    const isHaveOtp = storageUtil.getLocalStorageData("isHaveOtp");
+
+    if (isHaveOtp) {
+      storageUtil.setLocalStorageData("isLogin", false);
+      storeAuthentication.dialogConfirmSessionExpired = true;
+    } else {
+      Dialog.create({
+        title: "Thông báo",
+        message: "Đã hết phiên đăng nhập, vui lòng đăng nhập lại!",
+        ok: true,
+        cancel: false,
+        persistent: true,
+      }).onOk(async () => {
+        localStorage.clear();
+
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error("Error signing out:", error.message);
+          return;
+        }
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      });
+    }
+
     reset(); // restarts the idle timer. Does not change lastActive value
   }
 });
@@ -601,7 +610,7 @@ watch(downlink, (speed) => {
                 ? storeAuthentication.updateOtp(
                     storeAuthentication.otpCodeUpdate
                   )
-                : storeAuthentication.checkMatchOtp(
+                : storeAuthentication.clickCheckMatchOtpUpdate(
                     storeAuthentication.otpCodeConfirm
                   )
             "
@@ -627,6 +636,33 @@ watch(downlink, (speed) => {
           v-close-popup
         />
       </q-card-actions> -->
+    </q-card>
+  </q-dialog>
+
+  <q-dialog
+    v-model="storeAuthentication.dialogConfirmSessionExpired"
+    persistent
+  >
+    <q-card style="width: 400px" class="q-pa-sm">
+      <q-card-section>
+        <div class="text-subtitle1 text-bold">
+          Vui lòng nhập mã OTP để tiếp tục phiên
+        </div>
+      </q-card-section>
+
+      <q-card-section class="flex flex-center q-my-md q-mb-lg">
+        <InputOtp
+          integerOnly
+          v-model="storeAuthentication.otpSession"
+          @update:model-value="
+            storeAuthentication.otpSession?.length === 4
+              ? storeAuthentication.checkSessionViaOtp(
+                  storeAuthentication.otpSession
+                )
+              : []
+          "
+        />
+      </q-card-section>
     </q-card>
   </q-dialog>
 

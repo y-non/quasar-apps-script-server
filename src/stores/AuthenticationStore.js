@@ -21,6 +21,10 @@ export const useAuthenticationStore = defineStore("authentication", {
     emailMagicLink: "",
     isShowChangeOtpStep: false,
     isAlreadyConfirmTrueOldOtp: false,
+
+    /* check session expired */
+    dialogConfirmSessionExpired: false,
+    otpSession: "",
   }),
   actions: {
     async getInit() {
@@ -306,7 +310,6 @@ export const useAuthenticationStore = defineStore("authentication", {
     /* update otp session */
     async checkMatchOtp(otp) {
       try {
-        Loading.show();
         const { data, error: userError } = await supabase.auth.getUser();
 
         let { data: users, error } = await supabase
@@ -314,7 +317,27 @@ export const useAuthenticationStore = defineStore("authentication", {
           .select("*")
           .eq("user_id", data.user.id);
 
-        if (users[0].pin === otp) {
+        return users[0].pin === otp;
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* update otp session */
+    async clickCheckMatchOtpUpdate(otp) {
+      try {
+        Loading.show();
+        // const { data, error: userError } = await supabase.auth.getUser();
+
+        // let { data: users, error } = await supabase
+        //   .from("users")
+        //   .select("*")
+        //   .eq("user_id", data.user.id);
+
+        const checkMatchOtp = await this.checkMatchOtp(otp);
+
+        if (checkMatchOtp) {
           this.isAlreadyConfirmTrueOldOtp = true;
         } else {
           Notify.create({
@@ -550,6 +573,40 @@ export const useAuthenticationStore = defineStore("authentication", {
         }, 300);
 
         console.error("Session validation failed. User logged out.");
+      }
+    },
+
+    async checkSessionViaOtp(otp) {
+      try {
+        Loading.show();
+
+        const checkMatchOtp = await this.checkMatchOtp(otp);
+
+        if (checkMatchOtp) {
+          this.dialogConfirmSessionExpired = false;
+          this.otpSession = "";
+          Notify.create({
+            type: "positive",
+            message: "Xác thực thành công!",
+            timeout: 2000,
+            position: "top",
+          });
+          storageUtil.setLocalStorageData("isLogin", true);
+        } else {
+          Notify.create({
+            type: "negative",
+            message: "Xác thực thất bại!",
+            timeout: 2000,
+            position: "top",
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+
+        Loading.hide();
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
       }
     },
 
