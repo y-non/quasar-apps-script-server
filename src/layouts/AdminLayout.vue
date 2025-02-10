@@ -10,6 +10,8 @@ import { useNetwork } from "@vueuse/core";
 import { useCounter, useIdle } from "@vueuse/core";
 import { supabase } from "src/utils/superbase";
 
+import InputOtp from "primevue/inputotp";
+
 const { inc, count } = useCounter();
 const { idle, lastActive, reset } = useIdle(300 * 6 * 1000); // 5 min
 
@@ -93,7 +95,6 @@ onMounted(async () => {
   }
 
   window.addEventListener("beforeinstallprompt", (e) => {
-    console.log("beforeinstallprompt event fired!"); // Debugging log
     e.preventDefault();
     deferredPrompt = e;
     showInstallAppPrompt(e);
@@ -101,8 +102,6 @@ onMounted(async () => {
 });
 
 const showInstallAppPrompt = async () => {
-  console.log("Deferred Prompt:", deferredPrompt); // Debugging log
-
   if (!deferredPrompt) {
     console.warn("No install prompt available.");
     return;
@@ -111,7 +110,6 @@ const showInstallAppPrompt = async () => {
   try {
     await deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {
-      console.log("User choice:", choiceResult);
       deferredPrompt = null;
     });
   } catch (err) {
@@ -445,6 +443,25 @@ watch(downlink, (speed) => {
             </q-item-section>
           </q-item>
 
+          <q-item
+            @click="
+              async () => {
+                await storeAuthentication.checkHaveOtp();
+                storeAuthentication.dialogOtp = true;
+              }
+            "
+            clickable
+            v-ripple
+          >
+            <q-item-section avatar>
+              <q-icon class="text-grey-8" name="eva-settings-outline" />
+            </q-item-section>
+
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+              Thiết lập OTP
+            </q-item-section>
+          </q-item>
+
           <q-item @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-red-10 text-bold" name="logout" />
@@ -486,6 +503,129 @@ watch(downlink, (speed) => {
       <router-view />
     </q-page-container>
   </q-layout>
+
+  <q-dialog v-model="storeAuthentication.dialogOtp" persistent>
+    <q-card style="width: 400px">
+      <q-card-section>
+        <div class="text-h6">Thiết lập mã OTP đăng nhập</div>
+      </q-card-section>
+
+      <!-- cập nhật mã otp nếu đã có rối -->
+      <q-card-section v-if="storeAuthentication.isAlreadyHaveOtp">
+        <div
+          v-if="storeAuthentication.isShowChangeOtpStep === false"
+          class="column"
+        >
+          <span class="text-subtitle1">Mã otp của bạn là: ****</span>
+          <span
+            class="q-py-md text-subtitle1 text-blue"
+            @click="
+              storeAuthentication.isShowChangeOtpStep =
+                !storeAuthentication.isShowChangeOtpStep
+            "
+            >Đổi mã khác</span
+          >
+        </div>
+
+        <div v-else>
+          <q-btn
+            color="primary"
+            icon="eva-arrow-ios-back-outline"
+            label="Trở về"
+            flat
+            @click="
+              storeAuthentication.isShowChangeOtpStep =
+                !storeAuthentication.isShowChangeOtpStep
+            "
+          />
+
+          <div
+            v-if="storeAuthentication.isAlreadyConfirmTrueOldOtp === false"
+            class="flex flex-center q-py-lg"
+          >
+            <label for="" class="q-mb-md">Vui lòng nhập mã OTP hiện tại</label>
+            <InputOtp v-model="storeAuthentication.otpCodeConfirm" />
+          </div>
+
+          <div v-else class="flex flex-center q-py-lg">
+            <label for="" class="q-mb-md">Vui lòng nhập mã OTP mới</label>
+            <InputOtp v-model="storeAuthentication.otpCodeUpdate" />
+          </div>
+        </div>
+      </q-card-section>
+
+      <!-- tạo mới OTP -->
+      <q-card-section v-else class="flex flex-center">
+        <InputOtp v-model="storeAuthentication.otpCode" />
+      </q-card-section>
+
+      <!-- tạo mới -->
+      <q-card-actions
+        v-if="storeAuthentication.isAlreadyHaveOtp === false"
+        align="right"
+      >
+        <q-btn
+          @click="storeAuthentication.resetStateOtp()"
+          flat
+          label="Hủy"
+          v-close-popup
+        />
+        <q-btn
+          color="black"
+          label="Xác nhận"
+          @click="storeAuthentication.updateOtp(storeAuthentication.otpCode)"
+        />
+      </q-card-actions>
+
+      <!-- update -->
+      <q-card-actions v-if="storeAuthentication.isAlreadyHaveOtp" align="right">
+        <div v-if="storeAuthentication.isShowChangeOtpStep">
+          <q-btn
+            @click="storeAuthentication.resetStateOtp()"
+            flat
+            label="Hủy"
+            v-close-popup
+          />
+          <q-btn
+            color="black"
+            :label="
+              storeAuthentication.isAlreadyConfirmTrueOldOtp
+                ? 'Xác nhận'
+                : 'Tiếp tục'
+            "
+            @click="
+              storeAuthentication.isAlreadyConfirmTrueOldOtp
+                ? storeAuthentication.updateOtp(
+                    storeAuthentication.otpCodeUpdate
+                  )
+                : storeAuthentication.checkMatchOtp(
+                    storeAuthentication.otpCodeConfirm
+                  )
+            "
+          />
+        </div>
+
+        <div v-else>
+          <q-btn
+            @click="storeAuthentication.resetStateOtp()"
+            flat
+            label="Thoát"
+            v-close-popup
+          />
+        </div>
+      </q-card-actions>
+
+      <!-- otherwise -->
+      <!-- <q-card-actions v-else align="right">
+        <q-btn
+          @click="storeAuthentication.resetStateOtp()"
+          flat
+          label="Thoát"
+          v-close-popup
+        />
+      </q-card-actions> -->
+    </q-card>
+  </q-dialog>
 
   <q-banner
     v-if="storeSupabase.isOnline === false"

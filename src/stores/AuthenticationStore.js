@@ -13,7 +13,14 @@ export const useAuthenticationStore = defineStore("authentication", {
     isLogin: false,
     dialogChangePassword: false,
     dialogLoginWithMagicLink: false,
+    dialogOtp: false,
+    otpCode: "",
+    otpCodeConfirm: "",
+    otpCodeUpdate: "",
+    isAlreadyHaveOtp: false,
     emailMagicLink: "",
+    isShowChangeOtpStep: false,
+    isAlreadyConfirmTrueOldOtp: false,
   }),
   actions: {
     async getInit() {
@@ -280,6 +287,98 @@ export const useAuthenticationStore = defineStore("authentication", {
       }
     },
 
+    /* Handle otp feature */
+    async checkHaveOtp() {
+      try {
+        Loading.show();
+        const { data, error: userError } = await supabase.auth.getUser();
+
+        await this.getUserAccountData(data.user.id);
+
+        Loading.hide();
+        // if (userData.pin) {
+        // }
+      } catch (err) {
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    /* update otp session */
+    async checkMatchOtp(otp) {
+      try {
+        Loading.show();
+        const { data, error: userError } = await supabase.auth.getUser();
+
+        let { data: users, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("user_id", data.user.id);
+
+        if (users[0].pin === otp) {
+          this.isAlreadyConfirmTrueOldOtp = true;
+        } else {
+          Notify.create({
+            type: "negative",
+            message: "Mã OTP không trùng khớp",
+            timeout: 2000,
+            position: "top",
+          });
+        }
+        Loading.hide();
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    async updateOtp(newOtp) {
+      try {
+        Loading.show();
+
+        const userData = storageUtil.getLocalStorageData("userAuthInfo");
+
+        const payload = {
+          pin: newOtp,
+        };
+
+        const { data, error } = await supabase
+          .from("users")
+          .update(payload)
+          .eq("id", userData.id)
+          .select();
+
+        if (error) {
+          Dialog.create({
+            title: "Lỗi",
+            message: `Lỗi khi cập nhật OTP: ${error.message}`,
+          });
+        } else {
+          Notify.create({
+            type: "positive",
+            message: "Cập nhật thành công!",
+            timeout: 2000,
+            position: "top",
+          });
+
+          this.resetStateOtp();
+          this.dialogOtp = false;
+        }
+
+        Loading.hide();
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
+      }
+    },
+
+    resetStateOtp() {
+      this.isAlreadyConfirmTrueOldOtp = false;
+      this.isShowChangeOtpStep = false;
+      this.otpCode = "";
+      this.otpCodeConfirm = "";
+      this.otpCodeUpdate = "";
+    },
+
     async changePassword(currentPassword, newPassword) {
       try {
         Loading.show();
@@ -407,6 +506,16 @@ export const useAuthenticationStore = defineStore("authentication", {
           .select("*")
           .eq("user_id", id);
 
+        if (users[0].pin?.length) {
+          this.isAlreadyHaveOtp = true;
+          storageUtil.setLocalStorageData("isHaveOtp", true);
+        } else {
+          this.isAlreadyHaveOtp = false;
+          storageUtil.setLocalStorageData("isHaveOtp", false);
+        }
+
+        /* set thằng này sau cuối để remove cái mã pin của nó ra */
+        delete users[0].pin;
         storageUtil.setLocalStorageData("userAuthInfo", users[0]);
       } catch (err) {
         console.error("Internal Server Error getUserAccountData(): ", err);
