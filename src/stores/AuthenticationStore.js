@@ -12,6 +12,8 @@ export const useAuthenticationStore = defineStore("authentication", {
     userList: [],
     isLogin: false,
     dialogChangePassword: false,
+    dialogLoginWithMagicLink: false,
+    emailMagicLink: "",
   }),
   actions: {
     async getInit() {
@@ -148,6 +150,133 @@ export const useAuthenticationStore = defineStore("authentication", {
         });
       } catch (err) {
         console.error("Internal Server Error signOut(): ", err);
+      }
+    },
+
+    /* Handle Magic link Login */
+    async sendMagicLink(email) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email, // ✅ Use email directly instead of email.value
+        options: { shouldCreateUser: false, type: "email" },
+      });
+
+      if (error) {
+        console.error("Error sending magic link:", error.message);
+        Dialog.create({
+          title: "Thông báo",
+          message: `"Lỗi khi gửi email package: " ${error.message}`,
+          ok: true,
+          persistent: false,
+        });
+        return;
+      }
+
+      this.dialogLoginWithMagicLink = false;
+      this.emailMagicLink = "s";
+      alert("Vui lòng kiểm tra hòm thư của bạn!");
+    },
+
+    async signInWithMagicLink(accessToken, refreshToken) {
+      try {
+        Loading.show();
+        const storeSupabase = useSupabaseStore();
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          console.error(
+            "Caught error when handling function signInWithMagicLink(accessToken, refreshToken): ",
+            error
+          );
+        } else {
+          const { data, error: userError } = await supabase.auth.getUser();
+
+          const user = data.user;
+          /* OLD HANDLE */
+          await this.getUserAccountData(user.id);
+          const sessionToken = this.generateSessionToken();
+
+          // Start a transaction to enforce single-device login
+          const { data: sessionData, error: sessionError } = await supabase.rpc(
+            "manage_user_sessions",
+            {
+              user_id: user.id,
+              session_token: sessionToken,
+            }
+          );
+
+          if (sessionError) throw sessionError;
+
+          localStorage.setItem("session_token", sessionToken);
+
+          // Handle post-login actions, such as redirecting the user
+          if (accessToken && refreshToken) {
+            //handle check data user day off
+            const userAuthData =
+              storageUtil.getLocalStorageData("userAuthInfo");
+
+            const dayoffFrom = userAuthData.dayoff_from;
+            const dayoffTo = userAuthData.dayoff_to;
+
+            const currentDate = new Date();
+            const currentDateString = currentDate.toISOString().split("T")[0];
+
+            // Check if the current date is outside the range
+            const isExcluded =
+              currentDateString <= dayoffFrom || currentDateString >= dayoffTo;
+
+            //check if account already disable
+            if (userAuthData.disable) {
+              Loading.hide();
+              Dialog.create({
+                title: "Thông báo",
+                message: "Tài khoản đã bị vô hiệu hóa, không thể đăng nhập!",
+                ok: true,
+                persistent: "",
+              });
+
+              return;
+            }
+
+            if (isExcluded) {
+              Loading.hide();
+              Dialog.create({
+                title: "Thông báo",
+                message: "Nhân viên đang nghỉ phép, không thể đăng nhập!",
+                ok: true,
+                persistent: "",
+              });
+
+              return;
+            }
+            console.log("Already reach that step");
+            const role = storageUtil.getLocalStorageData("userAuthInfo").role;
+            localStorage.setItem("access_token", accessToken);
+            localStorage.setItem("refresh_token", refreshToken);
+            storageUtil.setLocalStorageData("userData", user);
+            this.isLogin = true;
+            storageUtil.setLocalStorageData("isLogin", true);
+
+            if (role === "superadmin") {
+              this.router.push("/admin/account");
+            } else if (role === "admin") {
+              this.router.push("/admin");
+            } else {
+              await storeSupabase.getUserStatus();
+              this.router.push("/data");
+              setTimeout(() => {
+                window.location.reload();
+              }, 200);
+            }
+
+            Loading.hide();
+          }
+        }
+      } catch (err) {
+        Loading.hide();
+        console.error("Internal Server Error: ", err);
       }
     },
 

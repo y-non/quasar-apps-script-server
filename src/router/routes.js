@@ -13,6 +13,7 @@ const routes = [
     component: () => import("layouts/MainLayout.vue"),
     children: [
       { path: "", component: LoginPage, name: "LoginPage" },
+      // { path: "/:access_token", component: LoginPage, name: "LoginPage" },
       { path: "data", component: DataViewPage, name: "DataViewPage" },
     ],
   },

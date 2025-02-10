@@ -9,7 +9,6 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 const { configure } = require("quasar/wrappers");
-import vue from "@vitejs/plugin-vue";
 
 module.exports = configure(function (/* ctx */) {
   return {
@@ -80,7 +79,6 @@ module.exports = configure(function (/* ctx */) {
 
       vitePlugins: [
         // [ 'package-name', { ..options.. } ]
-        vue(),
       ],
       eslint: {
         warnings: true,
@@ -109,14 +107,7 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: [
-        "Loading",
-        "Notify",
-        "Dialog",
-        "BottomSheet",
-        "AppFullscreen",
-        vue(),
-      ],
+      plugins: ["Loading", "Notify", "Dialog", "BottomSheet", "AppFullscreen"],
     },
 
     animations: "all", // --- includes all animations
