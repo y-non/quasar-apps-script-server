@@ -69,7 +69,7 @@ watch(
   (val) => {
     const selfUserData = val.filter(
       (item) =>
-        item.userid === storageUtil.getLocalStorageData("selfAppInfo").userid
+        item.userid === storageUtil.getLocalStorageData("selfAppInfo")?.userid
     )[0];
     userStatus.value = selfUserData;
   }
@@ -409,7 +409,11 @@ watch(downlink, (speed) => {
               <q-icon class="text-grey-8" name="eva-settings-outline" />
             </q-item-section>
 
-            <q-item-section class="text-grey-8" style="font-size: 1.1em">
+            <q-item-section
+              test-attr="otp-button"
+              class="text-grey-8"
+              style="font-size: 1.1em"
+            >
               Thiết lập OTP
             </q-item-section>
           </q-item>
@@ -498,6 +502,7 @@ watch(downlink, (speed) => {
           <span class="text-subtitle1">Mã otp của bạn là: ****</span>
           <span
             class="q-py-md text-subtitle1 text-blue"
+            test-attr="change-opt-span"
             @click="
               storeAuthentication.isShowChangeOtpStep =
                 !storeAuthentication.isShowChangeOtpStep
@@ -524,6 +529,7 @@ watch(downlink, (speed) => {
           >
             <label for="" class="q-mb-md">Vui lòng nhập mã OTP hiện tại</label>
             <InputOtp
+              test-attr="current-otp-input"
               integerOnly
               v-model="storeAuthentication.otpCodeConfirm"
             />
@@ -550,6 +556,7 @@ watch(downlink, (speed) => {
           @click="storeAuthentication.resetStateOtp()"
           flat
           label="Hủy"
+          test-attr="cancel-otp-button"
           v-close-popup
         />
         <q-btn
@@ -570,6 +577,7 @@ watch(downlink, (speed) => {
           />
           <q-btn
             color="black"
+            test-attr="update-otp-button"
             :label="
               storeAuthentication.isAlreadyConfirmTrueOldOtp
                 ? 'Xác nhận'
@@ -592,6 +600,7 @@ watch(downlink, (speed) => {
             @click="storeAuthentication.resetStateOtp()"
             flat
             label="Thoát"
+            test-attr="exit-otp-button"
             v-close-popup
           />
         </div>

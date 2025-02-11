@@ -26,18 +26,20 @@
     "primeicons": "^7.0.0",
     "primevue": "^4.2.5",
     "qrcode.vue": "^3.6.0",
-    "quasar": "^2.6.0",
-    "vue": "^3.0.0",
+    "quasar": "^2.17.7",
+    "register-service-worker": "^1.7.2",
+    "vue": "^3.5.13",
     "vue-qrcode-reader": "^5.7.0",
-    "vue-router": "^4.0.0"
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
-    "@quasar/app-vite": "^1.0.0",
+    "@quasar/app-vite": "^2.0.8",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitest/coverage-v8": "^3.0.5",
     "@vitest/ui": "^3.0.5",
     "autoprefixer": "^10.4.2",
+    "cypress": "^14.0.2",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-vue": "^9.32.0",
@@ -45,6 +47,7 @@
     "jsdom": "^26.0.0",
     "postcss": "^8.4.14",
     "prettier": "^2.5.1",
+    "vite": "^5.2.1",
     "vitest": "^3.0.5",
     "workbox-build": "7.0.x",
     "workbox-cacheable-response": "7.0.x",
@@ -58,5 +61,8 @@
     "node": "^18 || ^16 || ^14.19",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
+  },
+  "exports": {
+    "./preload-helper": "./dist/node/preload-helper.js"
   }
 }
