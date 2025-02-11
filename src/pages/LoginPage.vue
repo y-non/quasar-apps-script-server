@@ -83,6 +83,7 @@ onMounted(async () => {
         <div class="flex flex-center q-mt-lg">
           <span
             class="text-primary text-subtitle1"
+            id="magic-link"
             @click="storeAuthentication.dialogLoginWithMagicLink = true"
             >Đăng nhập bằng magic link</span
           >
@@ -170,11 +171,19 @@ onMounted(async () => {
               <q-input
                 v-model="storeAuthentication.emailMagicLink"
                 type="text"
+                class="input-email"
+                test-attr="input-email"
                 :rules="[(val) => !!val || 'Không được để rỗng!']"
               />
             </q-card-section>
             <q-card-actions align="right">
-              <q-btn label="Gửi" color="black" v-close-popup />
+              <q-btn
+                id="send-magic-link-button"
+                label="Gửi"
+                color="black"
+                type="submit"
+                v-close-popup
+              />
             </q-card-actions>
           </div>
         </q-form>
