@@ -296,6 +296,7 @@ export const useAuthenticationStore = defineStore("authentication", {
       try {
         Loading.show();
         const { data, error: userError } = await supabase.auth.getUser();
+        console.log(data);
 
         await this.getUserAccountData(data.user.id);
 
