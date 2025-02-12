@@ -431,7 +431,7 @@ watch(downlink, (speed) => {
             </q-item-section>
           </q-item>
 
-          <q-item @click="storeAuthentication.signOut" clickable v-ripple>
+          <q-item test-attr="logout-dialog" @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-red-8" name="logout" />
             </q-item-section>
