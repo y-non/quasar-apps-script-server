@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
-    "test": "vitest --coverage"
+    "test": "npx cypress run"
   },
   "dependencies": {
     "@pinia/testing": "^0.1.7",
