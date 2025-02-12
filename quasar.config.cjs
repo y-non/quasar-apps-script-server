@@ -10,6 +10,9 @@
 
 const { configure } = require("quasar/wrappers");
 
+const { renameSync, existsSync, mkdirSync } = require("fs");
+const { join } = require("path");
+
 module.exports = configure(function (/* ctx */) {
   return {
     eslint: {
@@ -67,6 +70,20 @@ module.exports = configure(function (/* ctx */) {
 
       publicPath: "/ffn/",
       distDir: "dist/spa/ffn",
+
+      afterBuild() {
+        const distDir = join(__dirname, "dist/spa");
+        const ffnDir = join(distDir, "ffn");
+        const indexFile = join(ffnDir, "index.html");
+        const newIndexPath = join(distDir, "index.html");
+
+        if (existsSync(indexFile)) {
+          renameSync(indexFile, newIndexPath);
+          console.log("✅ Moved index.html to dist/spa/");
+        } else {
+          console.error("❌ index.html not found inside dist/spa/ffn/");
+        }
+      },
       // analyze: true,
       // env: {},
       // rawDefine: {}
