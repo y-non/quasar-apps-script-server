@@ -1,4 +1,4 @@
-describe("template spec", () => {
+describe("Main Spec", () => {
   it("passes", () => {
     cy.visit("/");
   });

@@ -111,6 +111,16 @@ watch(idle, (idleValue) => {
 
 const handleChangePassword = async () => {
   if (!currentPassword.value || !newPassword.value) return;
+
+  if (currentPassword.value.trim() === newPassword.value.trim()) {
+    Dialog.create({
+      title: "Thông báo",
+      message: "Mật khẩu mới trùng với mật khẩu hiện tại",
+      ok: true,
+      cancel: false,
+    });
+    return;
+  }
   await storeAuthentication.changePassword(
     currentPassword.value,
     newPassword.value
@@ -330,7 +340,12 @@ watch(downlink, (speed) => {
     >
       <q-scroll-area class="fit">
         <q-list padding class="menu-list">
-          <q-item clickable v-ripple @click="storeSupabase.syncMenu">
+          <q-item
+            clickable
+            v-ripple
+            @click="storeSupabase.syncMenu"
+            test-attr="sync-button"
+          >
             <q-item-section avatar>
               <q-icon class="text-green-8" name="sync" />
             </q-item-section>
@@ -350,6 +365,7 @@ watch(downlink, (speed) => {
             clickable
             v-ripple
             @click="storeAuthentication.dialogChangePassword = true"
+            test-attr="change-password-dialog"
           >
             <q-item-section avatar>
               <q-icon class="text-grey-8" name="eva-unlock-outline" />
@@ -404,21 +420,18 @@ watch(downlink, (speed) => {
             "
             clickable
             v-ripple
+            test-attr="otp-button"
           >
             <q-item-section avatar>
               <q-icon class="text-grey-8" name="eva-settings-outline" />
             </q-item-section>
 
-            <q-item-section
-              test-attr="otp-button"
-              class="text-grey-8"
-              style="font-size: 1.1em"
-            >
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
               Thiết lập OTP
             </q-item-section>
           </q-item>
 
-          <q-item @click="storeAuthentication.signOut" clickable v-ripple>
+          <q-item test-attr="logout-dialog" @click="storeAuthentication.signOut" clickable v-ripple>
             <q-item-section avatar>
               <q-icon class="text-red-8" name="logout" />
             </q-item-section>
@@ -447,6 +460,7 @@ watch(downlink, (speed) => {
           v-model="currentPassword"
           :type="isShowCurrentPassword ? 'text' : 'password'"
           label="Mật khẩu hiện tại"
+          test-attr="current-password"
           filled
         >
           <template v-slot:append>
@@ -466,6 +480,7 @@ watch(downlink, (speed) => {
           :type="isShowNewPassword ? 'text' : 'password'"
           label="Mật khẩu mới"
           filled
+          test-attr="new-password"
           class="q-mt-md"
         >
           <template v-slot:append>
@@ -482,7 +497,7 @@ watch(downlink, (speed) => {
 
       <q-card-actions align="right">
         <q-btn flat label="Hủy" v-close-popup />
-        <q-btn color="primary" label="Xác nhận" @click="handleChangePassword" />
+        <q-btn color="primary" label="Xác nhận" test-attr="change-password-button" @click="handleChangePassword" />
       </q-card-actions>
     </q-card>
   </q-dialog>
