@@ -330,7 +330,12 @@ watch(downlink, (speed) => {
     >
       <q-scroll-area class="fit">
         <q-list padding class="menu-list">
-          <q-item clickable v-ripple @click="storeSupabase.syncMenu">
+          <q-item
+            clickable
+            v-ripple
+            @click="storeSupabase.syncMenu"
+            test-attr="sync-button"
+          >
             <q-item-section avatar>
               <q-icon class="text-green-8" name="sync" />
             </q-item-section>
@@ -404,16 +409,13 @@ watch(downlink, (speed) => {
             "
             clickable
             v-ripple
+            test-attr="otp-button"
           >
             <q-item-section avatar>
               <q-icon class="text-grey-8" name="eva-settings-outline" />
             </q-item-section>
 
-            <q-item-section
-              test-attr="otp-button"
-              class="text-grey-8"
-              style="font-size: 1.1em"
-            >
+            <q-item-section class="text-grey-8" style="font-size: 1.1em">
               Thiết lập OTP
             </q-item-section>
           </q-item>
