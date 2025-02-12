@@ -1,4 +1,4 @@
-describe("OTP", () => {
+describe("Sync Menu Data", () => {
   beforeEach(() => {
     cy.login();
   });

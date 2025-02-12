@@ -1,4 +1,4 @@
-describe("OTP", () => {
+describe("Change Password feature test", () => {
   beforeEach(() => {
     cy.login();
   });

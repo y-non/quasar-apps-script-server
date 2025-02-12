@@ -1,4 +1,4 @@
-describe("OTP", () => {
+describe("Logout", () => {
   beforeEach(() => {
     cy.login();
   });
