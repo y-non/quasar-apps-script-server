@@ -38,7 +38,7 @@ jobs:
       #     browser: chrome
 
       - name: Run E2E Test (Cypress)
-        run: npm run test:unit
+        run: npm run test
 
   build:
     name: Build Quasar App
