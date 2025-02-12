@@ -111,6 +111,16 @@ watch(idle, (idleValue) => {
 
 const handleChangePassword = async () => {
   if (!currentPassword.value || !newPassword.value) return;
+
+  if (currentPassword.value.trim() === newPassword.value.trim()) {
+    Dialog.create({
+      title: "Thông báo",
+      message: "Mật khẩu mới trùng với mật khẩu hiện tại",
+      ok: true,
+      cancel: false,
+    });
+    return;
+  }
   await storeAuthentication.changePassword(
     currentPassword.value,
     newPassword.value
@@ -355,6 +365,7 @@ watch(downlink, (speed) => {
             clickable
             v-ripple
             @click="storeAuthentication.dialogChangePassword = true"
+            test-attr="change-password-dialog"
           >
             <q-item-section avatar>
               <q-icon class="text-grey-8" name="eva-unlock-outline" />
@@ -449,6 +460,7 @@ watch(downlink, (speed) => {
           v-model="currentPassword"
           :type="isShowCurrentPassword ? 'text' : 'password'"
           label="Mật khẩu hiện tại"
+          test-attr="current-password"
           filled
         >
           <template v-slot:append>
@@ -468,6 +480,7 @@ watch(downlink, (speed) => {
           :type="isShowNewPassword ? 'text' : 'password'"
           label="Mật khẩu mới"
           filled
+          test-attr="new-password"
           class="q-mt-md"
         >
           <template v-slot:append>
@@ -484,7 +497,7 @@ watch(downlink, (speed) => {
 
       <q-card-actions align="right">
         <q-btn flat label="Hủy" v-close-popup />
-        <q-btn color="primary" label="Xác nhận" @click="handleChangePassword" />
+        <q-btn color="primary" label="Xác nhận" test-attr="change-password-button" @click="handleChangePassword" />
       </q-card-actions>
     </q-card>
   </q-dialog>

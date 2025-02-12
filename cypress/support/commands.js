@@ -28,6 +28,7 @@ Cypress.Commands.add("login", () => {
   //   cy.intercept("POST", "**/auth/v1/token").as("loginRequest");
   //   cy.wait("@loginRequest");
   // });
+  cy.viewport("iphone-xr");
 
   cy.fixture("users").then((users) => {
     // ✅ Set up interception BEFORE visiting the page

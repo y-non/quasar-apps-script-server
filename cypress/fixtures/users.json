@@ -6,5 +6,7 @@
   "invalidUser": {
     "email": "wronguser",
     "password": "wrongpassword"
-  }
+  },
+  "validPassword": 123123,
+  "invalidPassword": 111111
 }
