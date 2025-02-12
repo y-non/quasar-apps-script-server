@@ -58,6 +58,9 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - name: Install Quasar Locally
+        run: npm i -g @quasar/cli
+
       - name: Build for Production
         run: quasar build -m pwa
 
