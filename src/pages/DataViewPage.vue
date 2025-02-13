@@ -573,6 +573,7 @@ const onDetect = (decodedString) => {
         color="green-9"
         class="q-pa-md"
         round
+        test-attr="dialog-add-order"
         :disable="storeSupabase.isLoadingMainScreen"
         @click="storeSupabase.showAddDialog = true"
       />
@@ -1108,6 +1109,7 @@ const onDetect = (decodedString) => {
               icon="add"
               class="q-py-sm"
               push
+              test-attr="add-order-button"
             />
           </q-form>
         </q-card-section>
@@ -1691,6 +1693,7 @@ const onDetect = (decodedString) => {
                         v-model="scope.selected"
                         color="green"
                         @click="storeSupabase.clickToggleUpdateMenuItem(scope)"
+                        test-attr="toggle-add-order"
                       />
                     </div>
                   </q-item-section>
