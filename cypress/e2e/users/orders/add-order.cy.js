@@ -1,4 +1,4 @@
-describe("Change user status", () => {
+describe("Add new Order", () => {
   beforeEach(() => {
     cy.login();
   });

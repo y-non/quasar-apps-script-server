@@ -1884,6 +1884,7 @@ const onDetect = (decodedString) => {
               color="blue-7"
               icon="save"
               class="q-py-sm"
+              test-attr='update-order-button'
               push
             />
           </q-form>
