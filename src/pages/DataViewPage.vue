@@ -1172,7 +1172,7 @@ const onDetect = (decodedString) => {
                       {{
                         item.operation.toLowerCase() === "insert"
                           ? "Tạo mới"
-                          : "Cập nhập"
+                          : "Cập nhật"
                       }}
                     </div>
                     <div class="text-subtitle2 text-grey-6 q-ml-xs">
