@@ -424,6 +424,16 @@ export const useSupabaseStore = defineStore("supabase", {
           ok: true,
           cancel: true,
         }).onOk(async () => {
+          if (!newData.menuSelected?.length) {
+            Dialog.create({
+              title: "Thông báo",
+              message: "Vui lòng chọn ít nhất một dịch vụ",
+              ok: true,
+              cancel: false,
+            });
+            return;
+          }
+
           Loading.show({
             message: "Đang thêm mới dữ liệu...",
           });

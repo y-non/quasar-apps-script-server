@@ -189,6 +189,7 @@ watch(downlink, (speed) => {
           <div
             v-if="role !== 'admin' && role !== 'superadmin'"
             class="flex justify-end"
+            test-attr="change-status-button"
           >
             <div v-if="isLogin == true">
               <div class="active">
@@ -221,6 +222,7 @@ watch(downlink, (speed) => {
                   <q-item
                     v-close-popup
                     clickable
+                    test-attr="serving-button"
                     :class="
                       userStatus?.status_name === storeSupabase.statusServing
                         ? 'bg-grey-3'
@@ -249,6 +251,7 @@ watch(downlink, (speed) => {
                   <q-separator />
                   <q-item
                     v-close-popup
+                    test-attr="waiting-button"
                     :class="
                       userStatus?.status_name === storeSupabase.statusWaiting
                         ? 'bg-grey-3'
@@ -279,6 +282,7 @@ watch(downlink, (speed) => {
                   <q-separator />
                   <q-item
                     v-close-popup
+                    test-attr="off-button"
                     :class="
                       userStatus?.status_name === storeSupabase.statusOff
                         ? 'bg-grey-3'
@@ -302,7 +306,7 @@ watch(downlink, (speed) => {
                           size="xs"
                           color="red"
                         />
-                        <span class="q-ml-sm">{{
+                        <span class="q-ml-sm text-capitalize">{{
                           storeSupabase.statusOff
                         }}</span>
                       </div>
@@ -431,7 +435,12 @@ watch(downlink, (speed) => {
             </q-item-section>
           </q-item>
 
-          <q-item test-attr="logout-dialog" @click="storeAuthentication.signOut" clickable v-ripple>
+          <q-item
+            test-attr="logout-dialog"
+            @click="storeAuthentication.signOut"
+            clickable
+            v-ripple
+          >
             <q-item-section avatar>
               <q-icon class="text-red-8" name="logout" />
             </q-item-section>
@@ -497,7 +506,12 @@ watch(downlink, (speed) => {
 
       <q-card-actions align="right">
         <q-btn flat label="Hủy" v-close-popup />
-        <q-btn color="primary" label="Xác nhận" test-attr="change-password-button" @click="handleChangePassword" />
+        <q-btn
+          color="primary"
+          label="Xác nhận"
+          test-attr="change-password-button"
+          @click="handleChangePassword"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
